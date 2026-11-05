@@ -5,7 +5,7 @@
  * here is literally what lands in the other session — no separate preview format
  * to drift out of sync.
  */
-import { useEffect, useRef } from 'react'
+import { useEffect, useId } from 'react'
 import type { Digest } from '../shared/model.ts'
 import { buildInjectionText, buildPushText, digestIsEmpty } from './digest-text.ts'
 import { mapUi } from './map-state.ts'
@@ -19,7 +19,7 @@ export interface DigestDialogProps {
 }
 
 export function DigestDialog(props: DigestDialogProps): React.JSX.Element {
-  const textRef = useRef<HTMLTextAreaElement | null>(null)
+  const dialogId = useId()
 
   useEffect(() => {
     const release = mapUi.claimEscape('digest-dialog')
@@ -45,26 +45,33 @@ export function DigestDialog(props: DigestDialogProps): React.JSX.Element {
       data-talkmap-digest-dialog=""
       onMouseDown={(event) => { if (event.target === event.currentTarget) props.onClose() }}
     >
-      <div className={styles['digestDialog']} onMouseDown={(event) => { event.stopPropagation() }}>
+      <div
+        className={styles['digestDialog']}
+        data-empty={empty ? '' : undefined}
+        role="dialog"
+        aria-labelledby={`${dialogId}-title`}
+        onMouseDown={(event) => { event.stopPropagation() }}
+      >
         <div className={styles['digestDialogHead']}>
-          <span className={styles['digestDialogTitle']}>{t('digest.title')}</span>
-          <span className={styles['digestDialogFrom']}>{props.title}</span>
+          <span id={`${dialogId}-title`} className={styles['digestDialogTitle']}>{t('digest.title')}</span>
+          <span className={styles['digestDialogFrom']} title={props.title}>{props.title}</span>
         </div>
         {empty
           ? <div className={styles['digestEmpty']}>{t('digest.empty')}</div>
           : (
               <>
-                <div className={styles['digestLabel']}>{t('digest.pushLabel')}</div>
+                <label className={styles['digestLabel']} htmlFor={`${dialogId}-push`}>{t('digest.pushLabel')}</label>
                 <textarea
-                  ref={textRef}
+                  id={`${dialogId}-push`}
                   className={styles['digestText']}
                   readOnly
                   value={pushText}
                   spellCheck={false}
                   onFocus={(event) => { event.currentTarget.select() }}
                 />
-                <div className={styles['digestLabel']}>{t('digest.injectLabel')}</div>
+                <label className={styles['digestLabel']} htmlFor={`${dialogId}-inject`}>{t('digest.injectLabel')}</label>
                 <textarea
+                  id={`${dialogId}-inject`}
                   className={styles['digestText']}
                   readOnly
                   value={injectText}

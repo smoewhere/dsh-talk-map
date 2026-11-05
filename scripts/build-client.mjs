@@ -211,6 +211,8 @@ const result = await esbuild.build({
   absWorkingDir: ROOT,
   entryPoints: [ENTRY],
   outfile,
+  // Keep file writes in Node; native esbuild may run with narrower file access.
+  write: false,
   bundle: true,
   format: 'cjs',
   platform: 'browser',
@@ -228,6 +230,7 @@ const result = await esbuild.build({
   metafile: true,
 })
 
+fs.writeFileSync(outfile, result.outputFiles[0].contents)
 const bytes = fs.statSync(outfile).size
 const text = fs.readFileSync(outfile, 'utf8')
 const problems = []

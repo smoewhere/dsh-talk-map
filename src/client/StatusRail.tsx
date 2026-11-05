@@ -1,9 +1,9 @@
 /**
  * The status rail: a panel pinned to the left edge of the map that lists only the cards
- * which currently carry a lamp. Each entry is the same card the board draws — same width,
- * same look — stacked top to bottom.
+ * which currently carry a lamp. Entries share the board card's width and surface,
+ * with restrained status stripes and chips, stacked top to bottom.
  *
- * Behaviour: closed by default; a frosted handle (two bars + two dots) rides the panel
+ * Behaviour: closed by default; a themed handle (two bars + two dots) rides the panel
  * edge; the panel slides in from beyond the left edge; a card whose lamp changes jumps to
  * the top; cards that settle disappear; open/closed and the manual order survive a restart.
  *
@@ -292,6 +292,15 @@ export function StatusRail(props: StatusRailProps): React.JSX.Element {
   const renderCard = (entry: StatusRailEntry, floating: boolean): React.JSX.Element => (
     <div
       className={`${styles['card']} ${styles[LAMP_CLASS[entry.lamp]] ?? ''} ${styles['statusRailCard']}${floating ? ` ${styles['statusRailCardDragging']}` : ''}`}
+      role="button"
+      tabIndex={floating || !open ? -1 : 0}
+      aria-hidden={floating || undefined}
+      onKeyDown={floating ? undefined : (event) => {
+        if (event.key !== 'Enter' && event.key !== ' ') return
+        event.preventDefault()
+        event.stopPropagation()
+        props.onFocus(entry.cardId)
+      }}
       onPointerDown={floating ? undefined : (event) => { beginDrag(event, entry.cardId) }}
       onClick={() => { if (!floating && dragRef.current === null) props.onFocus(entry.cardId) }}
       title={entry.title}
