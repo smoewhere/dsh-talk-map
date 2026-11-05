@@ -1,8 +1,11 @@
-﻿node_modules/
+node_modules/
+
+# Agent scratch files and local verification output.
+.agent-tmp/
 *.bak-*
 *.panmode-*
 package-lock.json
 client/.client.check.js
+client/.client.build.js
 dist/
 client/client.dev.js
-client/.client.check.js

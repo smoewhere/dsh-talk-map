@@ -575,20 +575,33 @@
 }
 
 .digestDialog {
-  width: min(720px, 86vw);
-  max-height: 82vh;
+  box-sizing: border-box;
+  width: min(900px, calc(100vw - 32px));
+  height: min(760px, 84dvh);
+  min-height: min(360px, calc(100dvh - 32px));
+  max-height: calc(100dvh - 32px);
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 16px 18px 14px;
+  overflow: auto;
+  resize: vertical;
   border-radius: 14px;
-  background: var(--dsw-alias-bg-elevated, #232323);
-  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-1));
+  color: var(--dsw-alias-label-primary);
+  border: 1px solid var(--dsw-alias-border-l1);
   box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45);
   animation: tmRiseIn 200ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.digestDialog[data-empty] {
+  height: auto;
+  min-height: 0;
+  resize: none;
+}
+
 .digestDialogHead {
+  flex: none;
   display: flex;
   align-items: baseline;
   gap: 8px;
@@ -596,6 +609,7 @@
 }
 
 .digestDialogTitle {
+  flex: none;
   font-size: calc(13px + var(--tm-font-step, 0px));
   font-weight: 600;
   color: var(--dsw-alias-label-primary);
@@ -611,37 +625,56 @@
 }
 
 .digestLabel {
+  flex: none;
   margin-top: 4px;
-  font-size: calc(10.5px + var(--tm-font-step, 0px));
-  color: var(--dsw-alias-label-tertiary, rgba(255, 255, 255, 0.5));
+  font-size: calc(12px + var(--tm-font-step, 0px));
+  color: var(--dsw-alias-label-secondary);
 }
 
 .digestText {
+  box-sizing: border-box;
   width: 100%;
-  min-height: 96px;
-  max-height: 30vh;
+  min-width: 0;
+  flex: 1 1 0;
+  min-height: 64px;
   padding: 10px 12px;
+  overflow: auto;
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid var(--dsw-alias-border-l1);
+  background: var(--dsw-alias-bg-base);
   color: var(--dsw-alias-label-primary);
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: calc(11.5px + var(--tm-font-step, 0px));
+  font-size: calc(12px + var(--tm-font-step, 0px));
   line-height: 1.62;
   resize: none;
 }
 
+.digestText:focus-visible {
+  outline: 2px solid var(--dsw-alias-brand-primary);
+  outline-offset: 2px;
+}
+
 .digestEmpty {
+  flex: none;
   padding: 18px 4px;
   font-size: calc(12px + var(--tm-font-step, 0px));
   color: var(--dsw-alias-label-secondary);
 }
 
 .digestActions {
+  flex: none;
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: 8px;
   margin-top: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dialogBackdrop,
+  .digestDialog {
+    animation: none;
+  }
 }
 
 .renameBackdrop {
@@ -2226,6 +2259,13 @@
   --rail-card-outer: calc(var(--rail-card-w) + 26px);
   /* +2px: the card's own 1px border on each side must not be clipped */
   --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px);
+  --tm-rail-surface: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 95%, var(--dsw-alias-label-primary));
+  --tm-rail-accent: var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary));
+  --tm-rail-shadow: color-mix(in srgb, var(--dsw-alias-bg-mask-2) 30%, transparent);
+}
+
+:global(body[data-ds-dark-theme]) .statusRail {
+  --tm-rail-surface: var(--dsw-alias-bg-base);
 }
 
 .statusRailPanel {
@@ -2239,10 +2279,10 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: var(--dsw-alias-bg-elevated, rgba(18, 20, 26, 0.94));
-  border-right: 1px solid var(--dsw-alias-border-secondary);
-  box-shadow: 6px 0 26px rgba(0, 0, 0, 0.32);
-  backdrop-filter: blur(10px);
+  background: var(--tm-rail-surface);
+  color: var(--dsw-alias-label-primary);
+  border-right: 1px solid var(--dsw-alias-border-l2);
+  box-shadow: 4px 0 16px var(--tm-rail-shadow);
   transform: translateX(-101%);
   transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 320ms ease;
   pointer-events: none;
@@ -2269,7 +2309,7 @@
 
 .statusRailCount {
   font-size: 11px;
-  color: var(--dsw-alias-label-tertiary, #6b7280);
+  color: var(--dsw-alias-label-secondary);
   font-variant-numeric: tabular-nums;
 }
 
@@ -2302,12 +2342,56 @@
   cursor: grabbing;
 }
 
-/* A rail card is a board card: same width, same faces, same lamp. */
+/* Keep the board card's surface; confine status colour to a stripe and chip. */
 .statusRailCard {
+  --tm-rail-status: var(--tm-rail-accent);
+  --tm-rail-status-ink: color-mix(in srgb, var(--tm-rail-status) 45%, var(--dsw-alias-label-primary));
   width: var(--rail-card-w);
   min-height: 84px;
+  border-color: var(--dsw-alias-border-l2);
+  background: var(--dsw-alias-bg-layer-1);
+  color: var(--dsw-alias-label-primary);
+  box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 1px 3px var(--tm-rail-shadow);
+  animation: none;
   cursor: grab;
-  transition: transform 120ms ease, box-shadow 120ms ease;
+  transition: transform 120ms ease, box-shadow 120ms ease, background 140ms ease, border-color 140ms ease;
+}
+
+.statusRailCard.cardLampWaiting {
+  --tm-rail-status: var(--dsw-alias-state-warn-primary);
+}
+
+.statusRailCard.cardLampDone {
+  --tm-rail-status: var(--dsw-alias-state-success-primary);
+}
+
+.statusRailCard.cardLampError {
+  --tm-rail-status: var(--dsw-alias-state-error-primary);
+}
+
+.statusRailCard.cardLampRunning::after {
+  display: none;
+}
+
+.statusRailCard .cardChip {
+  color: var(--tm-rail-status-ink);
+  background: color-mix(in srgb, var(--tm-rail-status) 8%, var(--dsw-alias-bg-layer-1));
+  border-color: color-mix(in srgb, var(--tm-rail-status) 28%, var(--dsw-alias-bg-layer-1));
+}
+
+.statusRailCard .runningDot {
+  background: currentColor;
+}
+
+.statusRailCard .cardTime {
+  color: var(--dsw-alias-label-secondary);
+}
+
+.statusRailCard:focus-visible {
+  outline: 2px solid var(--tm-rail-accent);
+  outline-offset: -2px;
+  border-color: var(--tm-rail-accent);
+  background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1));
 }
 
 .statusRailCard:active {
@@ -2322,12 +2406,14 @@
 .statusRailCardDragging {
   cursor: grabbing;
   transform: scale(1.02) rotate(-0.3deg);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.55);
+  box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 10px 24px color-mix(in srgb, var(--dsw-alias-bg-mask-2) 75%, transparent);
   opacity: 0.97;
 }
 
-.statusRailCard:hover {
+.statusRailCard:hover:not(:focus-visible) {
   transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--tm-rail-accent) 25%, var(--dsw-alias-border-l2));
+  background: color-mix(in srgb, var(--tm-rail-accent) 4%, var(--dsw-alias-bg-layer-1));
 }
 
 .statusRailTab {
@@ -2341,14 +2427,11 @@
   gap: 5px;
   min-width: 30px;
   padding: 13px 7px;
-  border: 1px solid rgba(255, 255, 255, 0.16);
+  border: 1px solid var(--dsw-alias-border-l2);
   border-left: none;
   border-radius: 0 11px 11px 0;
-  /* Frosted glass: the canvas behind is dark, so a solid chip disappeared into it. */
-  background: rgba(38, 42, 52, 0.42);
-  backdrop-filter: blur(16px) saturate(1.5);
-  -webkit-backdrop-filter: blur(16px) saturate(1.5);
-  box-shadow: 3px 0 14px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: var(--tm-rail-surface);
+  box-shadow: 3px 0 10px var(--tm-rail-shadow);
   color: var(--dsw-alias-label-primary);
   cursor: pointer;
   font: inherit;
@@ -2363,8 +2446,13 @@
 }
 
 .statusRailTab:hover {
-  color: #ffffff;
-  background: rgba(58, 64, 78, 0.55);
+  color: var(--dsw-alias-label-primary);
+  background: color-mix(in srgb, var(--dsw-alias-label-primary) 5%, var(--tm-rail-surface));
+}
+
+.statusRailTab:focus-visible {
+  outline: 2px solid var(--tm-rail-accent);
+  outline-offset: 2px;
 }
 
 .statusRailTabCount {
@@ -2372,11 +2460,22 @@
   line-height: 1;
   padding: 2px 4px;
   border-radius: 999px;
-  background: var(--dsw-alias-brand-primary);
-  color: #0b0d12;
+  background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1));
+  color: color-mix(in srgb, var(--tm-rail-accent) 45%, var(--dsw-alias-label-primary));
   font-variant-numeric: tabular-nums;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .statusRailPanel,
+  .statusRailTab,
+  .statusRailCard {
+    transition: none;
+  }
+
+  .statusRailCard .runningDot {
+    animation: none;
+  }
+}
 
 /* ── destructive confirmation ────────────────────────────────────────────── */
 .dangerBackdrop {
