@@ -14,6 +14,7 @@
 import type { NodeProps, Node } from '@xyflow/react'
 import type { FrameGeometry } from '../shared/model.ts'
 import { colorOf } from './colors.ts'
+import { ArchivedBadge } from './ArchivedBadge.tsx'
 import styles from './talk-map.module.css'
 
 /** Which sides a drag moves: `n` grows upward, `w` grows leftward, … */
@@ -23,6 +24,7 @@ export interface WsFrameData extends Record<string, unknown> {
   workspaceId: string
   title: string
   count: number
+  archivedCount?: number
   width: number
   height: number
   /** Workspace colour: drives the frame border and the label chip. */
@@ -91,6 +93,7 @@ export function WsFrameNode(props: NodeProps<WsFrameNodeType>): React.JSX.Elemen
       >
         {data.title}
         <span className={styles['wsFrameCount']}>{data.count}</span>
+        {(data.archivedCount ?? 0) > 0 ? <ArchivedBadge count={data.archivedCount} /> : null}
       </div>
       {/* border strips: clickable/draggable surfaces along the dashed edge */}
       <div className={styles['wsFrameEdge']} style={{ top: 0, left: 0, right: 0, height: EDGE }} />

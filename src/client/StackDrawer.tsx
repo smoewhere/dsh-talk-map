@@ -7,6 +7,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import { mapUi } from './map-state.ts'
 import { t } from './i18n.ts'
+import { ArchivedBadge } from './ArchivedBadge.tsx'
 import { relativeTime, LAMP_CHIP } from './SessionCard.tsx'
 import type { CardGlow } from './SessionCard.tsx'
 import { drawerState } from './drawer-state.ts'
@@ -95,6 +96,7 @@ export interface StackEntry {
   interrupted?: boolean
   /** Pinned in the sidebar. */
   pinned?: boolean
+  archived?: boolean
   /** Connections to other cards of the same folder (injection direction). */
   links?: { toCardId: string; title: string; kind: string; outgoing: boolean }[]
 }
@@ -740,6 +742,7 @@ export function StackDrawer(props: StackDrawerProps): React.JSX.Element {
                 data-stack-card=""
                 data-card-id={item.cardId}
                 data-talkmap-session={item.sessionId}
+                data-talkmap-archived={item.archived === true ? '1' : undefined}
                 className={classNames.filter(Boolean).join(' ')}
                 draggable
                 data-talkmap-drag={dragId === item.cardId ? "1" : undefined}
@@ -778,6 +781,7 @@ export function StackDrawer(props: StackDrawerProps): React.JSX.Element {
                     ? <span className={styles['cardPin']} title={t('card.pinned')} data-talkmap-pin="1"><svg viewBox="0 0 24 24" width="13" height="13" aria-hidden="true"><path fill="currentColor" d="M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z"/></svg></span>
                     : null}
                   <span className={styles['cardTitle']}>{item.title}</span>
+                  {item.archived === true ? <ArchivedBadge /> : null}
                 </div>
                 {item.preview !== undefined && item.preview !== ''
                   ? <div className={styles['cardSummary']}>{item.preview}</div>

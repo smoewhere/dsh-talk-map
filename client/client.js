@@ -385,6 +385,12 @@ var zh = {
   "card.draft": "待发送",
   "card.draftHint": "这个对话的输入框里还有没发出去的文字",
   "card.pinned": "已置顶",
+  "card.archived": "已归档",
+  "card.archivedCount": "归档 {n}",
+  "card.archivedHint": "此会话已归档",
+  "card.archivedCountHint": "包含 {n} 个已归档会话",
+  "frame.autoSize": "恢复自动尺寸（最多 6 个位置）",
+  "frame.autoSizeActive": "自动尺寸（最多 6 个位置）",
   "rename.title": "重命名",
   "rename.placeholder": "新的标题",
   "rename.confirm": "确定",
@@ -435,6 +441,10 @@ var zh = {
   "menu.pin": "置顶会话",
   "menu.unpin": "取消置顶",
   "menu.archive": "归档会话",
+  "menu.unarchive": "取消归档",
+  "toast.unarchived": "已取消归档，可以打开会话",
+  "toast.unarchiveFailed": "取消归档失败：",
+  "toast.archivedCannotOpen": "此会话已归档，请先在右键菜单中取消归档",
   "menu.deleteSession": "删除会话（回收站）",
   "menu.batch": "批量操作…",
   "batch.title": "批量操作",
@@ -559,6 +569,12 @@ var en = {
   "card.draft": "unsent",
   "card.draftHint": "This conversation has text typed but not sent",
   "card.pinned": "pinned",
+  "card.archived": "Archived",
+  "card.archivedCount": "Archived {n}",
+  "card.archivedHint": "This conversation is archived",
+  "card.archivedCountHint": "Contains {n} archived conversations",
+  "frame.autoSize": "Restore automatic size (up to 6 slots)",
+  "frame.autoSizeActive": "Automatic size (up to 6 slots)",
   "rename.title": "Rename",
   "rename.placeholder": "New title",
   "rename.confirm": "Rename",
@@ -609,6 +625,10 @@ var en = {
   "menu.pin": "Pin conversation",
   "menu.unpin": "Unpin",
   "menu.archive": "Archive conversation",
+  "menu.unarchive": "Unarchive conversation",
+  "toast.unarchived": "Conversation restored; it can now be opened",
+  "toast.unarchiveFailed": "Unarchive failed: ",
+  "toast.archivedCannotOpen": "This conversation is archived; unarchive it from its context menu first",
   "menu.deleteSession": "Delete conversation (recycle bin)",
   "menu.batch": "Batch actions…",
   "batch.title": "Batch actions",
@@ -1395,7 +1415,7 @@ function cleanSnippet(raw, query) {
 
 // dsh-css: dsh-css:src/client/talk-map.module.css
 var __tagId = "dsh-talk-map/talk-map.module.css";
-var __css = `.tm_toggleButton { display: flex; align-items: center; justify-content: center; gap: 6px; width: 32px; height: 32px; padding: 0; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_toggleButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleButtonActive { background: var(--dsw-alias-interactive-bg-active); color: var(--dsw-alias-brand-primary); } .tm_toggleRow { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 10px; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; text-align: left; } .tm_toggleRow:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleLabel { white-space: nowrap; } .tm_toggleIcon { width: 18px; height: 18px; flex: none; } .tm_panel { height: 100%; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); } .tm_header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); flex: none; } .tm_backButton { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 38px; padding: 0 18px 0 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; line-height: 1; cursor: pointer; } .tm_backButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_globalSearch { position: relative; display: flex; align-items: center; gap: 6px; margin-right: 8px; } .tm_globalSearchInput { width: 200px; font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 9px; outline: none; } .tm_globalSearchInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_globalSearchButton { font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_globalSearchButton:hover { color: var(--dsw-alias-label-primary); } .tm_globalSearchBackdrop { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-start; justify-content: center; padding-top: 9vh; } .tm_globalSearchPanel { width: min(980px, 92vw); max-height: 76vh; display: flex; flex-direction: column; border-radius: 14px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5); overflow: hidden; } .tm_globalSearchHead { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_globalSearchTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_globalSearchBody { padding: 0 16px 14px; overflow-y: auto; overscroll-behavior: contain; } .tm_searchInlineLoading { display: flex; align-items: center; padding: 4px 0 2px 10px; } .tm_searchInlineLoading > span { width: 62%; } .tm_drawerScrollSensor { width: 100%; height: 1px; opacity: 0; } .tm_fontGroup { display: flex; align-items: center; gap: 4px; margin-right: 6px; } .tm_fontButton { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 46px; height: 28px; padding: 0 8px; line-height: 1; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_fontButton:hover:not(:disabled) { color: var(--dsw-alias-label-primary); border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_fontButton:disabled { opacity: 0.4; cursor: default; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { display: inline-block; width: calc(9px + 0px); text-align: center; line-height: 1; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_fontSign { display: inline-block; font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1; transform: translateY(-3px); } .tm_fontReset { min-width: 50px; } .tm_fontReset { min-width: 44px; } .tm_headerSpace { flex: 1; } .tm_langButton { flex: none; min-width: 72px; height: 34px; padding: 0 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_langButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_closeButton { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_closeButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_zoomResetLabel { font-size: calc(9px + var(--tm-font-step, 0px)); font-weight: 700; letter-spacing: -0.5px; } .tm_canvas { flex: 1; min-height: 0; position: relative; } @media (prefers-reduced-motion: reduce) { .tm_canvas .react-flow__edge circle { opacity: 0.28; } } .tm_canvas .react-flow__node { transition: transform 200ms cubic-bezier(0.2, 0.8, 0.25, 1); } .tm_canvas .react-flow__node.dragging, .tm_canvas .react-flow__node.tmDragging { transition: none; } .tm_canvas .react-flow__nodesselection, .tm_canvas .react-flow__nodesselection-rect { display: none !important; pointer-events: none !important; } .tm_card { position: relative; width: 224px; min-height: 104px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1); font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_cardSelected { border-color: var(--dsw-alias-brand-primary); } .tm_cardGhost { opacity: 0.55; border-style: dashed; } .tm_cardTop { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_cardTitle { font-weight: 600; font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_runningDot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ffffff; animation: tm_talkmap-pulse 1.6s ease-in-out infinite; } @keyframes tm_talkmap-pulse { 50% { opacity: 0.35; } } .tm_cardNext { display: flex; align-items: baseline; gap: 6px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); min-width: 0; } .tm_cardNextLabel { flex: none; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-brand-primary); font-weight: 600; } .tm_cardNextText { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .tm_cardStale { flex: none; color: var(--dsw-alias-state-warn-primary); font-size: calc(12px + var(--tm-font-step, 0px)); } .tm_cardFooter { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_cardTime { flex: none; } .tm_cardChip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); font-weight: 600; white-space: nowrap; border: 1px solid transparent; } .tm_cardChipRunning { color: #ffffff; background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); } .tm_cardChipWaiting { color: rgb(245, 178, 46); background: rgba(245, 178, 46, 0.14); border-color: rgba(245, 178, 46, 0.42); } .tm_cardChipDone { color: rgb(52, 199, 89); background: rgba(52, 199, 89, 0.14); border-color: rgba(52, 199, 89, 0.42); } .tm_cardChipError { color: rgb(242, 78, 78); background: rgba(242, 78, 78, 0.14); border-color: rgba(242, 78, 78, 0.45); } .tm_cardChipDraft { color: rgb(255, 197, 61); background: rgba(255, 197, 61, 0.18); border-color: rgba(255, 197, 61, 0.5); } .tm_cardChipInterrupted { color: rgb(214, 158, 92); background: rgba(214, 158, 92, 0.14); border-color: rgba(214, 158, 92, 0.42); } .tm_cardSummary { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.45; color: var(--dsw-alias-label-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_cardBadgeWaiting { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-warn-label); background: var(--dsw-alias-state-warn-tertiary); } .tm_cardBadgeDone { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-success-primary); background: var(--dsw-alias-state-success-tertiary); } .tm_cardLampRunning { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34), 0 0 16px 2px rgba(255, 255, 255, 0.2), 0 0 40px 9px rgba(255, 255, 255, 0.1); } .tm_dialogBackdrop { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(2px); animation: tm_tmFadeIn 140ms ease-out; } .tm_digestDialog { box-sizing: border-box; width: min(900px, calc(100vw - 32px)); height: min(760px, 84dvh); min-height: min(360px, calc(100dvh - 32px)); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 14px; overflow: auto; resize: vertical; border-radius: 14px; background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-1)); color: var(--dsw-alias-label-primary); border: 1px solid var(--dsw-alias-border-l1); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); animation: tm_tmRiseIn 200ms cubic-bezier(0.16, 1, 0.3, 1); } .tm_digestDialog[data-empty] { height: auto; min-height: 0; resize: none; } .tm_digestDialogHead { flex: none; display: flex; align-items: baseline; gap: 8px; min-width: 0; } .tm_digestDialogTitle { flex: none; font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_digestDialogFrom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestLabel { flex: none; margin-top: 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestText { box-sizing: border-box; width: 100%; min-width: 0; flex: 1 1 0; min-height: 64px; padding: 10px 12px; overflow: auto; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.62; resize: none; } .tm_digestText:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 2px; } .tm_digestEmpty { flex: none; padding: 18px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestActions { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 4px; } @media (prefers-reduced-motion: reduce) { .tm_dialogBackdrop, .tm_digestDialog { animation: none; } } .tm_renameBackdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.42); display: flex; align-items: flex-start; justify-content: center; padding-top: 22vh; } .tm_renameDialog { width: min(420px, 90vw); background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42); padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 10px; } .tm_renameHeading { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_renameInput { width: 100%; box-sizing: border-box; font: inherit; font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 8px 10px; outline: none; } .tm_renameInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.35)); } .tm_renameError { font-size: calc(12px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_renameActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_renameButton { font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 12px; cursor: pointer; } .tm_renameButton:hover { color: var(--dsw-alias-label-primary); } .tm_renamePrimary { color: #0b0b0c; background: rgb(255, 214, 106); border-color: rgb(255, 214, 106); } .tm_renamePrimary:disabled { opacity: 0.5; cursor: default; } .tm_cardPin { display: inline-flex; align-items: center; flex: none; color: rgb(255, 214, 106); filter: drop-shadow(0 0 5px rgba(255, 214, 106, 0.85)); animation: tm_talkmap-pin-glow 2.6s ease-in-out infinite; } @keyframes tm_talkmap-pin-glow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 214, 106, 0.6)); opacity: 0.92; } 50% { filter: drop-shadow(0 0 9px rgba(255, 214, 106, 1)); opacity: 1; } } .tm_cardReticle { position: absolute; inset: -5px; pointer-events: none; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.45)); } .tm_cardReticle i { position: absolute; width: 13px; height: 13px; border: 2px solid rgba(255, 255, 255, 0.9); } .tm_cardReticle i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 4px; } .tm_cardReticle i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 4px; } .tm_cardReticle i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 4px; } .tm_cardReticle i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 4px; } .tm_cardQuiet { opacity: 0.62; transition: opacity 140ms ease; } .tm_cardQuiet:hover { opacity: 1; } .tm_stackBadgeBusy { color: rgb(255, 197, 61); border-color: rgba(255, 197, 61, 0.5); } @property --tm-ring-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; } .tm_cardLampRunning::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; padding: 2px; background: conic-gradient( from var(--tm-ring-angle), rgba(255, 255, 255, 0) 0deg, rgba(255, 255, 255, 0) 190deg, rgba(255, 255, 255, 0.18) 250deg, rgba(255, 255, 255, 0.55) 292deg, rgba(255, 255, 255, 1) 325deg, rgba(255, 255, 255, 0.4) 352deg, rgba(255, 255, 255, 0) 360deg ); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: tm_talkmap-ring-sweep 1.8s linear infinite; pointer-events: none; } @keyframes tm_talkmap-ring-sweep { to { --tm-ring-angle: 360deg; } } .tm_cardLampDone { animation: tm_talkmap-lamp-green 2.8s ease-in-out infinite; } .tm_cardLampError { animation: tm_talkmap-lamp-red 1.9s ease-in-out infinite; } .tm_cardLampWaiting { animation: tm_talkmap-lamp-amber 3.4s ease-in-out infinite; } @keyframes tm_talkmap-lamp-green { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.40), 0 0 14px 1px rgba(52, 199, 89, 0.26), 0 0 34px 8px rgba(52, 199, 89, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.72), 0 0 24px 5px rgba(52, 199, 89, 0.46), 0 0 62px 20px rgba(52, 199, 89, 0.22); } } @keyframes tm_talkmap-lamp-amber { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.42), 0 0 14px 1px rgba(245, 178, 46, 0.24), 0 0 34px 8px rgba(245, 178, 46, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.72), 0 0 24px 5px rgba(245, 178, 46, 0.44), 0 0 60px 19px rgba(245, 178, 46, 0.20); } } @keyframes tm_talkmap-lamp-red { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.46), 0 0 14px 1px rgba(242, 78, 78, 0.28), 0 0 34px 8px rgba(242, 78, 78, 0.12); } 50% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.80), 0 0 26px 6px rgba(242, 78, 78, 0.52), 0 0 66px 22px rgba(242, 78, 78, 0.26); } } .tm_cardRemove { align-self: flex-start; padding: 3px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_cardRemove:hover { background: var(--dsw-alias-interactive-bg-hover-danger); color: var(--dsw-alias-state-error-primary); } .tm_cardHandle { width: 10px; height: 10px; background: var(--dsw-alias-border-l3); border: 2px solid var(--dsw-alias-bg-layer-1); opacity: 0; } .tm_card:hover .tm_cardHandle, .tm_canvasConnecting .tm_cardHandle { opacity: 1; } .tm_cardHandle:hover { background: var(--dsw-alias-brand-primary); } .tm_cardRefresh { flex: none; margin-left: auto; width: 22px; height: 22px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--dsw-alias-label-tertiary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; opacity: 0; transition: opacity 120ms ease; } .tm_card:hover .tm_cardRefresh { opacity: 1; } .tm_cardRefresh:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_cardRefreshBusy { opacity: 1; animation: tm_talkmap-spin 1s linear infinite; } @keyframes tm_talkmap-spin { to { transform: rotate(360deg); } } .tm_spawnPanel { position: absolute; right: 24px; top: 24px; z-index: 6; width: 420px; max-width: calc(100% - 48px); display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_spawnHeading { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_spawnFrom { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_spawnModes { display: flex; gap: 6px; } .tm_spawnModeBtn { flex: 1; padding: 5px 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnModeBtn:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_spawnModeActive { border-color: var(--dsw-alias-brand-primary); color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-interactive-bg-active); } .tm_spawnHint { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_spawnTextarea { width: 100%; resize: vertical; min-height: 140px; padding: 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.5; font-family: inherit; } .tm_spawnError { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_spawnActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_spawnBtnPrimary { padding: 6px 16px; border: none; border-radius: 8px; background: var(--dsw-alias-button-primary-fill); color: var(--dsw-alias-label-primary-foreground); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnPrimary:hover { background: var(--dsw-alias-button-primary-hover); } .tm_spawnBtnPrimary:disabled { background: var(--dsw-alias-button-primary-dimmed); cursor: default; } .tm_spawnBtnGhost { padding: 6px 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnGhost:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_wsFrame { position: relative; border: 1.5px dashed var(--dsw-alias-border-l2); border-radius: 16px; background: transparent; } .tm_wsFrameBlocked { border-color: rgb(242, 78, 78) !important; box-shadow: 0 0 0 1px rgba(242, 78, 78, 0.45) inset; } .tm_wsFrameSelected { border-style: solid; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameLabel { position: absolute; top: -12px; left: 14px; display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); font-size: calc(12px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); white-space: nowrap; pointer-events: auto; cursor: grab; z-index: 5; } .tm_wsFrameLabel:active { cursor: grabbing; } .tm_wsFrameEdge { position: absolute; pointer-events: auto; cursor: grab; } .tm_wsFrameEdge:active { cursor: grabbing; } .tm_wsFrameCount { font-weight: 400; color: var(--dsw-alias-label-tertiary); } .tm_menu { position: absolute; z-index: 60; min-width: 200px; max-width: 280px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; padding: 6px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_menuTitle { flex: none; padding: 4px 10px 6px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuSearch { flex: none; box-sizing: border-box; width: calc(100% - 8px); margin: 2px 4px 6px; padding: 5px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 7px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); font-family: inherit; } .tm_menuHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-dimmed); } .tm_menuPreview { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); word-break: break-all; } .tm_menuError { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_menuEmpty { padding: 8px 10px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuItem { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 6px 10px; border: none; border-radius: 7px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_menuIcon { flex: none; width: 14px; height: 14px; color: var(--dsw-alias-label-secondary); } .tm_menuItemDanger { color: rgb(242, 78, 78); } .tm_menuItemDanger .tm_menuIcon { color: rgb(242, 78, 78); } .tm_menuItem:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_menuItem:disabled { color: var(--dsw-alias-label-dimmed); cursor: default; } .tm_wsFrameHidden { font-weight: 400; color: var(--dsw-alias-state-warn-primary); } .tm_emptyHint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); pointer-events: none; z-index: 4; } .tm_toast { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 8; max-width: 70%; padding: 7px 16px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-2); font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_stackCell { position: relative; width: 224px; height: 104px; cursor: pointer; } .tm_stackSheetBack, .tm_stackSheetMid { position: absolute; inset: 0; border-radius: 12px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); } .tm_stackSheetBack { transform: translate(11px, 11px) scale(0.95); opacity: 0.35; } .tm_stackSheetMid { transform: translate(5px, 5px) scale(0.977); opacity: 0.6; } .tm_stackFace { position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); transition: border-color 140ms ease, transform 140ms ease; } .tm_stackCell:hover .tm_stackFace { border-color: var(--dsw-alias-brand-primary); transform: translateY(-1px); } .tm_stackFaceTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .tm_stackBadge { flex: none; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); color: var(--dsw-alias-label-secondary); font-size: calc(11px + var(--tm-font-step, 0px)); font-variant-numeric: tabular-nums; } .tm_drawerBackdrop { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--dsw-alias-bg-mask-2); } .tm_drawer { width: min(1120px, 94%); max-height: 84%; box-sizing: border-box; display: flex; flex-direction: column; border: 1px solid var(--dsw-alias-border-l1); border-radius: 16px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 18px 48px var(--dsw-alias-bg-mask-2); overflow: hidden; } .tm_drawerHead { display: flex; align-items: center; gap: 10px; flex: none; padding: 12px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); } .tm_drawerTitle { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_drawerCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerSpace { flex: 1; } .tm_drawerHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerClose { flex: none; width: 30px; height: 30px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(16px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; } .tm_drawerClose:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_drawerHits > .tm_drawerHit { animation: tm_tmPopIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerHits > .tm_drawerHit:nth-child(1) { animation-delay: 20ms; } .tm_drawerHits > .tm_drawerHit:nth-child(2) { animation-delay: 34ms; } .tm_drawerHits > .tm_drawerHit:nth-child(3) { animation-delay: 48ms; } .tm_drawerHits > .tm_drawerHit:nth-child(4) { animation-delay: 62ms; } .tm_drawerHits > .tm_drawerHit:nth-child(5) { animation-delay: 76ms; } .tm_drawerHits > .tm_drawerHit:nth-child(n+6) { animation-delay: 90ms; } .tm_searchLoading { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 2px; } .tm_searchLoadingBar { position: relative; height: 2px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, 0.07); } .tm_searchLoadingBar > i { position: absolute; inset: 0 auto 0 0; width: 34%; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--dsw-alias-brand-primary), transparent); animation: tm_tmSlideBar 1150ms cubic-bezier(0.4, 0, 0.2, 1) infinite; } @keyframes tm_tmSlideBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } } .tm_searchSkeletonRow { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; } .tm_searchSkeletonTitle, .tm_searchSkeletonLine { display: block; height: 9px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05)); background-size: 220% 100%; animation: tm_tmShimmer 1300ms ease-in-out infinite; } .tm_searchSkeletonTitle { width: 38%; } .tm_searchSkeletonLine { width: 78%; } @keyframes tm_tmShimmer { 0% { background-position: 120% 0; } 100% { background-position: -60% 0; } } @media (prefers-reduced-motion: reduce) { .tm_drawerHits > .tm_drawerHit, .tm_searchLoadingBar > i, .tm_searchSkeletonTitle, .tm_searchSkeletonLine { animation: none; } } @keyframes tm_tmFadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes tm_tmFadeOut { from { opacity: 1; } to { opacity: 0; } } @keyframes tm_tmRiseIn { from { opacity: 0; transform: translateY(26px) scale(0.94); } 60% { opacity: 1; } to { opacity: 1; transform: none; } } @keyframes tm_tmRiseOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px) scale(0.985); } } @keyframes tm_tmPopIn { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } } @keyframes tm_tmCardIn { from { opacity: 0; transform: translateY(6px) scale(0.99); } to { opacity: 1; transform: none; } } .tm_drawerBackdrop { animation: tm_tmFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerBackdropOut { animation: tm_tmFadeOut 130ms ease-in both; } .tm_drawer { animation: tm_tmRiseIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_drawerOut { animation: tm_tmRiseOut 150ms cubic-bezier(0.4, 0, 0.7, 0.2) both; } .tm_globalSearchBackdrop { animation: tm_tmFadeIn 130ms ease-out both; } .tm_globalSearchPanel { animation: tm_tmRiseIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_menu { animation: tm_tmPopIn 120ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_card { transition: transform 120ms ease-out, box-shadow 160ms ease-out, opacity 160ms ease-out; } .tm_card:hover { transform: translateY(-1px); } .tm_reactFlowNodeEnter { animation: tm_tmCardIn 170ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_stackCell { transition: transform 120ms ease-out, box-shadow 160ms ease-out; } .tm_stackCell:hover { transform: translateY(-2px); } .tm_wsFrameLabel { transition: color 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out; } .tm_wsFrameLabel:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); } .tm_toast { animation: tm_tmRiseIn 160ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_snippetCode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.94em; padding: 0 3px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); } .tm_snippetLink { color: var(--dsw-alias-brand-primary); } @media (prefers-reduced-motion: reduce) { .tm_drawerBackdrop, .tm_drawerBackdropOut, .tm_drawer, .tm_drawerOut, .tm_globalSearchBackdrop, .tm_globalSearchPanel, .tm_menu, .tm_toast, .tm_reactFlowNodeEnter { animation: none; } .tm_card, .tm_stackCell, .tm_wsFrameLabel { transition: none; } .tm_card:hover, .tm_stackCell:hover { transform: none; } } .tm_drawerSearchRow { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; } .tm_drawerSearch { flex: 1; min-width: 0; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 10px; outline: none; } .tm_drawerSearch:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerSearchGo { flex: none; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_drawerSearchGo:hover { color: var(--dsw-alias-label-primary); } .tm_drawerSearchState { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); flex: none; } .tm_drawerSearchError { flex: none; max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_drawerEmpty { grid-column: 1 / -1; padding: 10px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_drawerHits { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--dsw-alias-border-l2); } .tm_drawerHitsHead { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); letter-spacing: 0.04em; } .tm_drawerHit { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 8px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; background: transparent; color: var(--dsw-alias-label-primary); font: inherit; cursor: pointer; } .tm_drawerHit:hover { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerRoleChip { flex: none; margin-right: 6px; padding: 0 5px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.6; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.07); } .tm_drawerRoleChip[data-talkmap-role="user"] { color: rgba(160, 210, 255, 0.95); background: rgba(90, 160, 255, 0.14); } .tm_hitMark { color: #0b0b0c; background: rgb(255, 214, 106); border-radius: 3px; padding: 0 2px; } .tm_drawerHitHead { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_drawerAgentChip { flex: none; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1.5; color: var(--dsw-alias-label-secondary); letter-spacing: 0.02em; } .tm_drawerAgentChipSub { color: rgb(255, 214, 106); border-color: rgba(255, 214, 106, 0.5); background: rgba(255, 214, 106, 0.1); } .tm_drawerHitTitle { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); background: transparent; border: none; padding: 0 0 2px; cursor: pointer; } .tm_drawerHitTitle:hover { color: var(--dsw-alias-brand-primary); } .tm_peek { position: fixed; z-index: 80; width: min(500px, 88vw); max-height: 42vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); } .tm_peekTitle { font-size: calc(11.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_peekLine { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.55; color: var(--dsw-alias-label-primary); white-space: pre-wrap; word-break: break-word; } .tm_peekHint { margin-top: 6px; font-size: calc(10.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); opacity: 0.7; } .tm_drawerHitMore { align-self: flex-start; margin-top: 2px; font: inherit; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; cursor: pointer; } .tm_drawerHitMore:hover { color: var(--dsw-alias-brand-primary); } .tm_drawerHitBlock { display: flex; flex-direction: column; gap: 1px; margin-top: 4px; padding-left: 2px; } .tm_drawerHitLine { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; border-left: 2px solid var(--dsw-alias-border-l2); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .tm_drawerHitLine:hover { color: var(--dsw-alias-label-primary); border-left-color: var(--dsw-alias-brand-primary); } .tm_drawerScroll { overscroll-behavior: contain; scroll-behavior: auto; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: repeat(auto-fill, 224px); justify-content: center; align-content: start; gap: 12px; padding: 16px; } .tm_drawerCard[draggable="true"] { cursor: grab; } .tm_drawerCard[data-talkmap-drag="1"] { cursor: grabbing; opacity: 0.55; transform: scale(0.98); } .tm_cardLinks { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 4px; } .tm_cardLinkChip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.7; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.06); } .tm_cardLinkChip[data-talkmap-link="out"] { color: rgba(255, 214, 106, 0.9); background: rgba(255, 214, 106, 0.12); } .tm_drawerCard { width: 224px; box-sizing: border-box; text-align: left; font: inherit; cursor: pointer; background: var(--dsw-alias-bg-layer-1); } .tm_drawerCard:hover { border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResize { position: absolute; z-index: 2; pointer-events: auto; opacity: 0.5; } .tm_wsFrameResize:hover { opacity: 1; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResizeN { cursor: ns-resize; border-top: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 14px 0 0; } .tm_wsFrameResizeS { cursor: ns-resize; border-bottom: 3px solid var(--dsw-alias-border-l3); border-radius: 0 0 14px 14px; } .tm_wsFrameResizeW { cursor: ew-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 0 0 14px; } .tm_wsFrameResizeE { cursor: ew-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-radius: 0 14px 14px 0; } .tm_wsFrameResizeNw, .tm_wsFrameResizeNe, .tm_wsFrameResizeSw, .tm_wsFrameResizeSe { width: 26px; height: 26px; z-index: 3; } .tm_wsFrameResizeNw { cursor: nwse-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-left-radius: 14px; } .tm_wsFrameResizeNe { cursor: nesw-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-right-radius: 14px; } .tm_wsFrameResizeSw { cursor: nesw-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-left-radius: 14px; } .tm_wsFrameResizeSe { cursor: nwse-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-right-radius: 14px; } .tm_batchBar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-2); } .tm_batchCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); white-space: nowrap; } .tm_batchSpace { width: 6px; } .tm_batchAction { padding: 5px 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_batchAction:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_batchAction:disabled { opacity: 0.5; cursor: default; } .tm_batchDanger { color: var(--dsw-alias-state-error-primary); } .tm_pickBox { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--dsw-alias-border-l3); border-radius: 4px; background: var(--dsw-alias-bg-base); color: transparent; font-size: calc(11px + var(--tm-font-step, 0px)); line-height: 1; pointer-events: none; } .tm_pickBoxChecked { border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-brand-primary); color: #fff; } .tm_colorToolbar { position: absolute; top: 12px; left: 12px; z-index: 20; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 6px 20px var(--dsw-alias-bg-mask-2); } .tm_colorToolbarLabel { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); margin-right: 2px; white-space: nowrap; } .tm_colorSwatch { width: 16px; height: 16px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 50%; cursor: pointer; } .tm_colorSwatch:hover { transform: scale(1.15); } .tm_colorSwatchClear { display: flex; align-items: center; justify-content: center; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1; } .tm_colorSwatchClear:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_drawerWires { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; } .tm_drawerScroll { position: relative; } .tm_drawerScroll > .tm_card, .tm_drawerScroll > [data-stack-card] { position: relative; z-index: 1; } .tm_canvas .react-flow__edges { z-index: 0 !important; } .tm_canvas .react-flow__nodes { z-index: 1 !important; } .tm_statusRail { position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none; --rail-card-w: 224px; --rail-pad: 10px; --rail-card-outer: calc(var(--rail-card-w) + 26px); --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px); --tm-rail-surface: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 95%, var(--dsw-alias-label-primary)); --tm-rail-accent: var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary)); --tm-rail-shadow: color-mix(in srgb, var(--dsw-alias-bg-mask-2) 30%, transparent); } body[data-ds-dark-theme] .tm_statusRail { --tm-rail-surface: var(--dsw-alias-bg-base); } .tm_statusRailPanel { position: absolute; left: 0; top: 0; bottom: 0; width: var(--rail-w); box-sizing: border-box; padding: var(--rail-pad); display: flex; flex-direction: column; gap: 8px; background: var(--tm-rail-surface); color: var(--dsw-alias-label-primary); border-right: 1px solid var(--dsw-alias-border-l2); box-shadow: 4px 0 16px var(--tm-rail-shadow); transform: translateX(-101%); transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 320ms ease; pointer-events: none; } .tm_statusRail[data-open="1"] .tm_statusRailPanel { transform: translateX(0); pointer-events: auto; } .tm_statusRailHead { display: flex; align-items: baseline; gap: 8px; padding: 2px 4px 0; } .tm_statusRailTitle { flex: 1; font-size: 12px; letter-spacing: 0.02em; color: var(--dsw-alias-label-secondary); } .tm_statusRailCount { font-size: 11px; color: var(--dsw-alias-label-secondary); font-variant-numeric: tabular-nums; } .tm_statusRailList { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px 0 14px; } .tm_statusRailEmpty { padding: 8px 4px; font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-secondary); } .tm_statusRailSlot { position: relative; } .tm_statusRailSlot[draggable="true"] { cursor: grab; } .tm_statusRailSlot[draggable="true"]:active { cursor: grabbing; } .tm_statusRailCard { --tm-rail-status: var(--tm-rail-accent); --tm-rail-status-ink: color-mix(in srgb, var(--tm-rail-status) 45%, var(--dsw-alias-label-primary)); width: var(--rail-card-w); min-height: 84px; border-color: var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 1px 3px var(--tm-rail-shadow); animation: none; cursor: grab; transition: transform 120ms ease, box-shadow 120ms ease, background 140ms ease, border-color 140ms ease; } .tm_statusRailCard.tm_cardLampWaiting { --tm-rail-status: var(--dsw-alias-state-warn-primary); } .tm_statusRailCard.tm_cardLampDone { --tm-rail-status: var(--dsw-alias-state-success-primary); } .tm_statusRailCard.tm_cardLampError { --tm-rail-status: var(--dsw-alias-state-error-primary); } .tm_statusRailCard.tm_cardLampRunning::after { display: none; } .tm_statusRailCard .tm_cardChip { color: var(--tm-rail-status-ink); background: color-mix(in srgb, var(--tm-rail-status) 8%, var(--dsw-alias-bg-layer-1)); border-color: color-mix(in srgb, var(--tm-rail-status) 28%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard .tm_runningDot { background: currentColor; } .tm_statusRailCard .tm_cardTime { color: var(--dsw-alias-label-secondary); } .tm_statusRailCard:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: -2px; border-color: var(--tm-rail-accent); background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard:active { cursor: grabbing; } .tm_statusRailSlotFloating { pointer-events: none; } .tm_statusRailCardDragging { cursor: grabbing; transform: scale(1.02) rotate(-0.3deg); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 10px 24px color-mix(in srgb, var(--dsw-alias-bg-mask-2) 75%, transparent); opacity: 0.97; } .tm_statusRailCard:hover:not(:focus-visible) { transform: translateY(-1px); border-color: color-mix(in srgb, var(--tm-rail-accent) 25%, var(--dsw-alias-border-l2)); background: color-mix(in srgb, var(--tm-rail-accent) 4%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailTab { position: absolute; top: 50%; left: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 30px; padding: 13px 7px; border: 1px solid var(--dsw-alias-border-l2); border-left: none; border-radius: 0 11px 11px 0; background: var(--tm-rail-surface); box-shadow: 3px 0 10px var(--tm-rail-shadow); color: var(--dsw-alias-label-primary); cursor: pointer; font: inherit; pointer-events: auto; transition: left 320ms cubic-bezier(0.22, 0.61, 0.36, 1), color 140ms ease, background 140ms ease; } .tm_statusRail[data-open="1"] .tm_statusRailTab { left: calc(var(--rail-w) - 1px); } .tm_statusRailTab:hover { color: var(--dsw-alias-label-primary); background: color-mix(in srgb, var(--dsw-alias-label-primary) 5%, var(--tm-rail-surface)); } .tm_statusRailTab:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: 2px; } .tm_statusRailTabCount { font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 999px; background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); color: color-mix(in srgb, var(--tm-rail-accent) 45%, var(--dsw-alias-label-primary)); font-variant-numeric: tabular-nums; } @media (prefers-reduced-motion: reduce) { .tm_statusRailPanel, .tm_statusRailTab, .tm_statusRailCard { transition: none; } .tm_statusRailCard .tm_runningDot { animation: none; } } .tm_dangerBackdrop { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(8, 10, 14, 0.55); backdrop-filter: blur(2px); } .tm_dangerDialog { width: min(420px, calc(100% - 48px)); padding: 18px 18px 14px; border: 1px solid var(--dsw-alias-border-secondary); border-radius: 14px; background: var(--dsw-alias-bg-elevated, #16181f); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55); } .tm_dangerTitle { font-size: 14px; font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_dangerBody { margin-top: 8px; font-size: 12.5px; line-height: 1.6; color: var(--dsw-alias-label-secondary); } .tm_dangerActions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; } .tm_dangerCancel, .tm_dangerOk { padding: 6px 14px; border-radius: 8px; font: inherit; font-size: 12.5px; cursor: pointer; } .tm_dangerCancel { border: 1px solid var(--dsw-alias-border-secondary); background: transparent; color: var(--dsw-alias-label-secondary); } .tm_dangerCancel:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_dangerOk { border: 1px solid rgba(242, 78, 78, 0.55); background: rgba(242, 78, 78, 0.16); color: #ff6b6b; } .tm_dangerOk:hover { background: rgba(242, 78, 78, 0.28); color: #ff8a8a; } .tm_statusRailGhost { visibility: hidden; } .tm_statusRailFloating { position: fixed; z-index: 20; pointer-events: none; }`;
+var __css = `.tm_toggleButton { display: flex; align-items: center; justify-content: center; gap: 6px; width: 32px; height: 32px; padding: 0; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_toggleButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleButtonActive { background: var(--dsw-alias-interactive-bg-active); color: var(--dsw-alias-brand-primary); } .tm_toggleRow { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 10px; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; text-align: left; } .tm_toggleRow:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleLabel { white-space: nowrap; } .tm_toggleIcon { width: 18px; height: 18px; flex: none; } .tm_panel { height: 100%; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); } .tm_header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); flex: none; } .tm_backButton { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 38px; padding: 0 18px 0 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; line-height: 1; cursor: pointer; } .tm_backButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_globalSearch { position: relative; display: flex; align-items: center; gap: 6px; margin-right: 8px; } .tm_globalSearchInput { width: 200px; font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 9px; outline: none; } .tm_globalSearchInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_globalSearchButton { font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_globalSearchButton:hover { color: var(--dsw-alias-label-primary); } .tm_globalSearchBackdrop { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-start; justify-content: center; padding-top: 9vh; } .tm_globalSearchPanel { width: min(980px, 92vw); max-height: 76vh; display: flex; flex-direction: column; border-radius: 14px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5); overflow: hidden; } .tm_globalSearchHead { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_globalSearchTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_globalSearchBody { padding: 0 16px 14px; overflow-y: auto; overscroll-behavior: contain; } .tm_searchInlineLoading { display: flex; align-items: center; padding: 4px 0 2px 10px; } .tm_searchInlineLoading > span { width: 62%; } .tm_drawerScrollSensor { width: 100%; height: 1px; opacity: 0; } .tm_fontGroup { display: flex; align-items: center; gap: 4px; margin-right: 6px; } .tm_fontButton { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 46px; height: 28px; padding: 0 8px; line-height: 1; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_fontButton:hover:not(:disabled) { color: var(--dsw-alias-label-primary); border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_fontButton:disabled { opacity: 0.4; cursor: default; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { display: inline-block; width: calc(9px + 0px); text-align: center; line-height: 1; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_fontSign { display: inline-block; font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1; transform: translateY(-3px); } .tm_fontReset { min-width: 50px; } .tm_fontReset { min-width: 44px; } .tm_headerSpace { flex: 1; } .tm_langButton { flex: none; min-width: 72px; height: 34px; padding: 0 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_langButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_closeButton { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_closeButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_zoomResetLabel { font-size: calc(9px + var(--tm-font-step, 0px)); font-weight: 700; letter-spacing: -0.5px; } .tm_canvas { flex: 1; min-height: 0; position: relative; --rail-card-w: 224px; --rail-pad: 10px; --rail-card-outer: calc(var(--rail-card-w) + 26px); --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px); --tm-map-controls-left: 0px; } .tm_canvas[data-status-rail-open="1"] { --tm-map-controls-left: min(calc(var(--rail-w) + 12px), calc(100% - 52px)); } .tm_canvas[data-status-rail-open] .tm_mapControls { left: var(--tm-map-controls-left); z-index: 8; transition: left 320ms cubic-bezier(0.22, 0.61, 0.36, 1); } @media (prefers-reduced-motion: reduce) { .tm_canvas[data-status-rail-open] .tm_mapControls { transition: none; } } @media (prefers-reduced-motion: reduce) { .tm_canvas .react-flow__edge circle { opacity: 0.28; } } .tm_canvas .react-flow__node { transition: transform 200ms cubic-bezier(0.2, 0.8, 0.25, 1); } .tm_canvas .react-flow__node.dragging, .tm_canvas .react-flow__node.tmDragging { transition: none; } .tm_canvas .react-flow__nodesselection, .tm_canvas .react-flow__nodesselection-rect { display: none !important; pointer-events: none !important; } .tm_card { position: relative; width: 224px; min-height: 104px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1); font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_cardSelected { border-color: var(--dsw-alias-brand-primary); } .tm_cardGhost { opacity: 0.55; border-style: dashed; } .tm_cardTop { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_cardTop .tm_cardTitle { flex: 1; min-width: 0; } .tm_cardArchivedBadge { flex: none; padding: 1px 5px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 5px; background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary); font-size: calc(10px + var(--tm-font-step, 0px)); font-weight: 500; line-height: 1.4; white-space: nowrap; } .tm_card[data-talkmap-archived="1"] { border-style: dashed; } .tm_stackFace > .tm_cardArchivedBadge { position: absolute; bottom: 10px; left: 12px; } .tm_cardTitle { font-weight: 600; font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_runningDot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ffffff; animation: tm_talkmap-pulse 1.6s ease-in-out infinite; } @keyframes tm_talkmap-pulse { 50% { opacity: 0.35; } } .tm_cardNext { display: flex; align-items: baseline; gap: 6px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); min-width: 0; } .tm_cardNextLabel { flex: none; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-brand-primary); font-weight: 600; } .tm_cardNextText { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .tm_cardStale { flex: none; color: var(--dsw-alias-state-warn-primary); font-size: calc(12px + var(--tm-font-step, 0px)); } .tm_cardFooter { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_cardTime { flex: none; } .tm_cardChip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); font-weight: 600; white-space: nowrap; border: 1px solid transparent; } .tm_cardChipRunning { color: #ffffff; background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); } .tm_cardChipWaiting { color: rgb(245, 178, 46); background: rgba(245, 178, 46, 0.14); border-color: rgba(245, 178, 46, 0.42); } .tm_cardChipDone { color: rgb(52, 199, 89); background: rgba(52, 199, 89, 0.14); border-color: rgba(52, 199, 89, 0.42); } .tm_cardChipError { color: rgb(242, 78, 78); background: rgba(242, 78, 78, 0.14); border-color: rgba(242, 78, 78, 0.45); } .tm_cardChipDraft { color: rgb(255, 197, 61); background: rgba(255, 197, 61, 0.18); border-color: rgba(255, 197, 61, 0.5); } .tm_cardChipInterrupted { color: rgb(214, 158, 92); background: rgba(214, 158, 92, 0.14); border-color: rgba(214, 158, 92, 0.42); } .tm_cardSummary { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.45; color: var(--dsw-alias-label-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_cardBadgeWaiting { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-warn-label); background: var(--dsw-alias-state-warn-tertiary); } .tm_cardBadgeDone { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-success-primary); background: var(--dsw-alias-state-success-tertiary); } .tm_cardLampRunning { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34), 0 0 16px 2px rgba(255, 255, 255, 0.2), 0 0 40px 9px rgba(255, 255, 255, 0.1); } .tm_dialogBackdrop { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(2px); animation: tm_tmFadeIn 140ms ease-out; } .tm_digestDialog { box-sizing: border-box; width: min(900px, calc(100vw - 32px)); height: min(760px, 84dvh); min-height: min(360px, calc(100dvh - 32px)); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 14px; overflow: auto; resize: vertical; border-radius: 14px; background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-1)); color: var(--dsw-alias-label-primary); border: 1px solid var(--dsw-alias-border-l1); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); animation: tm_tmRiseIn 200ms cubic-bezier(0.16, 1, 0.3, 1); } .tm_digestDialog[data-empty] { height: auto; min-height: 0; resize: none; } .tm_digestDialogHead { flex: none; display: flex; align-items: baseline; gap: 8px; min-width: 0; } .tm_digestDialogTitle { flex: none; font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_digestDialogFrom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestLabel { flex: none; margin-top: 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestText { box-sizing: border-box; width: 100%; min-width: 0; flex: 1 1 0; min-height: 64px; padding: 10px 12px; overflow: auto; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.62; resize: none; } .tm_digestText:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 2px; } .tm_digestEmpty { flex: none; padding: 18px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestActions { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 4px; } @media (prefers-reduced-motion: reduce) { .tm_dialogBackdrop, .tm_digestDialog { animation: none; } } .tm_renameBackdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.42); display: flex; align-items: flex-start; justify-content: center; padding-top: 22vh; } .tm_renameDialog { width: min(420px, 90vw); background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42); padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 10px; } .tm_renameHeading { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_renameInput { width: 100%; box-sizing: border-box; font: inherit; font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 8px 10px; outline: none; } .tm_renameInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.35)); } .tm_renameError { font-size: calc(12px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_renameActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_renameButton { font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 12px; cursor: pointer; } .tm_renameButton:hover { color: var(--dsw-alias-label-primary); } .tm_renamePrimary { color: #0b0b0c; background: rgb(255, 214, 106); border-color: rgb(255, 214, 106); } .tm_renamePrimary:disabled { opacity: 0.5; cursor: default; } .tm_cardPin { display: inline-flex; align-items: center; flex: none; color: rgb(255, 214, 106); filter: drop-shadow(0 0 5px rgba(255, 214, 106, 0.85)); animation: tm_talkmap-pin-glow 2.6s ease-in-out infinite; } @keyframes tm_talkmap-pin-glow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 214, 106, 0.6)); opacity: 0.92; } 50% { filter: drop-shadow(0 0 9px rgba(255, 214, 106, 1)); opacity: 1; } } .tm_cardReticle { position: absolute; inset: -5px; pointer-events: none; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.45)); } .tm_cardReticle i { position: absolute; width: 13px; height: 13px; border: 2px solid rgba(255, 255, 255, 0.9); } .tm_cardReticle i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 4px; } .tm_cardReticle i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 4px; } .tm_cardReticle i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 4px; } .tm_cardReticle i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 4px; } .tm_cardQuiet { opacity: 0.62; transition: opacity 140ms ease; } .tm_cardQuiet:hover { opacity: 1; } .tm_stackBadgeBusy { color: rgb(255, 197, 61); border-color: rgba(255, 197, 61, 0.5); } @property --tm-ring-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; } .tm_cardLampRunning::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; padding: 2px; background: conic-gradient( from var(--tm-ring-angle), rgba(255, 255, 255, 0) 0deg, rgba(255, 255, 255, 0) 190deg, rgba(255, 255, 255, 0.18) 250deg, rgba(255, 255, 255, 0.55) 292deg, rgba(255, 255, 255, 1) 325deg, rgba(255, 255, 255, 0.4) 352deg, rgba(255, 255, 255, 0) 360deg ); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: tm_talkmap-ring-sweep 1.8s linear infinite; pointer-events: none; } @keyframes tm_talkmap-ring-sweep { to { --tm-ring-angle: 360deg; } } .tm_cardLampDone { animation: tm_talkmap-lamp-green 2.8s ease-in-out infinite; } .tm_cardLampError { animation: tm_talkmap-lamp-red 1.9s ease-in-out infinite; } .tm_cardLampWaiting { animation: tm_talkmap-lamp-amber 3.4s ease-in-out infinite; } @keyframes tm_talkmap-lamp-green { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.40), 0 0 14px 1px rgba(52, 199, 89, 0.26), 0 0 34px 8px rgba(52, 199, 89, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.72), 0 0 24px 5px rgba(52, 199, 89, 0.46), 0 0 62px 20px rgba(52, 199, 89, 0.22); } } @keyframes tm_talkmap-lamp-amber { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.42), 0 0 14px 1px rgba(245, 178, 46, 0.24), 0 0 34px 8px rgba(245, 178, 46, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.72), 0 0 24px 5px rgba(245, 178, 46, 0.44), 0 0 60px 19px rgba(245, 178, 46, 0.20); } } @keyframes tm_talkmap-lamp-red { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.46), 0 0 14px 1px rgba(242, 78, 78, 0.28), 0 0 34px 8px rgba(242, 78, 78, 0.12); } 50% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.80), 0 0 26px 6px rgba(242, 78, 78, 0.52), 0 0 66px 22px rgba(242, 78, 78, 0.26); } } .tm_cardRemove { align-self: flex-start; padding: 3px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_cardRemove:hover { background: var(--dsw-alias-interactive-bg-hover-danger); color: var(--dsw-alias-state-error-primary); } .tm_cardHandle { width: 10px; height: 10px; background: var(--dsw-alias-border-l3); border: 2px solid var(--dsw-alias-bg-layer-1); opacity: 0; } .tm_card:hover .tm_cardHandle, .tm_canvasConnecting .tm_cardHandle { opacity: 1; } .tm_cardHandle:hover { background: var(--dsw-alias-brand-primary); } .tm_cardRefresh { flex: none; margin-left: auto; width: 22px; height: 22px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--dsw-alias-label-tertiary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; opacity: 0; transition: opacity 120ms ease; } .tm_card:hover .tm_cardRefresh { opacity: 1; } .tm_cardRefresh:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_cardRefreshBusy { opacity: 1; animation: tm_talkmap-spin 1s linear infinite; } @keyframes tm_talkmap-spin { to { transform: rotate(360deg); } } .tm_spawnPanel { position: absolute; right: 24px; top: 24px; z-index: 6; width: 420px; max-width: calc(100% - 48px); display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_spawnHeading { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_spawnFrom { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_spawnModes { display: flex; gap: 6px; } .tm_spawnModeBtn { flex: 1; padding: 5px 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnModeBtn:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_spawnModeActive { border-color: var(--dsw-alias-brand-primary); color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-interactive-bg-active); } .tm_spawnHint { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_spawnTextarea { width: 100%; resize: vertical; min-height: 140px; padding: 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.5; font-family: inherit; } .tm_spawnError { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_spawnActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_spawnBtnPrimary { padding: 6px 16px; border: none; border-radius: 8px; background: var(--dsw-alias-button-primary-fill); color: var(--dsw-alias-label-primary-foreground); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnPrimary:hover { background: var(--dsw-alias-button-primary-hover); } .tm_spawnBtnPrimary:disabled { background: var(--dsw-alias-button-primary-dimmed); cursor: default; } .tm_spawnBtnGhost { padding: 6px 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnGhost:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_wsFrame { position: relative; border: 1.5px dashed var(--dsw-alias-border-l2); border-radius: 16px; background: transparent; } .tm_wsFrameBlocked { border-color: rgb(242, 78, 78) !important; box-shadow: 0 0 0 1px rgba(242, 78, 78, 0.45) inset; } .tm_wsFrameSelected { border-style: solid; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameLabel { position: absolute; top: -12px; left: 14px; display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); font-size: calc(12px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); white-space: nowrap; pointer-events: auto; cursor: grab; z-index: 5; } .tm_wsFrameLabel:active { cursor: grabbing; } .tm_wsFrameEdge { position: absolute; pointer-events: auto; cursor: grab; } .tm_wsFrameEdge:active { cursor: grabbing; } .tm_wsFrameCount { font-weight: 400; color: var(--dsw-alias-label-tertiary); } .tm_menu { position: absolute; z-index: 60; min-width: 200px; max-width: 280px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; padding: 6px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_menuTitle { flex: none; padding: 4px 10px 6px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuSearch { flex: none; box-sizing: border-box; width: calc(100% - 8px); margin: 2px 4px 6px; padding: 5px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 7px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); font-family: inherit; } .tm_menuHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-dimmed); } .tm_menuPreview { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); word-break: break-all; } .tm_menuError { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_menuEmpty { padding: 8px 10px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuItem { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 6px 10px; border: none; border-radius: 7px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_menuIcon { flex: none; width: 14px; height: 14px; color: var(--dsw-alias-label-secondary); } .tm_menuItemDanger { color: rgb(242, 78, 78); } .tm_menuItemDanger .tm_menuIcon { color: rgb(242, 78, 78); } .tm_menuItem:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_menuItem:disabled { color: var(--dsw-alias-label-dimmed); cursor: default; } .tm_wsFrameHidden { font-weight: 400; color: var(--dsw-alias-state-warn-primary); } .tm_emptyHint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); pointer-events: none; z-index: 4; } .tm_toast { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 8; max-width: 70%; padding: 7px 16px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-2); font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_stackCell { position: relative; width: 224px; height: 104px; cursor: pointer; } .tm_stackSheetBack, .tm_stackSheetMid { position: absolute; inset: 0; border-radius: 12px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); } .tm_stackSheetBack { transform: translate(11px, 11px) scale(0.95); opacity: 0.35; } .tm_stackSheetMid { transform: translate(5px, 5px) scale(0.977); opacity: 0.6; } .tm_stackFace { position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); transition: border-color 140ms ease, transform 140ms ease; } .tm_stackCell:hover .tm_stackFace { border-color: var(--dsw-alias-brand-primary); transform: translateY(-1px); } .tm_stackFaceTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .tm_stackBadge { flex: none; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); color: var(--dsw-alias-label-secondary); font-size: calc(11px + var(--tm-font-step, 0px)); font-variant-numeric: tabular-nums; } .tm_drawerBackdrop { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--dsw-alias-bg-mask-2); } .tm_drawer { width: min(1120px, 94%); max-height: 84%; box-sizing: border-box; display: flex; flex-direction: column; border: 1px solid var(--dsw-alias-border-l1); border-radius: 16px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 18px 48px var(--dsw-alias-bg-mask-2); overflow: hidden; } .tm_drawerHead { display: flex; align-items: center; gap: 10px; flex: none; padding: 12px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); } .tm_drawerTitle { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_drawerCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerSpace { flex: 1; } .tm_drawerHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerClose { flex: none; width: 30px; height: 30px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(16px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; } .tm_drawerClose:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_drawerHits > .tm_drawerHit { animation: tm_tmPopIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerHits > .tm_drawerHit:nth-child(1) { animation-delay: 20ms; } .tm_drawerHits > .tm_drawerHit:nth-child(2) { animation-delay: 34ms; } .tm_drawerHits > .tm_drawerHit:nth-child(3) { animation-delay: 48ms; } .tm_drawerHits > .tm_drawerHit:nth-child(4) { animation-delay: 62ms; } .tm_drawerHits > .tm_drawerHit:nth-child(5) { animation-delay: 76ms; } .tm_drawerHits > .tm_drawerHit:nth-child(n+6) { animation-delay: 90ms; } .tm_searchLoading { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 2px; } .tm_searchLoadingBar { position: relative; height: 2px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, 0.07); } .tm_searchLoadingBar > i { position: absolute; inset: 0 auto 0 0; width: 34%; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--dsw-alias-brand-primary), transparent); animation: tm_tmSlideBar 1150ms cubic-bezier(0.4, 0, 0.2, 1) infinite; } @keyframes tm_tmSlideBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } } .tm_searchSkeletonRow { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; } .tm_searchSkeletonTitle, .tm_searchSkeletonLine { display: block; height: 9px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05)); background-size: 220% 100%; animation: tm_tmShimmer 1300ms ease-in-out infinite; } .tm_searchSkeletonTitle { width: 38%; } .tm_searchSkeletonLine { width: 78%; } @keyframes tm_tmShimmer { 0% { background-position: 120% 0; } 100% { background-position: -60% 0; } } @media (prefers-reduced-motion: reduce) { .tm_drawerHits > .tm_drawerHit, .tm_searchLoadingBar > i, .tm_searchSkeletonTitle, .tm_searchSkeletonLine { animation: none; } } @keyframes tm_tmFadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes tm_tmFadeOut { from { opacity: 1; } to { opacity: 0; } } @keyframes tm_tmRiseIn { from { opacity: 0; transform: translateY(26px) scale(0.94); } 60% { opacity: 1; } to { opacity: 1; transform: none; } } @keyframes tm_tmRiseOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px) scale(0.985); } } @keyframes tm_tmPopIn { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } } @keyframes tm_tmCardIn { from { opacity: 0; transform: translateY(6px) scale(0.99); } to { opacity: 1; transform: none; } } .tm_drawerBackdrop { animation: tm_tmFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerBackdropOut { animation: tm_tmFadeOut 130ms ease-in both; } .tm_drawer { animation: tm_tmRiseIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_drawerOut { animation: tm_tmRiseOut 150ms cubic-bezier(0.4, 0, 0.7, 0.2) both; } .tm_globalSearchBackdrop { animation: tm_tmFadeIn 130ms ease-out both; } .tm_globalSearchPanel { animation: tm_tmRiseIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_menu { animation: tm_tmPopIn 120ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_card { transition: transform 120ms ease-out, box-shadow 160ms ease-out, opacity 160ms ease-out; } .tm_card:hover { transform: translateY(-1px); } .tm_reactFlowNodeEnter { animation: tm_tmCardIn 170ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_stackCell { transition: transform 120ms ease-out, box-shadow 160ms ease-out; } .tm_stackCell:hover { transform: translateY(-2px); } .tm_wsFrameLabel { transition: color 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out; } .tm_wsFrameLabel:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); } .tm_toast { animation: tm_tmRiseIn 160ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_snippetCode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.94em; padding: 0 3px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); } .tm_snippetLink { color: var(--dsw-alias-brand-primary); } @media (prefers-reduced-motion: reduce) { .tm_drawerBackdrop, .tm_drawerBackdropOut, .tm_drawer, .tm_drawerOut, .tm_globalSearchBackdrop, .tm_globalSearchPanel, .tm_menu, .tm_toast, .tm_reactFlowNodeEnter { animation: none; } .tm_card, .tm_stackCell, .tm_wsFrameLabel { transition: none; } .tm_card:hover, .tm_stackCell:hover { transform: none; } } .tm_drawerSearchRow { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; } .tm_drawerSearch { flex: 1; min-width: 0; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 10px; outline: none; } .tm_drawerSearch:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerSearchGo { flex: none; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_drawerSearchGo:hover { color: var(--dsw-alias-label-primary); } .tm_drawerSearchState { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); flex: none; } .tm_drawerSearchError { flex: none; max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_drawerEmpty { grid-column: 1 / -1; padding: 10px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_drawerHits { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--dsw-alias-border-l2); } .tm_drawerHitsHead { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); letter-spacing: 0.04em; } .tm_drawerHit { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 8px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; background: transparent; color: var(--dsw-alias-label-primary); font: inherit; cursor: pointer; } .tm_drawerHit:hover { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerRoleChip { flex: none; margin-right: 6px; padding: 0 5px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.6; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.07); } .tm_drawerRoleChip[data-talkmap-role="user"] { color: rgba(160, 210, 255, 0.95); background: rgba(90, 160, 255, 0.14); } .tm_hitMark { color: #0b0b0c; background: rgb(255, 214, 106); border-radius: 3px; padding: 0 2px; } .tm_drawerHitHead { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_drawerAgentChip { flex: none; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1.5; color: var(--dsw-alias-label-secondary); letter-spacing: 0.02em; } .tm_drawerAgentChipSub { color: rgb(255, 214, 106); border-color: rgba(255, 214, 106, 0.5); background: rgba(255, 214, 106, 0.1); } .tm_drawerHitTitle { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); background: transparent; border: none; padding: 0 0 2px; cursor: pointer; } .tm_drawerHitTitle:hover { color: var(--dsw-alias-brand-primary); } .tm_peek { position: fixed; z-index: 80; width: min(500px, 88vw); max-height: 42vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); } .tm_peekTitle { font-size: calc(11.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_peekLine { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.55; color: var(--dsw-alias-label-primary); white-space: pre-wrap; word-break: break-word; } .tm_peekHint { margin-top: 6px; font-size: calc(10.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); opacity: 0.7; } .tm_drawerHitMore { align-self: flex-start; margin-top: 2px; font: inherit; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; cursor: pointer; } .tm_drawerHitMore:hover { color: var(--dsw-alias-brand-primary); } .tm_drawerHitBlock { display: flex; flex-direction: column; gap: 1px; margin-top: 4px; padding-left: 2px; } .tm_drawerHitLine { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; border-left: 2px solid var(--dsw-alias-border-l2); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .tm_drawerHitLine:hover { color: var(--dsw-alias-label-primary); border-left-color: var(--dsw-alias-brand-primary); } .tm_drawerScroll { overscroll-behavior: contain; scroll-behavior: auto; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: repeat(auto-fill, 224px); justify-content: center; align-content: start; gap: 12px; padding: 16px; } .tm_drawerCard[draggable="true"] { cursor: grab; } .tm_drawerCard[data-talkmap-drag="1"] { cursor: grabbing; opacity: 0.55; transform: scale(0.98); } .tm_cardLinks { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 4px; } .tm_cardLinkChip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.7; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.06); } .tm_cardLinkChip[data-talkmap-link="out"] { color: rgba(255, 214, 106, 0.9); background: rgba(255, 214, 106, 0.12); } .tm_drawerCard { width: 224px; box-sizing: border-box; text-align: left; font: inherit; cursor: pointer; background: var(--dsw-alias-bg-layer-1); } .tm_drawerCard:hover { border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResize { position: absolute; z-index: 2; pointer-events: auto; opacity: 0.5; } .tm_wsFrameResize:hover { opacity: 1; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResizeN { cursor: ns-resize; border-top: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 14px 0 0; } .tm_wsFrameResizeS { cursor: ns-resize; border-bottom: 3px solid var(--dsw-alias-border-l3); border-radius: 0 0 14px 14px; } .tm_wsFrameResizeW { cursor: ew-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 0 0 14px; } .tm_wsFrameResizeE { cursor: ew-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-radius: 0 14px 14px 0; } .tm_wsFrameResizeNw, .tm_wsFrameResizeNe, .tm_wsFrameResizeSw, .tm_wsFrameResizeSe { width: 26px; height: 26px; z-index: 3; } .tm_wsFrameResizeNw { cursor: nwse-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-left-radius: 14px; } .tm_wsFrameResizeNe { cursor: nesw-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-right-radius: 14px; } .tm_wsFrameResizeSw { cursor: nesw-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-left-radius: 14px; } .tm_wsFrameResizeSe { cursor: nwse-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-right-radius: 14px; } .tm_batchBar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-2); } .tm_batchCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); white-space: nowrap; } .tm_batchSpace { width: 6px; } .tm_batchAction { padding: 5px 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_batchAction:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_batchAction:disabled { opacity: 0.5; cursor: default; } .tm_batchDanger { color: var(--dsw-alias-state-error-primary); } .tm_pickBox { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--dsw-alias-border-l3); border-radius: 4px; background: var(--dsw-alias-bg-base); color: transparent; font-size: calc(11px + var(--tm-font-step, 0px)); line-height: 1; pointer-events: none; } .tm_pickBoxChecked { border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-brand-primary); color: #fff; } .tm_colorToolbar { position: absolute; top: 12px; left: 12px; z-index: 20; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 6px 20px var(--dsw-alias-bg-mask-2); } .tm_colorToolbarLabel { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); margin-right: 2px; white-space: nowrap; } .tm_colorSwatch { width: 16px; height: 16px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 50%; cursor: pointer; } .tm_colorSwatch:hover { transform: scale(1.15); } .tm_colorSwatchClear { display: flex; align-items: center; justify-content: center; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1; } .tm_colorSwatchClear:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_drawerWires { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; } .tm_drawerScroll { position: relative; } .tm_drawerScroll > .tm_card, .tm_drawerScroll > [data-stack-card] { position: relative; z-index: 1; } .tm_canvas .react-flow__edges { z-index: 0 !important; } .tm_canvas .react-flow__nodes { z-index: 1 !important; } .tm_statusRail { position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none; --rail-card-w: 224px; --rail-pad: 10px; --rail-card-outer: calc(var(--rail-card-w) + 26px); --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px); --tm-rail-surface: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 95%, var(--dsw-alias-label-primary)); --tm-rail-accent: var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary)); --tm-rail-shadow: color-mix(in srgb, var(--dsw-alias-bg-mask-2) 30%, transparent); } body[data-ds-dark-theme] .tm_statusRail { --tm-rail-surface: var(--dsw-alias-bg-base); } .tm_statusRailPanel { position: absolute; left: 0; top: 0; bottom: 0; width: var(--rail-w); box-sizing: border-box; padding: var(--rail-pad); display: flex; flex-direction: column; gap: 8px; background: var(--tm-rail-surface); color: var(--dsw-alias-label-primary); border-right: 1px solid var(--dsw-alias-border-l2); box-shadow: 4px 0 16px var(--tm-rail-shadow); transform: translateX(-101%); transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 320ms ease; pointer-events: none; } .tm_statusRail[data-open="1"] .tm_statusRailPanel { transform: translateX(0); pointer-events: auto; } .tm_statusRailHead { display: flex; align-items: baseline; gap: 8px; padding: 2px 4px 0; } .tm_statusRailTitle { flex: 1; font-size: 12px; letter-spacing: 0.02em; color: var(--dsw-alias-label-secondary); } .tm_statusRailCount { font-size: 11px; color: var(--dsw-alias-label-secondary); font-variant-numeric: tabular-nums; } .tm_statusRailList { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px 0 14px; } .tm_statusRailEmpty { padding: 8px 4px; font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-secondary); } .tm_statusRailSlot { position: relative; } .tm_statusRailSlot[draggable="true"] { cursor: grab; } .tm_statusRailSlot[draggable="true"]:active { cursor: grabbing; } .tm_statusRailCard { -webkit-user-select: none; user-select: none; --tm-rail-status: var(--tm-rail-accent); --tm-rail-status-ink: color-mix(in srgb, var(--tm-rail-status) 45%, var(--dsw-alias-label-primary)); width: var(--rail-card-w); min-height: 84px; border-color: var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 1px 3px var(--tm-rail-shadow); animation: none; cursor: grab; transition: transform 120ms ease, box-shadow 120ms ease, background 140ms ease, border-color 140ms ease; } .tm_statusRailCard.tm_cardLampWaiting { --tm-rail-status: var(--dsw-alias-state-warn-primary); } .tm_statusRailCard.tm_cardLampDone { --tm-rail-status: var(--dsw-alias-state-success-primary); } .tm_statusRailCard.tm_cardLampError { --tm-rail-status: var(--dsw-alias-state-error-primary); } .tm_statusRailCard.tm_cardLampRunning::after { display: none; } .tm_statusRailCard .tm_cardChip { color: var(--tm-rail-status-ink); background: color-mix(in srgb, var(--tm-rail-status) 8%, var(--dsw-alias-bg-layer-1)); border-color: color-mix(in srgb, var(--tm-rail-status) 28%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard .tm_runningDot { background: currentColor; } .tm_statusRailCard .tm_cardTime { color: var(--dsw-alias-label-secondary); } .tm_statusRailCard:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: -2px; border-color: var(--tm-rail-accent); background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard:active { cursor: grabbing; } .tm_statusRailSlotFloating { pointer-events: none; } .tm_statusRailCardDragging { cursor: grabbing; transform: scale(1.02) rotate(-0.3deg); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 10px 24px color-mix(in srgb, var(--dsw-alias-bg-mask-2) 75%, transparent); opacity: 0.97; } .tm_statusRailCard:hover:not(:focus-visible) { transform: translateY(-1px); border-color: color-mix(in srgb, var(--tm-rail-accent) 25%, var(--dsw-alias-border-l2)); background: color-mix(in srgb, var(--tm-rail-accent) 4%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailTab { position: absolute; top: 50%; left: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 30px; padding: 13px 7px; border: 1px solid var(--dsw-alias-border-l2); border-left: none; border-radius: 0 11px 11px 0; background: var(--tm-rail-surface); box-shadow: 3px 0 10px var(--tm-rail-shadow); color: var(--dsw-alias-label-primary); cursor: pointer; font: inherit; pointer-events: auto; transition: left 320ms cubic-bezier(0.22, 0.61, 0.36, 1), color 140ms ease, background 140ms ease; } .tm_statusRail[data-open="1"] .tm_statusRailTab { left: calc(var(--rail-w) - 1px); } .tm_statusRailTab:hover { color: var(--dsw-alias-label-primary); background: color-mix(in srgb, var(--dsw-alias-label-primary) 5%, var(--tm-rail-surface)); } .tm_statusRailTab:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: 2px; } .tm_statusRailTabCount { font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 999px; background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); color: color-mix(in srgb, var(--tm-rail-accent) 45%, var(--dsw-alias-label-primary)); font-variant-numeric: tabular-nums; } @media (prefers-reduced-motion: reduce) { .tm_statusRailPanel, .tm_statusRailTab, .tm_statusRailCard { transition: none; } .tm_statusRailCard .tm_runningDot { animation: none; } } .tm_dangerBackdrop { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(8, 10, 14, 0.55); backdrop-filter: blur(2px); } .tm_dangerDialog { width: min(420px, calc(100% - 48px)); padding: 18px 18px 14px; border: 1px solid var(--dsw-alias-border-secondary); border-radius: 14px; background: var(--dsw-alias-bg-elevated, #16181f); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55); } .tm_dangerTitle { font-size: 14px; font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_dangerBody { margin-top: 8px; font-size: 12.5px; line-height: 1.6; color: var(--dsw-alias-label-secondary); } .tm_dangerActions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; } .tm_dangerCancel, .tm_dangerOk { padding: 6px 14px; border-radius: 8px; font: inherit; font-size: 12.5px; cursor: pointer; } .tm_dangerCancel { border: 1px solid var(--dsw-alias-border-secondary); background: transparent; color: var(--dsw-alias-label-secondary); } .tm_dangerCancel:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_dangerOk { border: 1px solid rgba(242, 78, 78, 0.55); background: rgba(242, 78, 78, 0.16); color: #ff6b6b; } .tm_dangerOk:hover { background: rgba(242, 78, 78, 0.28); color: #ff8a8a; } .tm_statusRailGhost { visibility: hidden; } .tm_statusRailFloating { position: fixed; z-index: 20; pointer-events: none; }`;
 if (typeof document !== "undefined") {
   const __selector = "style[data-plugin-css=" + JSON.stringify(__tagId) + "]";
   if (document.querySelector(__selector) === null) {
@@ -1406,7 +1426,7 @@ if (typeof document !== "undefined") {
     document.head.appendChild(__tag);
   }
 }
-var talk_map_default = { "backButton": "tm_backButton", "batchAction": "tm_batchAction", "batchBar": "tm_batchBar", "batchCount": "tm_batchCount", "batchDanger": "tm_batchDanger", "batchSpace": "tm_batchSpace", "canvas": "tm_canvas", "canvasConnecting": "tm_canvasConnecting", "card": "tm_card", "cardBadgeDone": "tm_cardBadgeDone", "cardBadgeWaiting": "tm_cardBadgeWaiting", "cardChip": "tm_cardChip", "cardChipDone": "tm_cardChipDone", "cardChipDraft": "tm_cardChipDraft", "cardChipError": "tm_cardChipError", "cardChipInterrupted": "tm_cardChipInterrupted", "cardChipRunning": "tm_cardChipRunning", "cardChipWaiting": "tm_cardChipWaiting", "cardFooter": "tm_cardFooter", "cardGhost": "tm_cardGhost", "cardHandle": "tm_cardHandle", "cardLampDone": "tm_cardLampDone", "cardLampError": "tm_cardLampError", "cardLampRunning": "tm_cardLampRunning", "cardLampWaiting": "tm_cardLampWaiting", "cardLinkChip": "tm_cardLinkChip", "cardLinks": "tm_cardLinks", "cardNext": "tm_cardNext", "cardNextLabel": "tm_cardNextLabel", "cardNextText": "tm_cardNextText", "cardPin": "tm_cardPin", "cardQuiet": "tm_cardQuiet", "cardRefresh": "tm_cardRefresh", "cardRefreshBusy": "tm_cardRefreshBusy", "cardRemove": "tm_cardRemove", "cardReticle": "tm_cardReticle", "cardSelected": "tm_cardSelected", "cardStale": "tm_cardStale", "cardSummary": "tm_cardSummary", "cardTime": "tm_cardTime", "cardTitle": "tm_cardTitle", "cardTop": "tm_cardTop", "closeButton": "tm_closeButton", "colorSwatch": "tm_colorSwatch", "colorSwatchClear": "tm_colorSwatchClear", "colorToolbar": "tm_colorToolbar", "colorToolbarLabel": "tm_colorToolbarLabel", "dangerActions": "tm_dangerActions", "dangerBackdrop": "tm_dangerBackdrop", "dangerBody": "tm_dangerBody", "dangerCancel": "tm_dangerCancel", "dangerDialog": "tm_dangerDialog", "dangerOk": "tm_dangerOk", "dangerTitle": "tm_dangerTitle", "dialogBackdrop": "tm_dialogBackdrop", "digestActions": "tm_digestActions", "digestDialog": "tm_digestDialog", "digestDialogFrom": "tm_digestDialogFrom", "digestDialogHead": "tm_digestDialogHead", "digestDialogTitle": "tm_digestDialogTitle", "digestEmpty": "tm_digestEmpty", "digestLabel": "tm_digestLabel", "digestText": "tm_digestText", "drawer": "tm_drawer", "drawerAgentChip": "tm_drawerAgentChip", "drawerAgentChipSub": "tm_drawerAgentChipSub", "drawerBackdrop": "tm_drawerBackdrop", "drawerBackdropOut": "tm_drawerBackdropOut", "drawerCard": "tm_drawerCard", "drawerClose": "tm_drawerClose", "drawerCount": "tm_drawerCount", "drawerEmpty": "tm_drawerEmpty", "drawerHead": "tm_drawerHead", "drawerHint": "tm_drawerHint", "drawerHit": "tm_drawerHit", "drawerHitBlock": "tm_drawerHitBlock", "drawerHitHead": "tm_drawerHitHead", "drawerHitLine": "tm_drawerHitLine", "drawerHitMore": "tm_drawerHitMore", "drawerHitTitle": "tm_drawerHitTitle", "drawerHits": "tm_drawerHits", "drawerHitsHead": "tm_drawerHitsHead", "drawerOut": "tm_drawerOut", "drawerRoleChip": "tm_drawerRoleChip", "drawerScroll": "tm_drawerScroll", "drawerScrollSensor": "tm_drawerScrollSensor", "drawerSearch": "tm_drawerSearch", "drawerSearchError": "tm_drawerSearchError", "drawerSearchGo": "tm_drawerSearchGo", "drawerSearchRow": "tm_drawerSearchRow", "drawerSearchState": "tm_drawerSearchState", "drawerSpace": "tm_drawerSpace", "drawerTitle": "tm_drawerTitle", "drawerWires": "tm_drawerWires", "emptyHint": "tm_emptyHint", "fontButton": "tm_fontButton", "fontGlyphLarge": "tm_fontGlyphLarge", "fontGlyphSmall": "tm_fontGlyphSmall", "fontGroup": "tm_fontGroup", "fontReset": "tm_fontReset", "fontSign": "tm_fontSign", "globalSearch": "tm_globalSearch", "globalSearchBackdrop": "tm_globalSearchBackdrop", "globalSearchBody": "tm_globalSearchBody", "globalSearchButton": "tm_globalSearchButton", "globalSearchHead": "tm_globalSearchHead", "globalSearchInput": "tm_globalSearchInput", "globalSearchPanel": "tm_globalSearchPanel", "globalSearchTitle": "tm_globalSearchTitle", "header": "tm_header", "headerSpace": "tm_headerSpace", "hitMark": "tm_hitMark", "langButton": "tm_langButton", "menu": "tm_menu", "menuEmpty": "tm_menuEmpty", "menuError": "tm_menuError", "menuHint": "tm_menuHint", "menuIcon": "tm_menuIcon", "menuItem": "tm_menuItem", "menuItemDanger": "tm_menuItemDanger", "menuPreview": "tm_menuPreview", "menuSearch": "tm_menuSearch", "menuTitle": "tm_menuTitle", "panel": "tm_panel", "peek": "tm_peek", "peekHint": "tm_peekHint", "peekLine": "tm_peekLine", "peekTitle": "tm_peekTitle", "pickBox": "tm_pickBox", "pickBoxChecked": "tm_pickBoxChecked", "reactFlowNodeEnter": "tm_reactFlowNodeEnter", "renameActions": "tm_renameActions", "renameBackdrop": "tm_renameBackdrop", "renameButton": "tm_renameButton", "renameDialog": "tm_renameDialog", "renameError": "tm_renameError", "renameHeading": "tm_renameHeading", "renameInput": "tm_renameInput", "renamePrimary": "tm_renamePrimary", "runningDot": "tm_runningDot", "searchInlineLoading": "tm_searchInlineLoading", "searchLoading": "tm_searchLoading", "searchLoadingBar": "tm_searchLoadingBar", "searchSkeletonLine": "tm_searchSkeletonLine", "searchSkeletonRow": "tm_searchSkeletonRow", "searchSkeletonTitle": "tm_searchSkeletonTitle", "snippetCode": "tm_snippetCode", "snippetLink": "tm_snippetLink", "spawnActions": "tm_spawnActions", "spawnBtnGhost": "tm_spawnBtnGhost", "spawnBtnPrimary": "tm_spawnBtnPrimary", "spawnError": "tm_spawnError", "spawnFrom": "tm_spawnFrom", "spawnHeading": "tm_spawnHeading", "spawnHint": "tm_spawnHint", "spawnModeActive": "tm_spawnModeActive", "spawnModeBtn": "tm_spawnModeBtn", "spawnModes": "tm_spawnModes", "spawnPanel": "tm_spawnPanel", "spawnTextarea": "tm_spawnTextarea", "stackBadge": "tm_stackBadge", "stackBadgeBusy": "tm_stackBadgeBusy", "stackCell": "tm_stackCell", "stackFace": "tm_stackFace", "stackFaceTitle": "tm_stackFaceTitle", "stackSheetBack": "tm_stackSheetBack", "stackSheetMid": "tm_stackSheetMid", "statusRail": "tm_statusRail", "statusRailCard": "tm_statusRailCard", "statusRailCardDragging": "tm_statusRailCardDragging", "statusRailCount": "tm_statusRailCount", "statusRailEmpty": "tm_statusRailEmpty", "statusRailFloating": "tm_statusRailFloating", "statusRailGhost": "tm_statusRailGhost", "statusRailHead": "tm_statusRailHead", "statusRailList": "tm_statusRailList", "statusRailPanel": "tm_statusRailPanel", "statusRailSlot": "tm_statusRailSlot", "statusRailSlotFloating": "tm_statusRailSlotFloating", "statusRailTab": "tm_statusRailTab", "statusRailTabCount": "tm_statusRailTabCount", "statusRailTitle": "tm_statusRailTitle", "toast": "tm_toast", "toggleButton": "tm_toggleButton", "toggleButtonActive": "tm_toggleButtonActive", "toggleIcon": "tm_toggleIcon", "toggleLabel": "tm_toggleLabel", "toggleRow": "tm_toggleRow", "wsFrame": "tm_wsFrame", "wsFrameBlocked": "tm_wsFrameBlocked", "wsFrameCount": "tm_wsFrameCount", "wsFrameEdge": "tm_wsFrameEdge", "wsFrameHidden": "tm_wsFrameHidden", "wsFrameLabel": "tm_wsFrameLabel", "wsFrameResize": "tm_wsFrameResize", "wsFrameResizeE": "tm_wsFrameResizeE", "wsFrameResizeN": "tm_wsFrameResizeN", "wsFrameResizeNe": "tm_wsFrameResizeNe", "wsFrameResizeNw": "tm_wsFrameResizeNw", "wsFrameResizeS": "tm_wsFrameResizeS", "wsFrameResizeSe": "tm_wsFrameResizeSe", "wsFrameResizeSw": "tm_wsFrameResizeSw", "wsFrameResizeW": "tm_wsFrameResizeW", "wsFrameSelected": "tm_wsFrameSelected", "zoomResetLabel": "tm_zoomResetLabel" };
+var talk_map_default = { "backButton": "tm_backButton", "batchAction": "tm_batchAction", "batchBar": "tm_batchBar", "batchCount": "tm_batchCount", "batchDanger": "tm_batchDanger", "batchSpace": "tm_batchSpace", "canvas": "tm_canvas", "canvasConnecting": "tm_canvasConnecting", "card": "tm_card", "cardArchivedBadge": "tm_cardArchivedBadge", "cardBadgeDone": "tm_cardBadgeDone", "cardBadgeWaiting": "tm_cardBadgeWaiting", "cardChip": "tm_cardChip", "cardChipDone": "tm_cardChipDone", "cardChipDraft": "tm_cardChipDraft", "cardChipError": "tm_cardChipError", "cardChipInterrupted": "tm_cardChipInterrupted", "cardChipRunning": "tm_cardChipRunning", "cardChipWaiting": "tm_cardChipWaiting", "cardFooter": "tm_cardFooter", "cardGhost": "tm_cardGhost", "cardHandle": "tm_cardHandle", "cardLampDone": "tm_cardLampDone", "cardLampError": "tm_cardLampError", "cardLampRunning": "tm_cardLampRunning", "cardLampWaiting": "tm_cardLampWaiting", "cardLinkChip": "tm_cardLinkChip", "cardLinks": "tm_cardLinks", "cardNext": "tm_cardNext", "cardNextLabel": "tm_cardNextLabel", "cardNextText": "tm_cardNextText", "cardPin": "tm_cardPin", "cardQuiet": "tm_cardQuiet", "cardRefresh": "tm_cardRefresh", "cardRefreshBusy": "tm_cardRefreshBusy", "cardRemove": "tm_cardRemove", "cardReticle": "tm_cardReticle", "cardSelected": "tm_cardSelected", "cardStale": "tm_cardStale", "cardSummary": "tm_cardSummary", "cardTime": "tm_cardTime", "cardTitle": "tm_cardTitle", "cardTop": "tm_cardTop", "closeButton": "tm_closeButton", "colorSwatch": "tm_colorSwatch", "colorSwatchClear": "tm_colorSwatchClear", "colorToolbar": "tm_colorToolbar", "colorToolbarLabel": "tm_colorToolbarLabel", "dangerActions": "tm_dangerActions", "dangerBackdrop": "tm_dangerBackdrop", "dangerBody": "tm_dangerBody", "dangerCancel": "tm_dangerCancel", "dangerDialog": "tm_dangerDialog", "dangerOk": "tm_dangerOk", "dangerTitle": "tm_dangerTitle", "dialogBackdrop": "tm_dialogBackdrop", "digestActions": "tm_digestActions", "digestDialog": "tm_digestDialog", "digestDialogFrom": "tm_digestDialogFrom", "digestDialogHead": "tm_digestDialogHead", "digestDialogTitle": "tm_digestDialogTitle", "digestEmpty": "tm_digestEmpty", "digestLabel": "tm_digestLabel", "digestText": "tm_digestText", "drawer": "tm_drawer", "drawerAgentChip": "tm_drawerAgentChip", "drawerAgentChipSub": "tm_drawerAgentChipSub", "drawerBackdrop": "tm_drawerBackdrop", "drawerBackdropOut": "tm_drawerBackdropOut", "drawerCard": "tm_drawerCard", "drawerClose": "tm_drawerClose", "drawerCount": "tm_drawerCount", "drawerEmpty": "tm_drawerEmpty", "drawerHead": "tm_drawerHead", "drawerHint": "tm_drawerHint", "drawerHit": "tm_drawerHit", "drawerHitBlock": "tm_drawerHitBlock", "drawerHitHead": "tm_drawerHitHead", "drawerHitLine": "tm_drawerHitLine", "drawerHitMore": "tm_drawerHitMore", "drawerHitTitle": "tm_drawerHitTitle", "drawerHits": "tm_drawerHits", "drawerHitsHead": "tm_drawerHitsHead", "drawerOut": "tm_drawerOut", "drawerRoleChip": "tm_drawerRoleChip", "drawerScroll": "tm_drawerScroll", "drawerScrollSensor": "tm_drawerScrollSensor", "drawerSearch": "tm_drawerSearch", "drawerSearchError": "tm_drawerSearchError", "drawerSearchGo": "tm_drawerSearchGo", "drawerSearchRow": "tm_drawerSearchRow", "drawerSearchState": "tm_drawerSearchState", "drawerSpace": "tm_drawerSpace", "drawerTitle": "tm_drawerTitle", "drawerWires": "tm_drawerWires", "emptyHint": "tm_emptyHint", "fontButton": "tm_fontButton", "fontGlyphLarge": "tm_fontGlyphLarge", "fontGlyphSmall": "tm_fontGlyphSmall", "fontGroup": "tm_fontGroup", "fontReset": "tm_fontReset", "fontSign": "tm_fontSign", "globalSearch": "tm_globalSearch", "globalSearchBackdrop": "tm_globalSearchBackdrop", "globalSearchBody": "tm_globalSearchBody", "globalSearchButton": "tm_globalSearchButton", "globalSearchHead": "tm_globalSearchHead", "globalSearchInput": "tm_globalSearchInput", "globalSearchPanel": "tm_globalSearchPanel", "globalSearchTitle": "tm_globalSearchTitle", "header": "tm_header", "headerSpace": "tm_headerSpace", "hitMark": "tm_hitMark", "langButton": "tm_langButton", "mapControls": "tm_mapControls", "menu": "tm_menu", "menuEmpty": "tm_menuEmpty", "menuError": "tm_menuError", "menuHint": "tm_menuHint", "menuIcon": "tm_menuIcon", "menuItem": "tm_menuItem", "menuItemDanger": "tm_menuItemDanger", "menuPreview": "tm_menuPreview", "menuSearch": "tm_menuSearch", "menuTitle": "tm_menuTitle", "panel": "tm_panel", "peek": "tm_peek", "peekHint": "tm_peekHint", "peekLine": "tm_peekLine", "peekTitle": "tm_peekTitle", "pickBox": "tm_pickBox", "pickBoxChecked": "tm_pickBoxChecked", "reactFlowNodeEnter": "tm_reactFlowNodeEnter", "renameActions": "tm_renameActions", "renameBackdrop": "tm_renameBackdrop", "renameButton": "tm_renameButton", "renameDialog": "tm_renameDialog", "renameError": "tm_renameError", "renameHeading": "tm_renameHeading", "renameInput": "tm_renameInput", "renamePrimary": "tm_renamePrimary", "runningDot": "tm_runningDot", "searchInlineLoading": "tm_searchInlineLoading", "searchLoading": "tm_searchLoading", "searchLoadingBar": "tm_searchLoadingBar", "searchSkeletonLine": "tm_searchSkeletonLine", "searchSkeletonRow": "tm_searchSkeletonRow", "searchSkeletonTitle": "tm_searchSkeletonTitle", "snippetCode": "tm_snippetCode", "snippetLink": "tm_snippetLink", "spawnActions": "tm_spawnActions", "spawnBtnGhost": "tm_spawnBtnGhost", "spawnBtnPrimary": "tm_spawnBtnPrimary", "spawnError": "tm_spawnError", "spawnFrom": "tm_spawnFrom", "spawnHeading": "tm_spawnHeading", "spawnHint": "tm_spawnHint", "spawnModeActive": "tm_spawnModeActive", "spawnModeBtn": "tm_spawnModeBtn", "spawnModes": "tm_spawnModes", "spawnPanel": "tm_spawnPanel", "spawnTextarea": "tm_spawnTextarea", "stackBadge": "tm_stackBadge", "stackBadgeBusy": "tm_stackBadgeBusy", "stackCell": "tm_stackCell", "stackFace": "tm_stackFace", "stackFaceTitle": "tm_stackFaceTitle", "stackSheetBack": "tm_stackSheetBack", "stackSheetMid": "tm_stackSheetMid", "statusRail": "tm_statusRail", "statusRailCard": "tm_statusRailCard", "statusRailCardDragging": "tm_statusRailCardDragging", "statusRailCount": "tm_statusRailCount", "statusRailEmpty": "tm_statusRailEmpty", "statusRailFloating": "tm_statusRailFloating", "statusRailGhost": "tm_statusRailGhost", "statusRailHead": "tm_statusRailHead", "statusRailList": "tm_statusRailList", "statusRailPanel": "tm_statusRailPanel", "statusRailSlot": "tm_statusRailSlot", "statusRailSlotFloating": "tm_statusRailSlotFloating", "statusRailTab": "tm_statusRailTab", "statusRailTabCount": "tm_statusRailTabCount", "statusRailTitle": "tm_statusRailTitle", "toast": "tm_toast", "toggleButton": "tm_toggleButton", "toggleButtonActive": "tm_toggleButtonActive", "toggleIcon": "tm_toggleIcon", "toggleLabel": "tm_toggleLabel", "toggleRow": "tm_toggleRow", "wsFrame": "tm_wsFrame", "wsFrameBlocked": "tm_wsFrameBlocked", "wsFrameCount": "tm_wsFrameCount", "wsFrameEdge": "tm_wsFrameEdge", "wsFrameHidden": "tm_wsFrameHidden", "wsFrameLabel": "tm_wsFrameLabel", "wsFrameResize": "tm_wsFrameResize", "wsFrameResizeE": "tm_wsFrameResizeE", "wsFrameResizeN": "tm_wsFrameResizeN", "wsFrameResizeNe": "tm_wsFrameResizeNe", "wsFrameResizeNw": "tm_wsFrameResizeNw", "wsFrameResizeS": "tm_wsFrameResizeS", "wsFrameResizeSe": "tm_wsFrameResizeSe", "wsFrameResizeSw": "tm_wsFrameResizeSw", "wsFrameResizeW": "tm_wsFrameResizeW", "wsFrameSelected": "tm_wsFrameSelected", "zoomResetLabel": "tm_zoomResetLabel" };
 
 // src/client/markdown-inline.tsx
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -12600,8 +12620,14 @@ function RenameDialog(props) {
   ) });
 }
 
-// src/client/SessionCard.tsx
+// src/client/ArchivedBadge.tsx
 var import_jsx_runtime10 = require("react/jsx-runtime");
+function ArchivedBadge(props) {
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: talk_map_default["cardArchivedBadge"], "data-talkmap-archived": "1", title: props.count === void 0 ? t("card.archivedHint") : t("card.archivedCountHint", { n: String(props.count) }), children: props.count === void 0 ? t("card.archived") : t("card.archivedCount", { n: String(props.count) }) });
+}
+
+// src/client/SessionCard.tsx
+var import_jsx_runtime11 = require("react/jsx-runtime");
 var LAMP_CLASS = {
   running: "cardLampRunning",
   done: "cardLampDone",
@@ -12617,13 +12643,13 @@ var LAMP_CHIP = {
 function statusChip(glow, running) {
   const spec = glow !== void 0 ? LAMP_CHIP[glow] : running ? LAMP_CHIP.running : void 0;
   if (spec === void 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
     "span",
     {
       className: `${talk_map_default["cardChip"]} ${talk_map_default[spec.className]}`,
       "data-talkmap-chip": glow ?? "running",
       children: [
-        spec.dot ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
+        spec.dot ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
         t(spec.key)
       ]
     }
@@ -12648,7 +12674,7 @@ function SessionCardNode(props) {
   if (data.glow !== void 0) classNames.push(talk_map_default[LAMP_CLASS[data.glow]] ?? "");
   const quiet = data.current !== true && data.pinned !== true && data.glow === void 0 && data.pendingDraft !== true && data.interrupted !== true;
   if (quiet) classNames.push(talk_map_default["cardQuiet"] ?? "");
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
     "div",
     {
       className: classNames.filter(Boolean).join(" "),
@@ -12659,17 +12685,18 @@ function SessionCardNode(props) {
       },
       style: data.onPick !== void 0 ? { cursor: "pointer" } : void 0,
       "data-talkmap-session": data.sessionId,
+      "data-talkmap-archived": data.archived === true ? "1" : void 0,
       children: [
-        data.current === true ? /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("span", { className: talk_map_default["cardReticle"], "aria-hidden": "true", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("i", {}),
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("i", {}),
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("i", {}),
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("i", {})
+        data.current === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { className: talk_map_default["cardReticle"], "aria-hidden": "true", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {})
         ] }) : null,
         "      ",
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Handle, { id: "t", type: "source", position: Position.Top, className: talk_map_default["cardHandle"] ?? "" }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Handle, { id: "l", type: "source", position: Position.Left, className: talk_map_default["cardHandle"] ?? "" }),
-        data.onPick !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "t", type: "source", position: Position.Top, className: talk_map_default["cardHandle"] ?? "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "l", type: "source", position: Position.Left, className: talk_map_default["cardHandle"] ?? "" }),
+        data.onPick !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "span",
           {
             className: `${talk_map_default["pickBox"]}${selected2 === true ? ` ${talk_map_default["pickBoxChecked"]}` : ""}`,
@@ -12679,11 +12706,12 @@ function SessionCardNode(props) {
             children: selected2 === true ? "✓" : ""
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: talk_map_default["cardTop"], children: [
-          data.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "aria-label": t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: talk_map_default["cardTitle"], children: data.ghost ? t("card.ghostTitle") : data.title })
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["cardTop"], children: [
+          data.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "aria-label": t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["cardTitle"], children: data.ghost ? t("card.ghostTitle") : data.title }),
+          data.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ArchivedBadge, {}) : null
         ] }),
-        data.ghost ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+        data.ghost ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "button",
           {
             type: "button",
@@ -12693,10 +12721,10 @@ function SessionCardNode(props) {
             },
             children: t("card.remove")
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(import_jsx_runtime10.Fragment, { children: data.preview !== void 0 && data.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("div", { className: talk_map_default["cardSummary"], children: data.preview }) : null }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(data.updatedAt) }),
-          data.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+        ) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children: data.preview !== void 0 && data.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["cardSummary"], children: data.preview }) : null }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(data.updatedAt) }),
+          data.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             "span",
             {
               className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipDraft"]}`,
@@ -12705,7 +12733,7 @@ function SessionCardNode(props) {
               children: t("card.draft")
             }
           ) : null,
-          data.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
+          data.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             "span",
             {
               className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipInterrupted"]}`,
@@ -12716,8 +12744,8 @@ function SessionCardNode(props) {
           ) : null,
           statusChip(data.glow, data.running === true)
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Handle, { id: "r", type: "source", position: Position.Right, className: talk_map_default["cardHandle"] ?? "" }),
-        /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(Handle, { id: "b", type: "source", position: Position.Bottom, className: talk_map_default["cardHandle"] ?? "" })
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "r", type: "source", position: Position.Right, className: talk_map_default["cardHandle"] ?? "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "b", type: "source", position: Position.Bottom, className: talk_map_default["cardHandle"] ?? "" })
       ]
     }
   );
@@ -12725,7 +12753,7 @@ function SessionCardNode(props) {
 
 // src/client/SpawnPreview.tsx
 var import_react9 = require("react");
-var import_jsx_runtime11 = require("react/jsx-runtime");
+var import_jsx_runtime12 = require("react/jsx-runtime");
 function SpawnPreview(props) {
   const { pending } = props;
   const digest = canvas.get().digests[pending.parent.sessionId];
@@ -12827,15 +12855,15 @@ function SpawnPreview(props) {
     { id: "digest", label: t("spawn.mode.digest") },
     { id: "full", label: t("spawn.mode.full") }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["spawnPanel"], role: "dialog", "aria-label": t("spawn.heading"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["spawnHeading"], children: t("spawn.heading") }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["spawnFrom"], children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: talk_map_default["spawnPanel"], role: "dialog", "aria-label": t("spawn.heading"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHeading"], children: t("spawn.heading") }),
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: talk_map_default["spawnFrom"], children: [
       t("spawn.from"),
       "「",
       pending.parent.title,
       "」"
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["spawnModes"], children: modes.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnModes"], children: modes.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
       "button",
       {
         type: "button",
@@ -12847,9 +12875,9 @@ function SpawnPreview(props) {
       },
       entry.id
     )) }),
-    mode === "digest" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.hint") }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    mode === "digest" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.hint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "textarea",
         {
           className: `${talk_map_default["spawnTextarea"]} nodrag nowheel`,
@@ -12860,9 +12888,9 @@ function SpawnPreview(props) {
           }
         }
       )
-    ] }) : mode === "none" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(import_jsx_runtime11.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.noneHint") }),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    ] }) : mode === "none" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.noneHint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "textarea",
         {
           className: `${talk_map_default["spawnTextarea"]} nodrag nowheel`,
@@ -12880,10 +12908,10 @@ function SpawnPreview(props) {
           }
         }
       )
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.fullHint") }),
-    error !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["spawnError"], children: error }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["spawnActions"], children: [
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.fullHint") }),
+    error !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnError"], children: error }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: talk_map_default["spawnActions"], children: [
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "button",
         {
           type: "button",
@@ -12893,7 +12921,7 @@ function SpawnPreview(props) {
           children: t("spawn.cancel")
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
         "button",
         {
           type: "button",
@@ -12926,7 +12954,7 @@ function colorOf(tagId) {
 }
 
 // src/client/WsFrame.tsx
-var import_jsx_runtime12 = require("react/jsx-runtime");
+var import_jsx_runtime13 = require("react/jsx-runtime");
 var EDGE = 10;
 var CORNER = 26;
 var EDGE_HANDLES = [
@@ -12949,7 +12977,7 @@ function WsFrameNode(props) {
     event.stopPropagation();
     data.onResizeStart?.(axis, event);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
     "div",
     {
       className: `${talk_map_default["wsFrame"]}${selected2 === true ? ` ${talk_map_default["wsFrameSelected"]}` : ""}${data.blocked === true ? ` ${talk_map_default["wsFrameBlocked"]}` : ""}`,
@@ -12963,22 +12991,23 @@ function WsFrameNode(props) {
       "data-talkmap-frame": "",
       "data-talkmap-workspace": data.workspaceId,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
           "div",
           {
             className: talk_map_default["wsFrameLabel"],
             style: color2 !== void 0 ? { borderColor: color2.border, backgroundImage: `linear-gradient(${color2.fill}, ${color2.fill})` } : {},
             children: [
               data.title,
-              /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: talk_map_default["wsFrameCount"], children: data.count })
+              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["wsFrameCount"], children: data.count }),
+              (data.archivedCount ?? 0) > 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(ArchivedBadge, { count: data.archivedCount }) : null
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, left: 0, right: 0, height: EDGE } }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { bottom: 0, left: 0, right: 0, height: EDGE } }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, left: 0, width: EDGE } }),
-        /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, right: 0, width: EDGE } }),
-        [...EDGE_HANDLES, ...CORNER_HANDLES].map((handle) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, left: 0, right: 0, height: EDGE } }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { bottom: 0, left: 0, right: 0, height: EDGE } }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, left: 0, width: EDGE } }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, right: 0, width: EDGE } }),
+        [...EDGE_HANDLES, ...CORNER_HANDLES].map((handle) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
           "div",
           {
             className: `${talk_map_default["wsFrameResize"]} ${talk_map_default[handle.className] ?? ""}`,
@@ -13004,6 +13033,7 @@ var FRAME_LABEL_H = 30;
 var TOP_INSET = FRAME_PAD + FRAME_LABEL_H;
 var MIN_FRAME_WIDTH = CARD_W + FRAME_PAD * 2;
 var MIN_FRAME_HEIGHT = TOP_INSET + CARD_H + FRAME_PAD;
+var AUTO_FRAME_CARD_LIMIT = 6;
 function colsForWidth(width) {
   const usable = Math.max(CARD_W, width - FRAME_PAD * 2);
   return Math.max(1, Math.floor((usable + GAP_X) / (CARD_W + GAP_X)));
@@ -13023,6 +13053,10 @@ function slotPoint(rect, index2, cols = colsForWidth(rect.width)) {
     y: rect.y + TOP_INSET + row * (CARD_H + GAP_Y)
   };
 }
+function contentHeight(count, cols) {
+  const rows = Math.max(1, Math.ceil(Math.max(count, 1) / cols));
+  return TOP_INSET + rows * CARD_H + (rows - 1) * GAP_Y + FRAME_PAD;
+}
 function frameRect(stored) {
   return {
     x: stored.x,
@@ -13030,6 +13064,44 @@ function frameRect(stored) {
     width: Math.max(MIN_FRAME_WIDTH, stored.width),
     height: Math.max(MIN_FRAME_HEIGHT, stored.height)
   };
+}
+function autoFrameRect(stored, count, obstacles = []) {
+  const base = frameRect(stored);
+  const target = Math.max(1, Math.min(AUTO_FRAME_CARD_LIMIT, Math.ceil(count) || 1));
+  if (capacityFor(base) >= target) return base;
+  const preferredCols = Math.min(3, target);
+  const originalOverlaps = obstacles.map((obstacle) => overlapArea(base, obstacle));
+  let best = base;
+  let bestCapacity = Math.min(target, capacityFor(base));
+  const cost = (rect) => rect.width * rect.height * (1 + 0.1 * Math.max(0, preferredCols - colsForWidth(rect.width)));
+  let bestCost = cost(base);
+  for (let cols = 1; cols <= preferredCols; cols += 1) {
+    const width = Math.max(base.width, MIN_FRAME_WIDTH + (cols - 1) * (CARD_W + GAP_X));
+    const actualCols = colsForWidth(width);
+    const maxRows = Math.ceil(target / actualCols);
+    for (let rows = 1; rows <= maxRows; rows += 1) {
+      const candidate = {
+        x: base.x,
+        y: base.y,
+        width,
+        height: Math.max(base.height, contentHeight(rows * actualCols, actualCols))
+      };
+      if (obstacles.some((obstacle, index2) => overlapArea(candidate, obstacle) > originalOverlaps[index2])) continue;
+      const capacity = Math.min(target, capacityFor(candidate));
+      const candidateCost = cost(candidate);
+      if (capacity > bestCapacity || capacity === bestCapacity && candidateCost < bestCost) {
+        best = candidate;
+        bestCapacity = capacity;
+        bestCost = candidateCost;
+      }
+    }
+  }
+  return best;
+}
+function overlapArea(a, b) {
+  const width = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x));
+  const height = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y));
+  return width * height;
 }
 function slotIndexAt(rect, point) {
   const cols = colsForWidth(rect.width);
@@ -13058,7 +13130,7 @@ function clamp2(value, min, max) {
 
 // src/client/StackDrawer.tsx
 var import_react10 = require("react");
-var import_jsx_runtime13 = require("react/jsx-runtime");
+var import_jsx_runtime14 = require("react/jsx-runtime");
 var LAMP_CLASS2 = {
   running: "cardLampRunning",
   done: "cardLampDone",
@@ -13150,7 +13222,7 @@ function StackDrawer(props) {
           { cardWidth: fromRect.w, cardHeight: fromRect.h }
         );
         const contentWidth = scroller.scrollWidth;
-        const contentHeight = scroller.scrollHeight;
+        const contentHeight2 = scroller.scrollHeight;
         const boundsWidth = scroller.scrollWidth;
         const boundsHeight = scroller.scrollHeight;
         const dirty = (candidate) => {
@@ -13437,7 +13509,7 @@ function StackDrawer(props) {
     setDragId(null);
     setDropIndex(null);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
     "div",
     {
       className: `${talk_map_default["drawerBackdrop"]}${leaving ? ` ${talk_map_default["drawerBackdropOut"]}` : ""}`,
@@ -13447,19 +13519,19 @@ function StackDrawer(props) {
       onClick: (event) => {
         if (event.target === event.currentTarget) requestClose();
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
         "div",
         {
           className: `${talk_map_default["drawer"]}${leaving ? ` ${talk_map_default["drawerOut"]}` : ""}`,
           role: "dialog",
           "aria-label": props.workspaceTitle,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: talk_map_default["drawerHead"], children: [
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["drawerTitle"], children: props.workspaceTitle }),
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["drawerCount"], children: t("stack.total", { n: String(props.items.length) }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["drawerSpace"] }),
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["drawerHint"], children: t("stack.hint") }),
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["drawerHead"], children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerTitle"], children: props.workspaceTitle }),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerCount"], children: t("stack.total", { n: String(props.items.length) }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerSpace"] }),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerHint"], children: t("stack.hint") }),
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "button",
                 {
                   type: "button",
@@ -13471,8 +13543,8 @@ function StackDrawer(props) {
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: talk_map_default["drawerSearchRow"], children: [
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["drawerSearchRow"], children: [
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "input",
                 {
                   className: talk_map_default["drawerSearch"],
@@ -13498,7 +13570,7 @@ function StackDrawer(props) {
                   }
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                 "button",
                 {
                   type: "button",
@@ -13510,10 +13582,10 @@ function StackDrawer(props) {
                   children: t("global.searchRun")
                 }
               ),
-              searching ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["drawerSearchState"], children: t("stack.searching") }) : null,
-              searchError !== null ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["drawerSearchError"], title: searchError, children: isIndexDisabled(searchError) ? t("stack.searchDisabled") : t("stack.searchFailed") + "：" + (searchError.length > 70 ? searchError.slice(0, 70) + "…" : searchError) }) : null
+              searching ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerSearchState"], children: t("stack.searching") }) : null,
+              searchError !== null ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerSearchError"], title: searchError, children: isIndexDisabled(searchError) ? t("stack.searchDisabled") : t("stack.searchFailed") + "：" + (searchError.length > 70 ? searchError.slice(0, 70) + "…" : searchError) }) : null
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
               "div",
               {
                 className: talk_map_default["drawerScroll"],
@@ -13528,15 +13600,15 @@ function StackDrawer(props) {
                   }, 200);
                 },
                 children: [
-                  wires.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  wires.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                     "svg",
                     {
                       className: talk_map_default["drawerWires"],
                       width: Math.max(1, wireSize.width),
                       height: Math.max(1, wireSize.height),
                       "aria-hidden": "true",
-                      children: wires.map((wire, index2) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("g", { children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                      children: wires.map((wire, index2) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("g", { children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                           "path",
                           {
                             d: wire.d,
@@ -13549,7 +13621,7 @@ function StackDrawer(props) {
                             strokeDasharray: "6 5"
                           }
                         ),
-                        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                           "path",
                           {
                             d: "M0 0 L-9 -4 L-9 4 Z",
@@ -13566,13 +13638,14 @@ function StackDrawer(props) {
                     const quiet = item.glow === void 0 && item.pendingDraft !== true && item.interrupted !== true && item.pinned !== true;
                     if (quiet) classNames.push(talk_map_default["cardQuiet"] ?? "");
                     if (item.selected === true) classNames.push(talk_map_default["cardSelected"] ?? "");
-                    return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                       "button",
                       {
                         type: "button",
                         "data-stack-card": "",
                         "data-card-id": item.cardId,
                         "data-talkmap-session": item.sessionId,
+                        "data-talkmap-archived": item.archived === true ? "1" : void 0,
                         className: classNames.filter(Boolean).join(" "),
                         draggable: true,
                         "data-talkmap-drag": dragId === item.cardId ? "1" : void 0,
@@ -13606,18 +13679,19 @@ function StackDrawer(props) {
                           props.onCardMenu?.(item.cardId, event);
                         },
                         children: [
-                          item.current === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { className: talk_map_default["cardReticle"], children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {}),
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {}),
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {}),
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {})
+                          item.current === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { className: talk_map_default["cardReticle"], children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {}),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {}),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {}),
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {})
                           ] }) : null,
-                          /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: talk_map_default["cardTop"], children: [
-                            item.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["cardTitle"], children: item.title })
+                          /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["cardTop"], children: [
+                            item.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["cardTitle"], children: item.title }),
+                            item.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(ArchivedBadge, {}) : null
                           ] }),
-                          item.preview !== void 0 && item.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["cardSummary"], children: item.preview }) : null,
-                          item.links !== void 0 && item.links.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["cardLinks"], "data-talkmap-card-links": item.links.length, children: item.links.slice(0, 3).map((link2) => /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                          item.preview !== void 0 && item.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["cardSummary"], children: item.preview }) : null,
+                          item.links !== void 0 && item.links.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["cardLinks"], "data-talkmap-card-links": item.links.length, children: item.links.slice(0, 3).map((link2) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                             "span",
                             {
                               className: talk_map_default["cardLinkChip"],
@@ -13630,9 +13704,9 @@ function StackDrawer(props) {
                             },
                             (link2.outgoing ? "out-" : "in-") + link2.toCardId
                           )) }) : null,
-                          /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(item.updatedAt) }),
-                            item.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                          /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(item.updatedAt) }),
+                            item.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                               "span",
                               {
                                 className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipDraft"]}`,
@@ -13641,7 +13715,7 @@ function StackDrawer(props) {
                                 children: t("card.draft")
                               }
                             ) : null,
-                            item.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                            item.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                               "span",
                               {
                                 className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipInterrupted"]}`,
@@ -13650,13 +13724,13 @@ function StackDrawer(props) {
                                 children: t("card.interrupted")
                               }
                             ) : null,
-                            item.glow === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+                            item.glow === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
                               "span",
                               {
                                 className: `${talk_map_default["cardChip"]} ${talk_map_default[LAMP_CHIP[item.glow].className]}`,
                                 "data-talkmap-chip": item.glow,
                                 children: [
-                                  item.glow === "running" ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
+                                  item.glow === "running" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
                                   t(LAMP_CHIP[item.glow].key)
                                 ]
                               }
@@ -13667,7 +13741,7 @@ function StackDrawer(props) {
                       item.cardId
                     );
                   }),
-                  hits.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+                  hits.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
                     SearchResults,
                     {
                       query,
@@ -13678,7 +13752,7 @@ function StackDrawer(props) {
                       }
                     }
                   ) : null,
-                  needle !== "" && visibleItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["drawerEmpty"], children: t("stack.noTitleMatch") }) : null
+                  needle !== "" && visibleItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["drawerEmpty"], children: t("stack.noTitleMatch") }) : null
                 ]
               }
             )
@@ -13690,13 +13764,13 @@ function StackDrawer(props) {
 }
 
 // src/client/StackNode.tsx
-var import_jsx_runtime14 = require("react/jsx-runtime");
+var import_jsx_runtime15 = require("react/jsx-runtime");
 function StackNode(props) {
   const { data } = props;
   const open = () => {
     data.onOpen();
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
     "div",
     {
       className: [talk_map_default["stackCell"], talk_map_default["cardQuiet"] ?? ""].filter(Boolean).join(" "),
@@ -13714,11 +13788,12 @@ function StackNode(props) {
         open();
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["stackSheetBack"] }),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["stackSheetMid"] }),
-        /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["stackFace"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["stackFaceTitle"], children: data.topTitle ?? t("frame.unknown") }),
-          /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { className: [talk_map_default["stackBadge"], data.busy === true ? talk_map_default["stackBadgeBusy"] ?? "" : ""].filter(Boolean).join(" "), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["stackSheetBack"] }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["stackSheetMid"] }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: talk_map_default["stackFace"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["stackFaceTitle"], children: data.topTitle ?? t("frame.unknown") }),
+          (data.archivedCount ?? 0) > 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ArchivedBadge, { count: data.archivedCount }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { className: [talk_map_default["stackBadge"], data.busy === true ? talk_map_default["stackBadgeBusy"] ?? "" : ""].filter(Boolean).join(" "), children: [
             "+",
             data.count
           ] })
@@ -13730,7 +13805,51 @@ function StackNode(props) {
 
 // src/client/StatusRail.tsx
 var import_react11 = require("react");
-var import_jsx_runtime15 = require("react/jsx-runtime");
+
+// src/client/rail-gesture.ts
+var RAIL_DRAG_THRESHOLD = 6;
+function createRailGesture() {
+  let pointer = null;
+  let dragging = false;
+  let suppressClick = false;
+  return {
+    begin(next) {
+      if (pointer !== null) return false;
+      pointer = next;
+      dragging = false;
+      suppressClick = false;
+      return true;
+    },
+    move(next) {
+      if (pointer === null || pointer.pointerId !== next.pointerId) return false;
+      if (Math.hypot(next.clientX - pointer.clientX, next.clientY - pointer.clientY) >= RAIL_DRAG_THRESHOLD) {
+        dragging = true;
+      }
+      return dragging;
+    },
+    end(pointerId, cancelled = false) {
+      if (pointer === null || pointer.pointerId !== pointerId) return null;
+      const commit = dragging && !cancelled;
+      suppressClick = dragging || cancelled;
+      pointer = null;
+      dragging = false;
+      return { commit };
+    },
+    cancel() {
+      if (pointer !== null) suppressClick = true;
+      pointer = null;
+      dragging = false;
+    },
+    consumeClick() {
+      const suppressed = suppressClick || dragging;
+      suppressClick = false;
+      return suppressed;
+    }
+  };
+}
+
+// src/client/StatusRail.tsx
+var import_jsx_runtime16 = require("react/jsx-runtime");
 var OPEN_KEY = "dsh.talk-map.status-rail.open.v1";
 var ORDER_KEY = "dsh.talk-map.status-rail.order.v1";
 var FLIP_MS = 180;
@@ -13798,8 +13917,11 @@ function StatusRail(props) {
   const panelRef = (0, import_react11.useRef)(null);
   const orderRef = (0, import_react11.useRef)(order);
   orderRef.current = order;
-  const dragRef = (0, import_react11.useRef)(null);
-  dragRef.current = drag;
+  const pointerDragRef = (0, import_react11.useRef)(null);
+  const gestureRef = (0, import_react11.useRef)(createRailGesture());
+  (0, import_react11.useEffect)(() => {
+    props.onOpenChange?.(open);
+  }, [open, props.onOpenChange]);
   const signature = (0, import_react11.useMemo)(
     () => props.entries.map((entry) => `${entry.cardId}:${entry.lamp}:${entry.stamp}`).join("|"),
     [props.entries]
@@ -13866,8 +13988,7 @@ function StatusRail(props) {
     };
   }, [order, drag === null]);
   (0, import_react11.useEffect)(() => {
-    if (drag === null) return;
-    const { cardId } = drag;
+    const gesture = gestureRef.current;
     const indexUnder = (pointerY) => {
       const ids = orderRef.current;
       let best = 0;
@@ -13885,12 +14006,19 @@ function StatusRail(props) {
       return best;
     };
     const onMove = (event) => {
-      const hover = indexUnder(event.clientY);
-      setDrag((current) => current === null ? null : { ...current, pointerY: event.clientY, hover });
+      if (!gesture.move(event)) return;
+      const current = pointerDragRef.current;
+      if (current === null) return;
+      if (event.cancelable) event.preventDefault();
+      const next = { ...current, pointerY: event.clientY, hover: indexUnder(event.clientY) };
+      pointerDragRef.current = next;
+      setDrag(next);
     };
-    const onUp = () => {
-      const current = dragRef.current;
-      if (current !== null && current.hover !== current.origin) {
+    const onEnd = (event) => {
+      const result = gesture.end(event.pointerId, event.type === "pointercancel");
+      if (result === null) return;
+      const current = pointerDragRef.current;
+      if (result.commit && current !== null && current.hover !== current.origin) {
         setOrder((existing) => {
           const from = existing.indexOf(current.cardId);
           if (from < 0) return existing;
@@ -13902,29 +14030,42 @@ function StatusRail(props) {
           return next;
         });
       }
+      pointerDragRef.current = null;
       prevTops.current.clear();
       setDrag(null);
     };
-    window.addEventListener("pointermove", onMove);
-    window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+    const onBlur = () => {
+      gesture.cancel();
+      pointerDragRef.current = null;
+      prevTops.current.clear();
+      setDrag(null);
+    };
+    window.addEventListener("pointermove", onMove, { passive: false });
+    window.addEventListener("pointerup", onEnd);
+    window.addEventListener("pointercancel", onEnd);
+    window.addEventListener("blur", onBlur);
     return () => {
       window.removeEventListener("pointermove", onMove);
-      window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("pointerup", onEnd);
+      window.removeEventListener("pointercancel", onEnd);
+      window.removeEventListener("blur", onBlur);
+      gesture.cancel();
     };
-  }, [drag === null]);
+  }, []);
   const toggle = (0, import_react11.useCallback)(() => {
     setOpenState(!openSnapshot());
   }, []);
   const beginDrag = (0, import_react11.useCallback)((event, cardId) => {
-    if (event.button !== 0) return;
+    if (event.button !== 0 || !event.isPrimary) return;
     const element = slotsRef.current.get(cardId);
-    if (element === void 0) return;
+    if (element === void 0 || !gestureRef.current.begin({
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY
+    })) return;
     const rect = element.getBoundingClientRect();
-    event.preventDefault();
     const index2 = Math.max(0, orderRef.current.indexOf(cardId));
-    setDrag({
+    pointerDragRef.current = {
       cardId,
       origin: index2,
       hover: index2,
@@ -13934,9 +14075,9 @@ function StatusRail(props) {
       left: rect.left,
       baseTop: rect.top,
       width: rect.width
-    });
+    };
   }, []);
-  const renderCard = (entry, floating) => /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+  const renderCard = (entry, floating) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
     "div",
     {
       className: `${talk_map_default["card"]} ${talk_map_default[LAMP_CLASS3[entry.lamp]] ?? ""} ${talk_map_default["statusRailCard"]}${floating ? ` ${talk_map_default["statusRailCardDragging"]}` : ""}`,
@@ -13947,22 +14088,30 @@ function StatusRail(props) {
         if (event.key !== "Enter" && event.key !== " ") return;
         event.preventDefault();
         event.stopPropagation();
-        props.onFocus(entry.cardId);
+        props.onOpenSession(entry.sessionId);
       },
       onPointerDown: floating ? void 0 : (event) => {
         beginDrag(event, entry.cardId);
       },
-      onClick: () => {
-        if (!floating && dragRef.current === null) props.onFocus(entry.cardId);
+      onClick: floating ? void 0 : (event) => {
+        event.stopPropagation();
+        if (gestureRef.current.consumeClick()) {
+          event.preventDefault();
+          return;
+        }
+        props.onOpenSession(entry.sessionId);
       },
       title: entry.title,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["cardTop"], children: /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["cardTitle"], children: entry.title }) }),
-        entry.preview !== void 0 && entry.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["cardSummary"], children: entry.preview }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(entry.updatedAt) }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { className: `${talk_map_default["cardChip"]} ${talk_map_default[LAMP_CHIP[entry.lamp].className]}`, children: [
-            LAMP_CHIP[entry.lamp].dot ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["cardTop"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["cardTitle"], children: entry.title }),
+          entry.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ArchivedBadge, {}) : null
+        ] }),
+        entry.preview !== void 0 && entry.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["cardSummary"], children: entry.preview }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(entry.updatedAt) }),
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { className: `${talk_map_default["cardChip"]} ${talk_map_default[LAMP_CHIP[entry.lamp].className]}`, children: [
+            LAMP_CHIP[entry.lamp].dot ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
             t(LAMP_CHIP[entry.lamp].key)
           ] })
         ] })
@@ -13970,20 +14119,20 @@ function StatusRail(props) {
     }
   );
   const floatingEntry = drag === null ? void 0 : ordered.find((entry) => entry.cardId === drag.cardId);
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
     "div",
     {
       className: talk_map_default["statusRail"],
       "data-open": open ? "1" : "0",
       style: { ["--rail-card-w"]: `${props.cardWidth}px` },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: talk_map_default["statusRailPanel"], "aria-hidden": !open, ref: panelRef, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: talk_map_default["statusRailHead"], children: [
-            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["statusRailTitle"], children: t("statusRail.title") }),
-            /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["statusRailCount"], children: props.entries.length })
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["statusRailPanel"], "aria-hidden": !open, ref: panelRef, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["statusRailHead"], children: [
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["statusRailTitle"], children: t("statusRail.title") }),
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["statusRailCount"], children: props.entries.length })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: talk_map_default["statusRailList"], role: "list", children: [
-            ordered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["statusRailEmpty"], children: t("statusRail.empty") }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["statusRailList"], role: "list", children: [
+            ordered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["statusRailEmpty"], children: t("statusRail.empty") }) : null,
             ordered.map((entry, index2) => {
               const dragging = drag !== null && drag.cardId === entry.cardId;
               let moved = 0;
@@ -13992,7 +14141,7 @@ function StatusRail(props) {
                 else if (drag.hover < drag.origin && index2 >= drag.hover && index2 < drag.origin) moved = drag.step;
               }
               const style2 = drag !== null ? { transform: `translateY(${moved}px)`, transition: `transform ${FLIP_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` } : shift[entry.cardId] !== void 0 ? { transform: `translateY(${shift[entry.cardId]}px)`, transition: "none" } : { transition: `transform ${FLIP_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` };
-              return /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+              return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                 "div",
                 {
                   role: "listitem",
@@ -14002,14 +14151,14 @@ function StatusRail(props) {
                   },
                   className: talk_map_default["statusRailSlot"],
                   style: style2,
-                  children: dragging ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["statusRailGhost"], children: renderCard(entry, false) }) : renderCard(entry, false)
+                  children: dragging ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["statusRailGhost"], children: renderCard(entry, false) }) : renderCard(entry, false)
                 },
                 entry.cardId
               );
             })
           ] })
         ] }),
-        drag !== null && floatingEntry !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
+        drag !== null && floatingEntry !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
           "div",
           {
             className: talk_map_default["statusRailFloating"],
@@ -14021,7 +14170,7 @@ function StatusRail(props) {
             children: renderCard(floatingEntry, true)
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
           "button",
           {
             type: "button",
@@ -14031,13 +14180,13 @@ function StatusRail(props) {
             title: open ? t("statusRail.close") : t("statusRail.open"),
             onClick: toggle,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("svg", { viewBox: "0 0 12 28", width: "14", height: "30", "aria-hidden": "true", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("rect", { x: "1.4", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
-                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("rect", { x: "8.6", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
-                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { cx: "2.4", cy: "25", r: "1.5", fill: "currentColor" }),
-                /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("circle", { cx: "9.6", cy: "25", r: "1.5", fill: "currentColor" })
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("svg", { viewBox: "0 0 12 28", width: "14", height: "30", "aria-hidden": "true", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("rect", { x: "1.4", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("rect", { x: "8.6", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { cx: "2.4", cy: "25", r: "1.5", fill: "currentColor" }),
+                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { cx: "9.6", cy: "25", r: "1.5", fill: "currentColor" })
               ] }),
-              props.entries.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["statusRailTabCount"], children: props.entries.length }) : null
+              props.entries.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["statusRailTabCount"], children: props.entries.length }) : null
             ]
           }
         )
@@ -14067,7 +14216,7 @@ function useDsDarkTheme() {
 }
 
 // src/client/MapCanvas.tsx
-var import_jsx_runtime16 = require("react/jsx-runtime");
+var import_jsx_runtime17 = require("react/jsx-runtime");
 var TALK_MAP_EDGE_TYPE = "talkMap";
 var nodeTypes = {
   sessionCard: SessionCardNode,
@@ -14108,17 +14257,16 @@ function rectsOverlap(rect, other) {
   const overlapY = Math.min(rect.y + rect.height, other.y + other.height) - Math.max(rect.y, other.y);
   return overlapX > 1 && overlapY > 1;
 }
-function fitRect(members) {
-  const minX = Math.min(...members.map((card) => card.x));
-  const minY = Math.min(...members.map((card) => card.y));
-  const maxX = Math.max(...members.map((card) => card.x + CARD_W));
-  const maxY = Math.max(...members.map((card) => card.y + CARD_H));
+function seedRect(members) {
   return {
-    x: minX - FRAME_PAD,
-    y: minY - FRAME_PAD - FRAME_LABEL_H,
-    width: maxX - minX + FRAME_PAD * 2,
-    height: maxY - minY + FRAME_PAD * 2 + FRAME_LABEL_H
+    x: Math.min(...members.map((card) => card.x)) - FRAME_PAD,
+    y: Math.min(...members.map((card) => card.y)) - FRAME_PAD - FRAME_LABEL_H,
+    width: MIN_FRAME_WIDTH,
+    height: MIN_FRAME_HEIGHT
   };
+}
+function fitRect(members, obstacles) {
+  return autoFrameRect(seedRect(members), members.length, obstacles);
 }
 function CanvasInner(props) {
   const dark = useDsDarkTheme();
@@ -14225,6 +14373,29 @@ function CanvasInner(props) {
   const wrapperRef = (0, import_react13.useRef)(null);
   const [draggingCardId, setDraggingCardId] = (0, import_react13.useState)(null);
   const [liveFrame, setLiveFrame] = (0, import_react13.useState)(null);
+  const [statusRailOpen, setStatusRailOpen] = (0, import_react13.useState)(false);
+  const [manualFrames, setManualFrames] = (0, import_react13.useState)(() => {
+    try {
+      const saved = JSON.parse(localStorage.getItem("dsh.talk-map.manual-frames.v1") ?? "[]");
+      return new Set(Array.isArray(saved) ? saved.filter((id2) => typeof id2 === "string") : []);
+    } catch {
+      return /* @__PURE__ */ new Set();
+    }
+  });
+  const setFrameManual = (0, import_react13.useCallback)((groupId, manual) => {
+    setManualFrames((previous) => {
+      if (previous.has(groupId) === manual) return previous;
+      const next = new Set(previous);
+      if (manual) next.add(groupId);
+      else next.delete(groupId);
+      try {
+        localStorage.setItem("dsh.talk-map.manual-frames.v1", JSON.stringify([...next]));
+      } catch {
+      }
+      return next;
+    });
+  }, []);
+  const frameRectsRef = (0, import_react13.useRef)({});
   const [blockedFrame, setBlockedFrame] = (0, import_react13.useState)(null);
   const [dragCenter, setDragCenter] = (0, import_react13.useState)(null);
   const [isSelecting, setIsSelecting] = (0, import_react13.useState)(false);
@@ -14237,6 +14408,7 @@ function CanvasInner(props) {
   );
   const workspacesReady = workspaces.baselinesReady !== false;
   const pinnedSessions = (0, import_react13.useMemo)(() => new Set(workspaces.pinnedSessionIds ?? []), [workspaces]);
+  const archivedSessions = (0, import_react13.useMemo)(() => new Set(workspaces.archivedSessionIds ?? []), [workspaces]);
   const boardSessionIds = (0, import_react13.useMemo)(
     () => new Set(Object.values(canvasState.cards).map((card) => card.sessionId)),
     [canvasState.cards]
@@ -14255,7 +14427,7 @@ function CanvasInner(props) {
     for (const [groupId, members] of byGroup) {
       const stored = framesNext[groupId];
       if (stored === void 0 && members.length > 0) {
-        framesNext[groupId] = fitRect(members);
+        framesNext[groupId] = seedRect(members);
       } else if (stored !== void 0) {
         framesNext[groupId] = frameRect(stored);
       }
@@ -14320,12 +14492,23 @@ function CanvasInner(props) {
   }, [visibleCards, sessionWs]);
   const frameRects = (0, import_react13.useMemo)(() => {
     const out = {};
-    for (const [groupId, stored] of Object.entries(wsFrames)) {
-      const base = liveFrame !== null && liveFrame.groupId === groupId ? liveFrame.rect : stored;
-      out[groupId] = frameRect(base);
+    for (const [groupId, stored] of Object.entries(wsFrames)) out[groupId] = frameRect(stored);
+    if (liveFrame !== null) {
+      for (const groupId of Object.keys(out)) {
+        out[groupId] = groupId === liveFrame.groupId ? frameRect(liveFrame.rect) : frameRectsRef.current[groupId] ?? out[groupId];
+      }
+      return out;
+    }
+    for (const groupId of Object.keys(out).sort()) {
+      if (manualFrames.has(groupId)) continue;
+      const obstacles = Object.entries(out).filter(([id2]) => id2 !== groupId).map(([, rect]) => rect);
+      out[groupId] = autoFrameRect(out[groupId], membersByGroup.get(groupId)?.length ?? 0, obstacles);
     }
     return out;
-  }, [wsFrames, liveFrame]);
+  }, [wsFrames, liveFrame, membersByGroup, manualFrames]);
+  (0, import_react13.useEffect)(() => {
+    frameRectsRef.current = frameRects;
+  }, [frameRects]);
   const folderLayouts = (0, import_react13.useMemo)(() => {
     const out = {};
     for (const [groupId, rect] of Object.entries(frameRects)) {
@@ -14339,7 +14522,7 @@ function CanvasInner(props) {
         const pinB = pinnedSessions.has(visibleCards[b]?.sessionId ?? "") ? 0 : 1;
         return pinA - pinB;
       });
-      const capacity = capacityFor(rect);
+      const capacity = manualFrames.has(groupId) ? capacityFor(rect) : Math.min(AUTO_FRAME_CARD_LIMIT, capacityFor(rect));
       let preview = ordered;
       if (draggingCardId !== null && ordered.includes(draggingCardId)) {
         const others = ordered.filter((cardId) => cardId !== draggingCardId);
@@ -14357,7 +14540,7 @@ function CanvasInner(props) {
       };
     }
     return out;
-  }, [frameRects, membersByGroup, visibleCards, pinnedSessions, draggingCardId, dragCenter]);
+  }, [frameRects, membersByGroup, visibleCards, pinnedSessions, draggingCardId, dragCenter, manualFrames]);
   const cardLayout = (0, import_react13.useMemo)(() => {
     const out = {};
     for (const layout of Object.values(folderLayouts)) {
@@ -14440,7 +14623,7 @@ function CanvasInner(props) {
       const left = boxes.length === 0 ? 0 : snap(Math.min(...boxes.map((box) => box.x)));
       let cursorY = boxes.length === 0 ? 0 : snap(Math.max(...boxes.map((box) => box.y + box.height)) + GAP_Y);
       for (const [groupId, sessionIds] of [...newcomers.entries()].slice(0, 6)) {
-        const ordered = sessionIds.sort((a, b) => (sessions.byId[b]?.updatedAt ?? 0) - (sessions.byId[a]?.updatedAt ?? 0)).slice(0, 9);
+        const ordered = sessionIds.sort((a, b) => (sessions.byId[b]?.updatedAt ?? 0) - (sessions.byId[a]?.updatedAt ?? 0));
         const cards = ordered.map((sessionId, index2) => ({
           boardId: INBOX_BOARD_ID,
           sessionId,
@@ -14448,7 +14631,7 @@ function CanvasInner(props) {
           createdAt: Date.now()
         }));
         if (cards.length === 0) continue;
-        const rect = fitRect(cards);
+        const rect = fitRect(cards, boxes);
         const batch = {};
         for (const card of cards) batch[newCardId()] = card;
         canvas.addCards(batch);
@@ -14635,7 +14818,7 @@ function CanvasInner(props) {
     const onUp = () => {
       window.removeEventListener("pointermove", onMove);
       window.removeEventListener("pointerup", onUp);
-      window.removeEventListener("pointercancel", onUp);
+      window.removeEventListener("pointercancel", onCancel);
       setLiveFrame(null);
       const clamped = { ...next };
       if (clamped.width < MIN_FRAME_WIDTH) {
@@ -14646,11 +14829,21 @@ function CanvasInner(props) {
         if (movesNorth) clamped.y = start2.y + start2.height - MIN_FRAME_HEIGHT;
         clamped.height = MIN_FRAME_HEIGHT;
       }
+      const collision = Object.entries(frameRects).some(([id2, other]) => id2 !== groupId && rectsOverlap(clamped, other));
+      if (collision) return;
+      if (clamped.width === start2.width && clamped.height === start2.height && clamped.x === start2.x && clamped.y === start2.y) return;
+      setFrameManual(groupId, true);
       canvas.setWsFrameRect(groupId, frameRect(clamped));
+    };
+    const onCancel = () => {
+      window.removeEventListener("pointermove", onMove);
+      window.removeEventListener("pointerup", onUp);
+      window.removeEventListener("pointercancel", onCancel);
+      setLiveFrame(null);
     };
     window.addEventListener("pointermove", onMove);
     window.addEventListener("pointerup", onUp);
-    window.addEventListener("pointercancel", onUp);
+    window.addEventListener("pointercancel", onCancel);
   };
   const glowOf = (sessionId) => {
     const status = statusById.get(sessionId);
@@ -14673,6 +14866,7 @@ function CanvasInner(props) {
         sessionId: card.sessionId,
         title: renamedTitles[card.sessionId] ?? summary?.displayTitle ?? card.sessionId,
         lamp,
+        archived: archivedSessions.has(card.sessionId),
         stamp: summary?.updatedAt ?? 0,
         ...summary?.updatedAt !== void 0 ? { updatedAt: summary.updatedAt } : {},
         ...previews[card.sessionId] !== void 0 ? { preview: previews[card.sessionId] } : {},
@@ -14680,15 +14874,7 @@ function CanvasInner(props) {
       });
     }
     return rows;
-  }, [visibleCards, sessions, renamedTitles, previews, pinnedSessions, statusById, alertById, finishedById]);
-  const focusCard = (0, import_react13.useCallback)((cardId) => {
-    const slot = cardLayout[cardId];
-    const card = visibleCards[cardId];
-    const point = slot ?? (card === void 0 ? void 0 : { x: card.x, y: card.y });
-    setSelectedIds([cardId]);
-    if (point === void 0) return;
-    setCenter(point.x + CARD_W / 2, point.y + CARD_H / 2, { zoom: getZoom(), duration: 320 });
-  }, [cardLayout, visibleCards, setCenter, getZoom, setSelectedIds]);
+  }, [visibleCards, sessions, renamedTitles, previews, pinnedSessions, archivedSessions, statusById, alertById, finishedById]);
   const liveNodes = (0, import_react13.useMemo)(() => {
     const wsColors = canvasState.global?.wsColors ?? {};
     const frameNodes = Object.entries(frameRects).map(([groupId, rect]) => {
@@ -14701,6 +14887,7 @@ function CanvasInner(props) {
           workspaceId: groupId,
           title: renamedWorkspaces[groupId] ?? wsTitles.get(groupId) ?? t("frame.unknown"),
           count: members.length,
+          archivedCount: members.filter((id2) => archivedSessions.has(visibleCards[id2]?.sessionId ?? "")).length,
           width: rect.width,
           height: rect.height,
           // Workspace colours are not used any more: frames keep their default look.
@@ -14736,7 +14923,8 @@ function CanvasInner(props) {
         sessionId: card.sessionId,
         title: renamedTitles[card.sessionId] ?? summary?.displayTitle ?? card.sessionId,
         running: status?.running ?? summary?.running ?? false,
-        ghost: summary === void 0,
+        ghost: summary === void 0 && !archivedSessions.has(card.sessionId),
+        archived: archivedSessions.has(card.sessionId),
         updatedAt: summary?.updatedAt,
         ...previews[card.sessionId] !== void 0 ? { preview: previews[card.sessionId] } : {},
         waiting: status !== void 0 ? status.pendingInteraction !== void 0 : summary?.pendingInteraction !== void 0,
@@ -14789,6 +14977,7 @@ function CanvasInner(props) {
         data: {
           workspaceId: groupId,
           count: folded.length,
+          archivedCount: folded.filter((id2) => archivedSessions.has(visibleCards[id2]?.sessionId ?? "")).length,
           ...busy ? { busy: true } : {},
           ...topSessionId !== void 0 && sessions.byId[topSessionId] !== void 0 ? { topTitle: sessions.byId[topSessionId].displayTitle } : {},
           onOpen: () => {
@@ -14799,7 +14988,7 @@ function CanvasInner(props) {
       };
     });
     return [...frameNodes, ...cardNodes, ...stackNodes];
-  }, [frameRects, folderLayouts, foldedCards, foldedSet, cardLayout, draggingCardId, membersByGroup, wsTitles, visibleCards, canvasState.digests, canvasState.global, sessions, statusById, alertById, finishedById, interruptedById, draftSessions, previews, pinnedSessions, renamedTitles, renamedWorkspaces, liveSelectedIds, batchMode, batchPicks, locale]);
+  }, [frameRects, folderLayouts, foldedCards, foldedSet, cardLayout, draggingCardId, membersByGroup, wsTitles, visibleCards, canvasState.digests, canvasState.global, sessions, statusById, alertById, finishedById, interruptedById, draftSessions, previews, pinnedSessions, archivedSessions, renamedTitles, renamedWorkspaces, liveSelectedIds, batchMode, batchPicks, locale]);
   const sessionIdToCardId = (0, import_react13.useMemo)(() => {
     const index2 = /* @__PURE__ */ new Map();
     for (const [cardId, card] of Object.entries(visibleCards)) {
@@ -15233,6 +15422,10 @@ function CanvasInner(props) {
     });
   };
   const openSession = (sessionId) => {
+    if (archivedSessions.has(sessionId)) {
+      showToast(t("toast.archivedCannotOpen"));
+      return;
+    }
     sessionActivity.acknowledge(sessionId);
     if (openSessionInUi(sessionId)) closeMapPanel();
   };
@@ -15315,6 +15508,7 @@ function CanvasInner(props) {
         ...previews[card.sessionId] !== void 0 ? { preview: previews[card.sessionId] } : {},
         ...summary?.updatedAt !== void 0 ? { updatedAt: summary.updatedAt } : {},
         running: statusById.get(card.sessionId)?.running ?? summary?.running ?? false,
+        archived: archivedSessions.has(card.sessionId),
         ...glow !== void 0 ? { glow } : {},
         ...draftSessions.has(card.sessionId) ? { pendingDraft: true } : {},
         ...interruptedById.has(card.sessionId) ? { interrupted: true } : {},
@@ -15340,6 +15534,19 @@ function CanvasInner(props) {
       showToast(`${t("toast.pinFailed")}${String(error)}`);
     });
   };
+  const unarchiveSession = async (sessionId) => {
+    const ui = uiWorkspaceService();
+    if (ui === void 0 || typeof ui.unarchiveSession !== "function") {
+      showToast(t("toast.needUiWorkspace"));
+      return;
+    }
+    try {
+      await ui.unarchiveSession(sessionId);
+      showToast(t("toast.unarchived"));
+    } catch (error) {
+      showToast(`${t("toast.unarchiveFailed")}${String(error)}`);
+    }
+  };
   const runActions = async (kind, cardIds) => {
     if (cardIds.length === 0) return;
     const sessionIds = cardIds.map((cardId) => visibleCards[cardId]?.sessionId).filter((sessionId) => sessionId !== void 0);
@@ -15350,7 +15557,7 @@ function CanvasInner(props) {
       else await trashSessions(sessionIds, () => {
         showToast(t("toast.stopping"));
       });
-      for (const cardId of cardIds) canvas.removeCard(cardId);
+      if (kind === "delete") for (const cardId of cardIds) canvas.removeCard(cardId);
       showToast(t(kind === "archive" ? "toast.archived" : "toast.deleted", { n: String(sessionIds.length) }));
     } catch (error) {
       showToast(`${t(kind === "archive" ? "toast.archiveFailed" : "toast.deleteFailed")}${String(error)}`);
@@ -15451,7 +15658,12 @@ function CanvasInner(props) {
       placed.push(card);
     });
     if (placed.length > 0) canvas.addCards(added);
-    const rect = placed.length > 0 ? fitRect(placed) : { x: snap(atX) - FRAME_PAD, y: snap(atY) - FRAME_PAD - FRAME_LABEL_H, width: 400, height: 260 };
+    const obstacles = Object.entries(frameRects).filter(([id2]) => id2 !== workspaceId).map(([, rect2]) => rect2);
+    let rect = placed.length > 0 ? fitRect(placed, obstacles) : { x: snap(atX) - FRAME_PAD, y: snap(atY) - FRAME_PAD - FRAME_LABEL_H, width: MIN_FRAME_WIDTH, height: MIN_FRAME_HEIGHT };
+    if (obstacles.some((other) => rectsOverlap(rect, other))) {
+      rect = { ...rect, y: snap(Math.max(...obstacles.map((other) => other.y + other.height)) + GAP_Y) };
+    }
+    setFrameManual(workspaceId, false);
     canvas.setWsFrameRect(workspaceId, rect);
   };
   const importSession = (sessionId, atX, atY) => {
@@ -15519,6 +15731,7 @@ function CanvasInner(props) {
     }
   };
   const removeGroup = (groupId) => {
+    setFrameManual(groupId, false);
     for (const cardId of membersByGroup.get(groupId) ?? []) canvas.removeCard(cardId);
     const framesNext = { ...wsFrames };
     delete framesNext[groupId];
@@ -15692,10 +15905,11 @@ function CanvasInner(props) {
       items.push({
         key: "archive",
         icon: "archive",
-        label: t("menu.archive"),
+        label: card !== void 0 && archivedSessions.has(card.sessionId) ? t("menu.unarchive") : t("menu.archive"),
         onPick: () => {
           close();
-          void runActions("archive", [cardId]);
+          if (card !== void 0 && archivedSessions.has(card.sessionId)) void unarchiveSession(card.sessionId);
+          else void runActions("archive", [cardId]);
         }
       });
       items.push({
@@ -15793,6 +16007,15 @@ function CanvasInner(props) {
         }
       });
       items.push({
+        key: "auto-size",
+        label: t(manualFrames.has(groupId) ? "frame.autoSize" : "frame.autoSizeActive"),
+        disabled: !manualFrames.has(groupId),
+        onPick: () => {
+          setFrameManual(groupId, false);
+          close();
+        }
+      });
+      items.push({
         key: "remove-group",
         icon: "delete",
         label: t("menu.removeGroup"),
@@ -15813,14 +16036,16 @@ function CanvasInner(props) {
       ...searchable ? { searchable } : {},
       items
     };
-  }, [menu, workspaces.items, sessions, boardSessionIds, wsFrames, wsTitles, canvasState.cards, canvasState.edges, canvasState.digests, pinnedSessions, locale]);
+  }, [menu, workspaces.items, sessions, boardSessionIds, wsFrames, wsTitles, canvasState.cards, canvasState.edges, canvasState.digests, pinnedSessions, archivedSessions, manualFrames, locale]);
   const savedCamera = canvas.savedCamera(INBOX_BOARD_ID);
   const hasContent = Object.keys(visibleCards).length > 0 || Object.keys(wsFrames).length > 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
     "div",
     {
       ref: wrapperRef,
       className: `${talk_map_default["canvas"]}${connecting ? ` ${talk_map_default["canvasConnecting"]}` : ""}`,
+      "data-status-rail-open": statusRailOpen ? "1" : "0",
+      style: { ["--rail-card-w"]: `${CARD_W}px` },
       onDoubleClick: (event) => {
         const target = event.target;
         const nodeElement = target.closest(".react-flow__node");
@@ -15840,7 +16065,7 @@ function CanvasInner(props) {
         if (menu !== null) setMenu(null);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
           index,
           {
             nodes,
@@ -15908,15 +16133,15 @@ function CanvasInner(props) {
             proOptions: { hideAttribution: true },
             ...savedCamera !== void 0 ? { defaultViewport: savedCamera } : { fitView: hasContent },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Background, { variant: BackgroundVariant.Dots, gap: GRID, size: 1 }),
-              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(Controls, { showInteractive: false, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ControlButton, { title: t("map.zoom100"), onClick: () => {
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Background, { variant: BackgroundVariant.Dots, gap: GRID, size: 1 }),
+              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Controls, { showInteractive: false, className: talk_map_default["mapControls"], children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ControlButton, { title: t("map.zoom100"), onClick: () => {
                 void zoomTo(1, { duration: 200 });
-              }, children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["zoomResetLabel"], children: "1:1" }) }) })
+              }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["zoomResetLabel"], children: "1:1" }) }) })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(StatusRail, { entries: statusEntries, cardWidth: CARD_W, onFocus: focusCard }),
-        batchMode ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(StatusRail, { entries: statusEntries, cardWidth: CARD_W, onOpenSession: openSession, onOpenChange: setStatusRailOpen }),
+        batchMode ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
           BatchBar,
           {
             count: selectedCardIds.length,
@@ -15933,14 +16158,14 @@ function CanvasInner(props) {
             }
           }
         ) : null,
-        hasContent ? null : /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.empty") }),
-        menuState !== null ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ContextMenu, { menu: menuState, onClose: () => {
+        hasContent ? null : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.empty") }),
+        menuState !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ContextMenu, { menu: menuState, onClose: () => {
           setMenu(null);
         } }, menu?.view ?? "root") : null,
-        pendingSpawn !== null ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(SpawnPreview, { pending: pendingSpawn, onClose: () => {
+        pendingSpawn !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SpawnPreview, { pending: pendingSpawn, onClose: () => {
           setPendingSpawn(null);
         } }) : null,
-        digestTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        digestTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
           DigestDialog,
           {
             title: digestTarget.title,
@@ -15950,7 +16175,7 @@ function CanvasInner(props) {
             }
           }
         ) : null,
-        renameTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        renameTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
           RenameDialog,
           {
             target: renameTarget,
@@ -15967,7 +16192,7 @@ function CanvasInner(props) {
             }
           }
         ) : null,
-        drawer !== null ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        drawer !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
           StackDrawer,
           {
             workspaceTitle: renamedWorkspaces[drawer.groupId] ?? wsTitles.get(drawer.groupId) ?? t("frame.unknown"),
@@ -15992,16 +16217,16 @@ function CanvasInner(props) {
             onClose: closeDrawer
           }
         ) : null,
-        toast !== null ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["toast"], children: toast }) : null
+        toast !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["toast"], children: toast }) : null
       ]
     }
   );
 }
 function BatchBar(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["batchBar"], role: "toolbar", "aria-label": t("batch.title"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["batchCount"], children: t("batch.count", { n: String(props.count) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["batchSpace"] }),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: talk_map_default["batchBar"], role: "toolbar", "aria-label": t("batch.title"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["batchCount"], children: t("batch.count", { n: String(props.count) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["batchSpace"] }),
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       "button",
       {
         type: "button",
@@ -16011,7 +16236,7 @@ function BatchBar(props) {
         children: t("batch.archive")
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       "button",
       {
         type: "button",
@@ -16021,7 +16246,7 @@ function BatchBar(props) {
         children: t("batch.delete")
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
       "button",
       {
         type: "button",
@@ -16042,11 +16267,11 @@ function MapCanvas(props) {
     return canvas.connect();
   }, []);
   if (canvasState.phase === "error") {
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["emptyHint"], children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: talk_map_default["emptyHint"], children: [
       t("map.loadError"),
       " ",
       canvasState.error,
-      /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
         "button",
         {
           type: "button",
@@ -16061,17 +16286,17 @@ function MapCanvas(props) {
     ] }) });
   }
   if (canvasState.phase !== "ready") {
-    return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.loading") }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.loading") }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ReactFlowProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(CanvasInner, { ...props }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ReactFlowProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(CanvasInner, { ...props }) });
 }
 
 // src/client/MapOverlay.tsx
-var import_jsx_runtime17 = require("react/jsx-runtime");
+var import_jsx_runtime18 = require("react/jsx-runtime");
 function FontSizeButtons() {
   const step2 = (0, import_react15.useSyncExternalStore)(fontScale.subscribe, fontScale.getSnapshot);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: talk_map_default["fontGroup"], role: "group", "aria-label": t("font.group"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["fontGroup"], role: "group", "aria-label": t("font.group"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
       "button",
       {
         type: "button",
@@ -16083,12 +16308,12 @@ function FontSizeButtons() {
           fontScale.decrease();
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["fontGlyphSmall"], children: "A" }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["fontSign"], children: "−" })
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontGlyphSmall"], children: "A" }),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontSign"], children: "−" })
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
       "button",
       {
         type: "button",
@@ -16100,12 +16325,12 @@ function FontSizeButtons() {
           fontScale.increase();
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["fontGlyphLarge"], children: "A" }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["fontSign"], children: "+" })
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontGlyphLarge"], children: "A" }),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontSign"], children: "+" })
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
       "button",
       {
         type: "button",
@@ -16122,10 +16347,10 @@ function FontSizeButtons() {
   ] });
 }
 function BackIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M15 5l-7 7 7 7" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M15 5l-7 7 7 7" }) });
 }
 function CloseIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("path", { d: "M6 6l12 12M18 6L6 18" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M6 6l12 12M18 6L6 18" }) });
 }
 function MapOverlay(props) {
   (0, import_react15.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
@@ -16150,7 +16375,7 @@ function MapOverlay(props) {
       window.removeEventListener("keydown", onKeyDown, { capture: true });
     };
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
     "div",
     {
       className: talk_map_default["panel"],
@@ -16159,8 +16384,8 @@ function MapOverlay(props) {
       "aria-label": t("map.title"),
       style: { "--tm-font-step": `${fontStep}px` },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: talk_map_default["header"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["header"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
             "button",
             {
               type: "button",
@@ -16169,17 +16394,17 @@ function MapOverlay(props) {
               "aria-label": t("map.back"),
               onClick: closeMapPanel,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(BackIcon, {}),
-                /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { children: t("map.back") })
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(BackIcon, {}),
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: t("map.back") })
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["headerSpace"] }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(GlobalSearch, { onOpenSession: (sessionId) => {
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["headerSpace"] }),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GlobalSearch, { onOpenSession: (sessionId) => {
             openSessionInUi(sessionId);
           } }),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(FontSizeButtons, {}),
-          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(FontSizeButtons, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
             "button",
             {
               type: "button",
@@ -16187,11 +16412,11 @@ function MapOverlay(props) {
               title: t("map.close"),
               "aria-label": t("map.close"),
               onClick: closeMapPanel,
-              children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(CloseIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CloseIcon, {})
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(MapCanvas, { ...props })
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(MapCanvas, { ...props })
       ]
     }
   );
@@ -16199,12 +16424,12 @@ function MapOverlay(props) {
 
 // src/client/MapToggleButton.tsx
 var import_react16 = require("react");
-var import_jsx_runtime18 = require("react/jsx-runtime");
+var import_jsx_runtime19 = require("react/jsx-runtime");
 function MapIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("svg", { className: talk_map_default["toggleIcon"], viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M9 4v14" }),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M15 6v14" })
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { className: talk_map_default["toggleIcon"], viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("path", { d: "M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("path", { d: "M9 4v14" }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("path", { d: "M15 6v14" })
   ] });
 }
 function MapToggleButton(props) {
@@ -16216,7 +16441,7 @@ function MapToggleButton(props) {
   }, [wide]);
   const classNames = [wide ? talk_map_default["toggleRow"] : talk_map_default["toggleButton"]];
   if (open) classNames.push(talk_map_default["toggleButtonActive"]);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
     "button",
     {
       type: "button",
@@ -16229,8 +16454,8 @@ function MapToggleButton(props) {
         mapUi.toggle();
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(MapIcon, {}),
-        wide ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["toggleLabel"], children: t("map.toggle") }) : null
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(MapIcon, {}),
+        wide ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: talk_map_default["toggleLabel"], children: t("map.toggle") }) : null
       ]
     }
   );

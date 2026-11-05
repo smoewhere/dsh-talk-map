@@ -13,7 +13,9 @@
  */
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore } from 'react'
 import { relativeTime, LAMP_CHIP, type CardGlow } from './SessionCard.tsx'
+import { ArchivedBadge } from './ArchivedBadge.tsx'
 import { t } from './i18n.ts'
+import { createRailGesture } from './rail-gesture.ts'
 import styles from './talk-map.module.css'
 
 export type StatusLamp = CardGlow
@@ -28,13 +30,16 @@ export interface StatusRailEntry {
   updatedAt?: number
   preview?: string
   pinned?: boolean
+  archived?: boolean
 }
 
 export interface StatusRailProps {
   entries: readonly StatusRailEntry[]
   /** The board's card width, so a rail card is exactly as wide as a map card. */
   cardWidth: number
-  onFocus: (cardId: string) => void
+  onOpenSession: (sessionId: string) => void
+  /** Synchronizes the persisted initial state and subsequent open/closed changes. */
+  onOpenChange?: (open: boolean) => void
 }
 
 interface DragState {
@@ -130,8 +135,12 @@ export function StatusRail(props: StatusRailProps): React.JSX.Element {
   const panelRef = useRef<HTMLDivElement | null>(null)
   const orderRef = useRef(order)
   orderRef.current = order
-  const dragRef = useRef<DragState | null>(null)
-  dragRef.current = drag
+  const pointerDragRef = useRef<DragState | null>(null)
+  const gestureRef = useRef(createRailGesture())
+
+  useEffect(() => {
+    props.onOpenChange?.(open)
+  }, [open, props.onOpenChange])
 
   const signature = useMemo(
     () => props.entries.map(entry => `${entry.cardId}:${entry.lamp}:${entry.stamp}`).join('|'),
@@ -205,10 +214,9 @@ export function StatusRail(props: StatusRailProps): React.JSX.Element {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order, drag === null])
 
-  // Pointer drag: pick the row, follow the pointer, open a gap both ways, commit on drop.
+  // Track a pending press without rendering a drag until it crosses the threshold.
   useEffect(() => {
-    if (drag === null) return
-    const { cardId } = drag
+    const gesture = gestureRef.current
 
     const indexUnder = (pointerY: number): number => {
       const ids = orderRef.current
@@ -228,15 +236,20 @@ export function StatusRail(props: StatusRailProps): React.JSX.Element {
     }
 
     const onMove = (event: PointerEvent): void => {
-      const hover = indexUnder(event.clientY)
-      setDrag(current => (current === null
-        ? null
-        : { ...current, pointerY: event.clientY, hover }))
+      if (!gesture.move(event)) return
+      const current = pointerDragRef.current
+      if (current === null) return
+      if (event.cancelable) event.preventDefault()
+      const next = { ...current, pointerY: event.clientY, hover: indexUnder(event.clientY) }
+      pointerDragRef.current = next
+      setDrag(next)
     }
 
-    const onUp = (): void => {
-      const current = dragRef.current
-      if (current !== null && current.hover !== current.origin) {
+    const onEnd = (event: PointerEvent): void => {
+      const result = gesture.end(event.pointerId, event.type === 'pointercancel')
+      if (result === null) return
+      const current = pointerDragRef.current
+      if (result.commit && current !== null && current.hover !== current.origin) {
         setOrder(existing => {
           const from = existing.indexOf(current.cardId)
           if (from < 0) return existing
@@ -248,35 +261,48 @@ export function StatusRail(props: StatusRailProps): React.JSX.Element {
           return next
         })
       }
+      pointerDragRef.current = null
       prevTops.current.clear()
       setDrag(null)
     }
 
-    window.addEventListener('pointermove', onMove)
-    window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
+    const onBlur = (): void => {
+      gesture.cancel()
+      pointerDragRef.current = null
+      prevTops.current.clear()
+      setDrag(null)
+    }
+
+    window.addEventListener('pointermove', onMove, { passive: false })
+    window.addEventListener('pointerup', onEnd)
+    window.addEventListener('pointercancel', onEnd)
+    window.addEventListener('blur', onBlur)
     return () => {
       window.removeEventListener('pointermove', onMove)
-      window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
+      window.removeEventListener('pointerup', onEnd)
+      window.removeEventListener('pointercancel', onEnd)
+      window.removeEventListener('blur', onBlur)
+      gesture.cancel()
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [drag === null])
+  }, [])
 
   const toggle = useCallback(() => {
     setOpenState(!openSnapshot())
   }, [])
 
   const beginDrag = useCallback((event: React.PointerEvent<HTMLDivElement>, cardId: string) => {
-    if (event.button !== 0) return
+    if (event.button !== 0 || !event.isPrimary) return
     const element = slotsRef.current.get(cardId)
-    if (element === undefined) return
+    if (element === undefined || !gestureRef.current.begin({
+      pointerId: event.pointerId,
+      clientX: event.clientX,
+      clientY: event.clientY,
+    })) return
     const rect = element.getBoundingClientRect()
     // The floating copy is a direct child of .statusRail (outside the transformed panel),
     // so position:fixed there is viewport-relative — use viewport numbers, not panel ones.
-    event.preventDefault()
     const index = Math.max(0, orderRef.current.indexOf(cardId))
-    setDrag({
+    pointerDragRef.current = {
       cardId,
       origin: index,
       hover: index,
@@ -286,7 +312,7 @@ export function StatusRail(props: StatusRailProps): React.JSX.Element {
       left: rect.left,
       baseTop: rect.top,
       width: rect.width,
-    })
+    }
   }, [])
 
   const renderCard = (entry: StatusRailEntry, floating: boolean): React.JSX.Element => (
@@ -299,14 +325,22 @@ export function StatusRail(props: StatusRailProps): React.JSX.Element {
         if (event.key !== 'Enter' && event.key !== ' ') return
         event.preventDefault()
         event.stopPropagation()
-        props.onFocus(entry.cardId)
+        props.onOpenSession(entry.sessionId)
       }}
       onPointerDown={floating ? undefined : (event) => { beginDrag(event, entry.cardId) }}
-      onClick={() => { if (!floating && dragRef.current === null) props.onFocus(entry.cardId) }}
+      onClick={floating ? undefined : (event) => {
+        event.stopPropagation()
+        if (gestureRef.current.consumeClick()) {
+          event.preventDefault()
+          return
+        }
+        props.onOpenSession(entry.sessionId)
+      }}
       title={entry.title}
     >
       <div className={styles['cardTop']}>
         <span className={styles['cardTitle']}>{entry.title}</span>
+        {entry.archived === true ? <ArchivedBadge /> : null}
       </div>
       {entry.preview !== undefined && entry.preview !== ''
         ? <div className={styles['cardSummary']}>{entry.preview}</div>

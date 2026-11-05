@@ -680,6 +680,13 @@
         sync()
         return Promise.resolve()
       },
+      unarchiveSession: (sessionId) => {
+        log('ui.unarchiveSession', { sessionId })
+        archivedSessionIds = archivedSessionIds.filter(id => id !== sessionId)
+        workspacesState = buildWorkspaces()
+        sync()
+        return Promise.resolve()
+      },
     },
     // Panel navigation: the map registers a `main` entry and selects it here,
     // exactly like the recycle bin / Plugins page do in the real shell.

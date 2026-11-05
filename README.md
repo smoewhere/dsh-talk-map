@@ -11,7 +11,8 @@ A visual conversation map plugin for DeepSeek Harness (dsh): every session becom
 ![Cards connected by links, with running / waiting / unread lamps](https://raw.githubusercontent.com/Da0Mine/dsh-talk-map/main/docs/screenshots/cards-and-links.png)
 
 - **Spatial memory instead of working memory**: free placement + grid snapping, and nothing ever rearranges your cards — if you remember "that conversation was bottom-left", it stays bottom-left. Designed for ADHD users, useful for everyone.
-- **Folders stay readable**: a workspace becomes a frame that auto-expands or folds its overflow into a stack cell you can open as a drawer; pinned cards stay in front.
+- **Folders stay readable**: frames grow without covering neighbors, up to six slots by default. Overflow occupies the last slot: seven conversations show five cards and a “+2” stack that opens a drawer. Pinned cards stay in front. Resizing switches a frame to manual sizing; its context menu restores automatic sizing. The sizing preference is saved in the current browser.
+- **Archives stay identifiable**: archived cards keep their positions and links, carry an Archived badge, and contribute to archive counts on frames and stacks. Their context menu offers Unarchive and Delete; restore a conversation before opening it.
 - **Double-click to chat**: double-click empty canvas to start a new session; the card is born exactly where you clicked.
 - **Draw an edge to fork**: drag a line from a card onto empty space, preview (and edit) the context digest to inject, confirm — a new session starts *knowing* the old conversation.
 - **Card front = resume surface**: title, the last thing you said, relative time and a status lamp (running / finished / unread / waiting / interrupted). One glance tells you what to do next.
@@ -19,7 +20,7 @@ A visual conversation map plugin for DeepSeek Harness (dsh): every session becom
 - **Automatic digests**: a three-field digest (summary / key findings / next step) is generated on demand through your deployment's default model; hit ⟳ on a card to regenerate.
 - **Bilingual interface**: the map's own copy renders in Chinese or English. The pill in the map header cycles Auto → 中文 → English; Auto follows dsh's own language, and the choice is remembered across restarts.
 
-- **Status rail**: a collapsible strip on the left edge lists only the cards that carry a lamp (running / waiting / unread / interrupted). A card whose status changes jumps to the top, the order is yours to drag, a card that settles drops out, and the rail remembers whether you left it open.
+- **Status rail**: a collapsible strip on the left edge lists only cards with a lamp (running / waiting / unread / interrupted). Click or press Enter / Space to open the conversation, or drag to reorder. Changed statuses rise to the top; cleared statuses leave the list. The rail remembers its open state, and the map controls move aside when it opens.
 
 ## Install
 

@@ -1174,9 +1174,17 @@ try {
   await clickMenuItem('归档')
   const archiveLog = await page.evaluate(() => window.__harness.log.filter(e => e.kind === 'ui.archiveSession').at(-1))
   const afterArchive = await page.evaluate(() => document.querySelectorAll('.react-flow__node[data-id^="card-"]').length)
-  check('右键归档调用 archiveSession 并移出地图',
-    archiveLog?.detail?.sessionId === 's10' && afterArchive === beforeArchive - 1,
-    `${JSON.stringify(archiveLog?.detail)} / ${beforeArchive} → ${afterArchive}`)
+  const archivedMark = await page.evaluate(() => document.querySelector('[data-talkmap-session="s10"] [data-talkmap-archived="1"]') !== null)
+  check('右键归档调用 archiveSession，保留地图卡片并显示归档标识',
+    archiveLog?.detail?.sessionId === 's10' && afterArchive === beforeArchive && archivedMark,
+    `${JSON.stringify(archiveLog?.detail)} / ${beforeArchive} → ${afterArchive} / badge=${archivedMark}`)
+  const restorePoint = await cardPoint('s10')
+  await page.mouse.click(restorePoint.x, restorePoint.y, { button: 'right' })
+  await page.waitForTimeout(400)
+  await clickMenuItem('取消归档')
+  const unarchiveLog = await page.evaluate(() => window.__harness.log.filter(e => e.kind === 'ui.unarchiveSession').at(-1))
+  const restoredMark = await page.evaluate(() => document.querySelector('[data-talkmap-session="s10"] [data-talkmap-archived="1"]') !== null)
+  check('取消归档调用 unarchiveSession 并清除标识', unarchiveLog?.detail?.sessionId === 's10' && !restoredMark, JSON.stringify(unarchiveLog?.detail))
 
   const deletePoint = await cardPoint('s9')
   await page.mouse.click(deletePoint.x, deletePoint.y, { button: 'right' })
