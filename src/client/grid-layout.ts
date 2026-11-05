@@ -32,6 +32,9 @@ export const MIN_FRAME_WIDTH = CARD_W + FRAME_PAD * 2
 /** …and at least one row. */
 export const MIN_FRAME_HEIGHT = TOP_INSET + CARD_H + FRAME_PAD
 
+/** Automatic growth stops here; manual frames may hold more slots. */
+export const AUTO_FRAME_CARD_LIMIT = 6
+
 export interface Point {
   x: number
   y: number
@@ -71,10 +74,9 @@ export function contentHeight(count: number, cols: number): number {
 }
 
 /**
- * The rect a frame actually renders at. The stored rect is the user's wish;
- * the only clamps are "at least one column" and "at least one row" — the folder
- * does NOT grow to fit its contents any more. Cards that do not fit collapse
- * into the stack cell instead (the caller decides that with `capacityFor`).
+ * Normalize stored or manually chosen geometry to at least one column and row.
+ * Automatic frames additionally use autoFrameRect; keeping these responsibilities
+ * separate lets a manual resize retain its chosen overflow capacity.
  */
 export function frameRect(stored: FrameGeometry): FrameGeometry {
   return {
@@ -83,6 +85,62 @@ export function frameRect(stored: FrameGeometry): FrameGeometry {
     width: Math.max(MIN_FRAME_WIDTH, stored.width),
     height: Math.max(MIN_FRAME_HEIGHT, stored.height),
   }
+}
+
+/**
+ * Grow right/down only, up to six slots, without pushing neighboring frames.
+ * Existing dimensions remain a lower bound, including larger manual sizes.
+ * Try narrow grids too so a neighbor on one axis need not block the other.
+ */
+export function autoFrameRect(
+  stored: FrameGeometry,
+  count: number,
+  obstacles: readonly FrameGeometry[] = [],
+): FrameGeometry {
+  const base = frameRect(stored)
+  const target = Math.max(1, Math.min(AUTO_FRAME_CARD_LIMIT, Math.ceil(count) || 1))
+  if (capacityFor(base) >= target) return base
+
+  const preferredCols = Math.min(3, target)
+  const originalOverlaps = obstacles.map(obstacle => overlapArea(base, obstacle))
+  let best = base
+  let bestCapacity = Math.min(target, capacityFor(base))
+  // A small area premium favors a readable horizontal grid over a tall stack.
+  // Substantially smaller grids can still win (e.g. four cards in two columns).
+  const cost = (rect: FrameGeometry) => rect.width * rect.height
+    * (1 + 0.1 * Math.max(0, preferredCols - colsForWidth(rect.width)))
+  let bestCost = cost(base)
+
+  for (let cols = 1; cols <= preferredCols; cols += 1) {
+    const width = Math.max(base.width, MIN_FRAME_WIDTH + (cols - 1) * (CARD_W + GAP_X))
+    const actualCols = colsForWidth(width)
+    const maxRows = Math.ceil(target / actualCols)
+    for (let rows = 1; rows <= maxRows; rows += 1) {
+      const candidate = {
+        x: base.x,
+        y: base.y,
+        width,
+        height: Math.max(base.height, contentHeight(rows * actualCols, actualCols)),
+      }
+      // Check the whole candidate, including diagonal neighbors. If old data
+      // already overlaps, allow it to remain but never deepen that overlap.
+      if (obstacles.some((obstacle, index) => overlapArea(candidate, obstacle) > originalOverlaps[index])) continue
+      const capacity = Math.min(target, capacityFor(candidate))
+      const candidateCost = cost(candidate)
+      if (capacity > bestCapacity || (capacity === bestCapacity && candidateCost < bestCost)) {
+        best = candidate
+        bestCapacity = capacity
+        bestCost = candidateCost
+      }
+    }
+  }
+  return best
+}
+
+function overlapArea(a: FrameGeometry, b: FrameGeometry): number {
+  const width = Math.max(0, Math.min(a.x + a.width, b.x + b.width) - Math.max(a.x, b.x))
+  const height = Math.max(0, Math.min(a.y + a.height, b.y + b.height) - Math.max(a.y, b.y))
+  return width * height
 }
 
 /** Which slot a point falls on — a hit-test helper for callers, not an order. */

@@ -6,12 +6,14 @@
  */
 import type { NodeProps, Node } from '@xyflow/react'
 import { t } from './i18n.ts'
+import { ArchivedBadge } from './ArchivedBadge.tsx'
 import styles from './talk-map.module.css'
 
 export interface StackNodeData extends Record<string, unknown> {
   workspaceId: string
   /** How many cards are folded into this cell. */
   count: number
+  archivedCount?: number
   /** Face of the stack: the newest folded card's title. */
   topTitle?: string
   /** Something inside the stack has a status of its own (keeps the cell lit). */
@@ -45,6 +47,7 @@ export function StackNode(props: NodeProps<StackNodeType>): React.JSX.Element {
       <span className={styles['stackSheetMid']} />
       <div className={styles['stackFace']}>
         <span className={styles['stackFaceTitle']}>{data.topTitle ?? t('frame.unknown')}</span>
+        {(data.archivedCount ?? 0) > 0 ? <ArchivedBadge count={data.archivedCount} /> : null}
         <span className={[styles['stackBadge'], data.busy === true ? (styles['stackBadgeBusy'] ?? '') : ''].filter(Boolean).join(' ')}>+{data.count}</span>
       </div>
     </div>

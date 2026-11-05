@@ -7,6 +7,7 @@
 import { Handle, Position, type NodeProps, type Node } from '@xyflow/react'
 import { canvas } from './canvas-store.ts'
 import { t } from './i18n.ts'
+import { ArchivedBadge } from './ArchivedBadge.tsx'
 import styles from './talk-map.module.css'
 
 /** Which lamp the card wears; see the priority order in MapCanvas. */
@@ -77,6 +78,8 @@ export interface SessionCardData extends Record<string, unknown> {
   current?: boolean
   /** Pinned in the sidebar: shown at full strength, with a pin mark. */
   pinned?: boolean
+  /** Still addressable, but stored in the workspace archive. */
+  archived?: boolean
 }
 
 export type SessionCardNodeType = Node<SessionCardData, 'sessionCard'>
@@ -117,6 +120,7 @@ export function SessionCardNode(props: NodeProps<SessionCardNodeType>): React.JS
       }}
       style={data.onPick !== undefined ? { cursor: 'pointer' } : undefined}
       data-talkmap-session={data.sessionId}
+      data-talkmap-archived={data.archived === true ? '1' : undefined}
     >
       {/* The conversation the map was opened from, marked like a reticle: four
         * corner brackets instead of a full frame. */}
@@ -157,6 +161,7 @@ export function SessionCardNode(props: NodeProps<SessionCardNodeType>): React.JS
             )
           : null}
         <span className={styles['cardTitle']}>{data.ghost ? t('card.ghostTitle') : data.title}</span>
+        {data.archived === true ? <ArchivedBadge /> : null}
       </div>
       {data.ghost
         ? (

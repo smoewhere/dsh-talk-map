@@ -51,7 +51,7 @@ import { activeLocale, subscribeLocale, t } from './i18n.ts'
 import { talkMapApi, type ApiError } from './api.ts'
 import {
   CARD_H, CARD_W, FRAME_LABEL_H, FRAME_PAD, GAP_X, GAP_Y, MIN_FRAME_HEIGHT, MIN_FRAME_WIDTH,
-  capacityFor, colsForWidth, frameRect, layoutFor, readingOrder, slotIndexAt, slotPoint, visibleCount, type PlacedCard,
+  AUTO_FRAME_CARD_LIMIT, autoFrameRect, capacityFor, colsForWidth, frameRect, layoutFor, readingOrder, slotIndexAt, slotPoint, visibleCount, type PlacedCard,
 } from './grid-layout.ts'
 import { StackDrawer, type StackEntry } from './StackDrawer.tsx'
 import { StackNode, type StackNodeType } from './StackNode.tsx'
@@ -121,18 +121,19 @@ function rectsOverlap(rect: FrameGeometry, other: FrameGeometry): boolean {
   return overlapX > 1 && overlapY > 1
 }
 
-/** Frame rect that fits a set of member cards. */
-function fitRect(members: Card[]): FrameGeometry {
-  const minX = Math.min(...members.map(card => card.x))
-  const minY = Math.min(...members.map(card => card.y))
-  const maxX = Math.max(...members.map(card => card.x + CARD_W))
-  const maxY = Math.max(...members.map(card => card.y + CARD_H))
+/** Reserve a one-slot origin before multiple new groups grow around each other. */
+function seedRect(members: Card[]): FrameGeometry {
   return {
-    x: minX - FRAME_PAD,
-    y: minY - FRAME_PAD - FRAME_LABEL_H,
-    width: maxX - minX + FRAME_PAD * 2,
-    height: maxY - minY + FRAME_PAD * 2 + FRAME_LABEL_H,
+    x: Math.min(...members.map(card => card.x)) - FRAME_PAD,
+    y: Math.min(...members.map(card => card.y)) - FRAME_PAD - FRAME_LABEL_H,
+    width: MIN_FRAME_WIDTH,
+    height: MIN_FRAME_HEIGHT,
   }
+}
+
+/** Initial automatic size, bounded by the same obstacles as subsequent growth. */
+function fitRect(members: Card[], obstacles: readonly FrameGeometry[]): FrameGeometry {
+  return autoFrameRect(seedRect(members), members.length, obstacles)
 }
 
 
@@ -289,6 +290,25 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
   // gesture commits.
   const [draggingCardId, setDraggingCardId] = useState<string | null>(null)
   const [liveFrame, setLiveFrame] = useState<{ groupId: string; rect: FrameGeometry } | null>(null)
+  const [statusRailOpen, setStatusRailOpen] = useState(false)
+  // Sizing mode is a local UI preference, like the rail's open/closed state.
+  const [manualFrames, setManualFrames] = useState<ReadonlySet<string>>(() => {
+    try {
+      const saved: unknown = JSON.parse(localStorage.getItem('dsh.talk-map.manual-frames.v1') ?? '[]')
+      return new Set(Array.isArray(saved) ? saved.filter((id): id is string => typeof id === 'string') : [])
+    } catch { return new Set() }
+  })
+  const setFrameManual = useCallback((groupId: string, manual: boolean): void => {
+    setManualFrames(previous => {
+      if (previous.has(groupId) === manual) return previous
+      const next = new Set(previous)
+      if (manual) next.add(groupId)
+      else next.delete(groupId)
+      try { localStorage.setItem('dsh.talk-map.manual-frames.v1', JSON.stringify([...next])) } catch { /* local preference only */ }
+      return next
+    })
+  }, [])
+  const frameRectsRef = useRef<Record<string, FrameGeometry>>({})
   // Folder currently overlapping another one while being dragged (drop will bounce).
   const [blockedFrame, setBlockedFrame] = useState<string | null>(null)
   // Centre of the card being dragged, in flow coordinates: the folder uses it to
@@ -314,6 +334,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
   const workspacesReady = workspaces.baselinesReady !== false
   /** The sidebar's own pin set — the map mirrors it, it does not own it. */
   const pinnedSessions = useMemo(() => new Set(workspaces.pinnedSessionIds ?? []), [workspaces])
+  const archivedSessions = useMemo(() => new Set(workspaces.archivedSessionIds ?? []), [workspaces])
   /** Sessions that already own a card (import/auto-sync skip these). */
   const boardSessionIds = useMemo(
     () => new Set(Object.values(canvasState.cards).map(card => card.sessionId)),
@@ -340,9 +361,8 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
     for (const [groupId, members] of byGroup) {
       const stored = framesNext[groupId]
       if (stored === undefined && members.length > 0) {
-        // A frame born from cards is sized to fit them once; after that the size
-        // is the user's, and overflow collapses into the stack cell.
-        framesNext[groupId] = fitRect(members)
+        // Reserve all origins before the shared geometry pass grows any group.
+        framesNext[groupId] = seedRect(members)
       } else if (stored !== undefined) {
         framesNext[groupId] = frameRect(stored)
       }
@@ -421,18 +441,27 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
     return index
   }, [visibleCards, sessionWs])
 
-  // Folder geometry as rendered: the stored rect (the user's wish, clamped to
-  // one column / one row) with a live gesture rect on top while a frame is
-  // being moved or resized. The folder does NOT grow to fit its cards any more:
-  // what does not fit collapses into the stack cell at the end of the grid.
+  // Reserve every base frame first, then accept automatic growth in stable
+  // order. Later frames see earlier growth, so two auto frames cannot collide.
   const frameRects = useMemo(() => {
     const out: Record<string, FrameGeometry> = {}
-    for (const [groupId, stored] of Object.entries(wsFrames)) {
-      const base = liveFrame !== null && liveFrame.groupId === groupId ? liveFrame.rect : stored
-      out[groupId] = frameRect(base)
+    for (const [groupId, stored] of Object.entries(wsFrames)) out[groupId] = frameRect(stored)
+    if (liveFrame !== null) {
+      for (const groupId of Object.keys(out)) {
+        out[groupId] = groupId === liveFrame.groupId
+          ? frameRect(liveFrame.rect)
+          : frameRectsRef.current[groupId] ?? out[groupId]!
+      }
+      return out
+    }
+    for (const groupId of Object.keys(out).sort()) {
+      if (manualFrames.has(groupId)) continue
+      const obstacles = Object.entries(out).filter(([id]) => id !== groupId).map(([, rect]) => rect)
+      out[groupId] = autoFrameRect(out[groupId]!, membersByGroup.get(groupId)?.length ?? 0, obstacles)
     }
     return out
-  }, [wsFrames, liveFrame])
+  }, [wsFrames, liveFrame, membersByGroup, manualFrames])
+  useEffect(() => { frameRectsRef.current = frameRects }, [frameRects])
 
   /** Per folder: the slot order, how many slots it can show, and the split. */
   const folderLayouts = useMemo(() => {
@@ -463,7 +492,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
           const pinB = pinnedSessions.has(visibleCards[b]?.sessionId ?? '') ? 0 : 1
           return pinA - pinB
         }))
-      const capacity = capacityFor(rect)
+      const capacity = manualFrames.has(groupId) ? capacityFor(rect) : Math.min(AUTO_FRAME_CARD_LIMIT, capacityFor(rect))
       let preview = ordered
       if (draggingCardId !== null && ordered.includes(draggingCardId)) {
         // While a card is in the air the folder previews the INSERTION: the card
@@ -486,7 +515,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       }
     }
     return out
-  }, [frameRects, membersByGroup, visibleCards, pinnedSessions, draggingCardId, dragCenter])
+  }, [frameRects, membersByGroup, visibleCards, pinnedSessions, draggingCardId, dragCenter, manualFrames])
 
   // Slot positions for every card that lives in a folder. Positions are derived
   // from the order, never stored-and-trusted: that is what makes a resize
@@ -609,7 +638,6 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       for (const [groupId, sessionIds] of [...newcomers.entries()].slice(0, 6)) {
         const ordered = sessionIds
           .sort((a, b) => (sessions.byId[b]?.updatedAt ?? 0) - (sessions.byId[a]?.updatedAt ?? 0))
-          .slice(0, 9)
         const cards: Card[] = ordered.map((sessionId, index) => ({
           boardId: INBOX_BOARD_ID,
           sessionId,
@@ -617,7 +645,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
           createdAt: Date.now(),
         }))
         if (cards.length === 0) continue
-        const rect = fitRect(cards)
+        const rect = fitRect(cards, boxes)
         const batch: Record<string, Card> = {}
         for (const card of cards) batch[newCardId()] = card
         canvas.addCards(batch)
@@ -855,7 +883,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
     const onUp = (): void => {
       window.removeEventListener('pointermove', onMove)
       window.removeEventListener('pointerup', onUp)
-      window.removeEventListener('pointercancel', onUp)
+      window.removeEventListener('pointercancel', onCancel)
       setLiveFrame(null)
       // Clamp to the one-column / one-row floor without teleporting the frame:
       // anchored on the edge the user is NOT dragging.
@@ -868,11 +896,21 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
         if (movesNorth) clamped.y = start.y + start.height - MIN_FRAME_HEIGHT
         clamped.height = MIN_FRAME_HEIGHT
       }
+      const collision = Object.entries(frameRects).some(([id, other]) => id !== groupId && rectsOverlap(clamped, other))
+      if (collision) return
+      if (clamped.width === start.width && clamped.height === start.height && clamped.x === start.x && clamped.y === start.y) return
+      setFrameManual(groupId, true)
       canvas.setWsFrameRect(groupId, frameRect(clamped))
+    }
+    const onCancel = (): void => {
+      window.removeEventListener('pointermove', onMove)
+      window.removeEventListener('pointerup', onUp)
+      window.removeEventListener('pointercancel', onCancel)
+      setLiveFrame(null)
     }
     window.addEventListener('pointermove', onMove)
     window.addEventListener('pointerup', onUp)
-    window.addEventListener('pointercancel', onUp)
+    window.addEventListener('pointercancel', onCancel)
   }
 
   /**
@@ -908,6 +946,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
         sessionId: card.sessionId,
         title: renamedTitles[card.sessionId] ?? summary?.displayTitle ?? card.sessionId,
         lamp,
+        archived: archivedSessions.has(card.sessionId),
         stamp: summary?.updatedAt ?? 0,
         ...(summary?.updatedAt !== undefined ? { updatedAt: summary.updatedAt } : {}),
         ...(previews[card.sessionId] !== undefined ? { preview: previews[card.sessionId] } : {}),
@@ -915,17 +954,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       })
     }
     return rows
-  }, [visibleCards, sessions, renamedTitles, previews, pinnedSessions, statusById, alertById, finishedById])
-
-  /** Bring one card into view and select it (a click on a rail row). */
-  const focusCard = useCallback((cardId: string) => {
-    const slot = cardLayout[cardId]
-    const card = visibleCards[cardId]
-    const point = slot ?? (card === undefined ? undefined : { x: card.x, y: card.y })
-    setSelectedIds([cardId])
-    if (point === undefined) return
-    setCenter(point.x + CARD_W / 2, point.y + CARD_H / 2, { zoom: getZoom(), duration: 320 })
-  }, [cardLayout, visibleCards, setCenter, getZoom, setSelectedIds])
+  }, [visibleCards, sessions, renamedTitles, previews, pinnedSessions, archivedSessions, statusById, alertById, finishedById])
 
   const liveNodes = useMemo<TalkMapNode[]>(() => {
     const wsColors = canvasState.global?.wsColors ?? {}
@@ -939,6 +968,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
           workspaceId: groupId,
           title: renamedWorkspaces[groupId] ?? wsTitles.get(groupId) ?? t('frame.unknown'),
           count: members.length,
+          archivedCount: members.filter(id => archivedSessions.has(visibleCards[id]?.sessionId ?? '')).length,
           width: rect.width,
           height: rect.height,
         // Workspace colours are not used any more: frames keep their default look.
@@ -976,7 +1006,8 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
           sessionId: card.sessionId,
           title: renamedTitles[card.sessionId] ?? summary?.displayTitle ?? card.sessionId,
           running: status?.running ?? summary?.running ?? false,
-          ghost: summary === undefined,
+          ghost: summary === undefined && !archivedSessions.has(card.sessionId),
+          archived: archivedSessions.has(card.sessionId),
           updatedAt: summary?.updatedAt,
           ...(previews[card.sessionId] !== undefined ? { preview: previews[card.sessionId] } : {}),
           waiting: status !== undefined ? status.pendingInteraction !== undefined : summary?.pendingInteraction !== undefined,
@@ -1035,6 +1066,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
         data: {
           workspaceId: groupId,
           count: folded.length,
+          archivedCount: folded.filter(id => archivedSessions.has(visibleCards[id]?.sessionId ?? '')).length,
           ...(busy ? { busy: true } : {}),
           ...(topSessionId !== undefined && sessions.byId[topSessionId] !== undefined
             ? { topTitle: sessions.byId[topSessionId].displayTitle }
@@ -1047,7 +1079,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       }
     })
     return [...frameNodes, ...cardNodes, ...stackNodes]
-  }, [frameRects, folderLayouts, foldedCards, foldedSet, cardLayout, draggingCardId, membersByGroup, wsTitles, visibleCards, canvasState.digests, canvasState.global, sessions, statusById, alertById, finishedById, interruptedById, draftSessions, previews, pinnedSessions, renamedTitles, renamedWorkspaces, liveSelectedIds, batchMode, batchPicks, locale])
+  }, [frameRects, folderLayouts, foldedCards, foldedSet, cardLayout, draggingCardId, membersByGroup, wsTitles, visibleCards, canvasState.digests, canvasState.global, sessions, statusById, alertById, finishedById, interruptedById, draftSessions, previews, pinnedSessions, archivedSessions, renamedTitles, renamedWorkspaces, liveSelectedIds, batchMode, batchPicks, locale])
 
   const sessionIdToCardId = useMemo(() => {
     const index = new Map<string, string>()
@@ -1680,6 +1712,10 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
   }
 
   const openSession = (sessionId: string): void => {
+    if (archivedSessions.has(sessionId)) {
+      showToast(t('toast.archivedCannotOpen'))
+      return
+    }
     // Looking at it counts as reading it: drop the map's own "finished, unread".
     sessionActivity.acknowledge(sessionId)
     // Open first: if the runtime has no session opener, the map stays up (and
@@ -1789,6 +1825,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
         ...(previews[card.sessionId] !== undefined ? { preview: previews[card.sessionId] } : {}),
         ...(summary?.updatedAt !== undefined ? { updatedAt: summary.updatedAt } : {}),
         running: statusById.get(card.sessionId)?.running ?? summary?.running ?? false,
+        archived: archivedSessions.has(card.sessionId),
         ...(glow !== undefined ? { glow } : {}),
         ...(draftSessions.has(card.sessionId) ? { pendingDraft: true } : {}),
         ...(interruptedById.has(card.sessionId) ? { interrupted: true } : {}),
@@ -1817,10 +1854,23 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
     })
   }
 
+  const unarchiveSession = async (sessionId: string): Promise<void> => {
+    const ui = uiWorkspaceService()
+    if (ui === undefined || typeof ui.unarchiveSession !== 'function') {
+      showToast(t('toast.needUiWorkspace'))
+      return
+    }
+    try {
+      await ui.unarchiveSession(sessionId)
+      showToast(t('toast.unarchived'))
+    } catch (error) {
+      showToast(`${t('toast.unarchiveFailed')}${String(error)}`)
+    }
+  }
+
   /**
-   * Archive or delete a set of cards, then take them off the map. Delete goes
-   * through dsh-recycle-bin's Host route, so it lands in the bin and stays
-   * restorable.
+   * Archiving keeps the map's positions and links; only deletion removes cards.
+   * Delete uses dsh-recycle-bin's Host route, so sessions remain restorable.
    */
   const runActions = async (kind: 'archive' | 'delete', cardIds: readonly string[]): Promise<void> => {
     if (cardIds.length === 0) return
@@ -1832,7 +1882,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
     try {
       if (kind === 'archive') await archiveSessions(sessionIds)
       else await trashSessions(sessionIds, () => { showToast(t('toast.stopping')) })
-      for (const cardId of cardIds) canvas.removeCard(cardId)
+      if (kind === 'delete') for (const cardId of cardIds) canvas.removeCard(cardId)
       showToast(t(kind === 'archive' ? 'toast.archived' : 'toast.deleted', { n: String(sessionIds.length) }))
     } catch (error) {
       showToast(`${t(kind === 'archive' ? 'toast.archiveFailed' : 'toast.deleteFailed')}${String(error)}`)
@@ -1973,9 +2023,14 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       placed.push(card)
     })
     if (placed.length > 0) canvas.addCards(added)
-    const rect = placed.length > 0
-      ? fitRect(placed)
-      : { x: snap(atX) - FRAME_PAD, y: snap(atY) - FRAME_PAD - FRAME_LABEL_H, width: 400, height: 260 }
+    const obstacles = Object.entries(frameRects).filter(([id]) => id !== workspaceId).map(([, rect]) => rect)
+    let rect = placed.length > 0
+      ? fitRect(placed, obstacles)
+      : { x: snap(atX) - FRAME_PAD, y: snap(atY) - FRAME_PAD - FRAME_LABEL_H, width: MIN_FRAME_WIDTH, height: MIN_FRAME_HEIGHT }
+    if (obstacles.some(other => rectsOverlap(rect, other))) {
+      rect = { ...rect, y: snap(Math.max(...obstacles.map(other => other.y + other.height)) + GAP_Y) }
+    }
+    setFrameManual(workspaceId, false)
     canvas.setWsFrameRect(workspaceId, rect)
   }
 
@@ -2063,6 +2118,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
   }
 
   const removeGroup = (groupId: string): void => {
+    setFrameManual(groupId, false)
     for (const cardId of membersByGroup.get(groupId) ?? []) canvas.removeCard(cardId)
     const framesNext = { ...wsFrames }
     delete framesNext[groupId]
@@ -2253,10 +2309,11 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       items.push({
         key: 'archive',
         icon: 'archive',
-        label: t('menu.archive'),
+        label: card !== undefined && archivedSessions.has(card.sessionId) ? t('menu.unarchive') : t('menu.archive'),
         onPick: () => {
           close()
-          void runActions('archive', [cardId])
+          if (card !== undefined && archivedSessions.has(card.sessionId)) void unarchiveSession(card.sessionId)
+          else void runActions('archive', [cardId])
         },
       })
       items.push({
@@ -2366,6 +2423,12 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
           setRenameTarget({ kind: 'workspace', id: groupId, title: wsTitles.get(groupId) ?? t('frame.unknown') })
         },
       })
+      items.push({
+        key: 'auto-size',
+        label: t(manualFrames.has(groupId) ? 'frame.autoSize' : 'frame.autoSizeActive'),
+        disabled: !manualFrames.has(groupId),
+        onPick: () => { setFrameManual(groupId, false); close() },
+      })
       // Sync is automatic now (once per open), so the manual row is gone.
       items.push({
         key: 'remove-group',
@@ -2389,7 +2452,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       items,
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [menu, workspaces.items, sessions, boardSessionIds, wsFrames, wsTitles, canvasState.cards, canvasState.edges, canvasState.digests, pinnedSessions, locale])
+  }, [menu, workspaces.items, sessions, boardSessionIds, wsFrames, wsTitles, canvasState.cards, canvasState.edges, canvasState.digests, pinnedSessions, archivedSessions, manualFrames, locale])
 
   const savedCamera = canvas.savedCamera(INBOX_BOARD_ID)
   const hasContent = Object.keys(visibleCards).length > 0 || Object.keys(wsFrames).length > 0
@@ -2398,6 +2461,8 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
     <div
       ref={wrapperRef}
       className={`${styles['canvas']}${connecting ? ` ${styles['canvasConnecting']}` : ''}`}
+      data-status-rail-open={statusRailOpen ? '1' : '0'}
+      style={{ ['--rail-card-w' as string]: `${CARD_W}px` }}
       onDoubleClick={(event) => {
         const target = event.target as HTMLElement
         // React Flow renders nodes INSIDE the pane, so the pane check below is
@@ -2494,13 +2559,13 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
         {...(savedCamera !== undefined ? { defaultViewport: savedCamera } : { fitView: hasContent })}
       >
         <Background variant={BackgroundVariant.Dots} gap={GRID} size={1} />
-        <Controls showInteractive={false}>
+        <Controls showInteractive={false} className={styles['mapControls']}>
           <ControlButton title={t('map.zoom100')} onClick={() => { void zoomTo(1, { duration: 200 }) }}>
             <span className={styles['zoomResetLabel']}>1:1</span>
           </ControlButton>
         </Controls>
       </ReactFlow>
-      <StatusRail entries={statusEntries} cardWidth={CARD_W} onFocus={focusCard} />
+      <StatusRail entries={statusEntries} cardWidth={CARD_W} onOpenSession={openSession} onOpenChange={setStatusRailOpen} />
       {batchMode
         ? (
             <BatchBar
