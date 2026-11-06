@@ -15,6 +15,7 @@ import { activeLocale, subscribeLocale, t } from './i18n.ts'
 import { fontScale } from './font-scale.ts'
 import { GlobalSearch } from './GlobalSearch.tsx'
 import { closeMapPanel, hideSidebarForMap, mapUi, openSessionInUi, restoreSidebarAfterMap } from './map-state.ts'
+import { TrashButton } from './TrashPanel.tsx'
 import { MapCanvas } from './MapCanvas.tsx'
 import styles from './talk-map.module.css'
 
@@ -133,6 +134,7 @@ export function MapOverlay(props: RootSlotStandardProps): React.JSX.Element {
         </button>
         <span className={styles['headerSpace']} />
         <GlobalSearch onOpenSession={(sessionId) => { openSessionInUi(sessionId) }} />
+        <TrashButton wide={false} />
         <FontSizeButtons />
         <button
           type="button"

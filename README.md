@@ -10,6 +10,7 @@ A visual conversation map plugin for DeepSeek Harness (dsh): every session becom
 
 ![Cards connected by links, with running / waiting / unread lamps](https://raw.githubusercontent.com/Da0Mine/dsh-talk-map/main/docs/screenshots/cards-and-links.png)
 
+- **Built-in recycle bin**: the map and native session list share confirmed deletion, single/batch restore, and permanent deletion. Right-click a native row to open its existing More menu. Group deletion targets its mapped conversations; ordinary forks remain independent. On rc.5, retained or file-locked sessions are refused explicitly; retry after restarting DSH.
 - **Spatial memory instead of working memory**: free placement + grid snapping, and nothing ever rearranges your cards — if you remember "that conversation was bottom-left", it stays bottom-left. Designed for ADHD users, useful for everyone.
 - **Folders stay readable**: frames grow without covering neighbors, up to six slots by default. Overflow occupies the last slot: seven conversations show five cards and a “+2” stack that opens a drawer. Pinned cards stay in front. Resizing switches a frame to manual sizing; its context menu restores automatic sizing. The sizing preference is saved in the current browser.
 - **Archives stay identifiable**: archived cards keep their positions and links, carry an Archived badge, and contribute to archive counts on frames and stacks. Their context menu offers Unarchive and Delete; restore a conversation before opening it.

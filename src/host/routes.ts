@@ -13,6 +13,7 @@ import type { DomainChanged, TalkMapHostServices } from './dsh-host.ts'
 import type { DigestPipeline } from './digest/pipeline.ts'
 import { SessionNotLiveError, type Spawner } from './spawn.ts'
 import { cardSchema, edgeSchema, globalSchema, DOMAIN_NAME, type TalkMapStore } from './store.ts'
+import { safeId, type SessionTrash } from './session-trash.ts'
 
 /**
  * Capabilities filled in by independently-injected layers: the digest layer
@@ -21,6 +22,7 @@ import { cardSchema, edgeSchema, globalSchema, DOMAIN_NAME, type TalkMapStore } 
  * whole plugin refusing to mount.
  */
 export interface TalkMapRuntime {
+  trash?: SessionTrash
   digest?: DigestPipeline
   spawner?: Spawner
   /** Read a session's surface — powers the card body (user's last message). */
@@ -188,6 +190,12 @@ export function mountTalkMapRoutes(
           return
         }
 
+        if (route === 'GET /talk-map/trash') {
+          if (!runtime.trash) { sendJson(response, 503, { code: 'SERVICE_UNAVAILABLE', error: '回收站服务不可用' }); return }
+          sendJson(response, 200, { entries: runtime.trash.list() })
+          return
+        }
+
         if (route === 'GET /talk-map/defaults') {
           let model: unknown = null
           let preset: unknown = null
@@ -218,17 +226,31 @@ export function mountTalkMapRoutes(
           return
         }
 
+        if (/^POST \/talk-map\/sessions\/(trash|restore|purge)$/.test(route)) {
+          if (!runtime.trash) { sendJson(response, 503, { code: 'SERVICE_UNAVAILABLE', error: '回收站服务不可用' }); return }
+          const action = url.pathname.split('/').at(-1) as 'trash' | 'restore' | 'purge'
+          const schema = action === 'trash'
+            ? z.object({ sessionIds: z.array(safeId).min(1).max(200) }).strict()
+            : z.object({ entryIds: z.array(z.string().uuid()).min(1).max(200) }).strict()
+          const body = schema.parse(await readJsonBody(request))
+          const ids = 'sessionIds' in body ? body.sessionIds : body.entryIds
+          sendJson(response, 200, { results: await runtime.trash[action](ids) })
+          return
+        }
+
         if (route === 'POST /talk-map/cards/upsert') {
           const store = await storeReady
           const body = upsertCardsBody.parse(await readJsonBody(request))
-          for (const [id, card] of Object.entries(body.cards)) {
+          const write = async (): Promise<void> => { for (const [id, card] of Object.entries(body.cards)) {
             await store.cards.put(id, card)
             // A card without a usable digest gets one queued (hash-skip keeps it cheap).
             const digest = store.digests.get(card.sessionId)
             if (digest === undefined || digest.summary === '') {
               runtime.digest?.schedule(card.sessionId)
             }
-          }
+          } }
+          if (runtime.trash) await runtime.trash.writeActive(Object.values(body.cards).map(c => c.sessionId), write)
+          else await write()
           sendJson(response, 200, { ok: true, count: Object.keys(body.cards).length })
           return
         }
@@ -236,9 +258,12 @@ export function mountTalkMapRoutes(
         if (route === 'POST /talk-map/edges/upsert') {
           const store = await storeReady
           const body = upsertEdgesBody.parse(await readJsonBody(request))
-          for (const [id, edge] of Object.entries(body.edges)) {
+          const write = async (): Promise<void> => { for (const [id, edge] of Object.entries(body.edges)) {
+            if (!store.cards.get(edge.fromCardId) || !store.cards.get(edge.toCardId)) throw new Error('edge endpoints unavailable')
             await store.edges.put(id, edge)
-          }
+          } }
+          if (runtime.trash) await runtime.trash.serial(write)
+          else await write()
           sendJson(response, 200, { ok: true, count: Object.keys(body.edges).length })
           return
         }
@@ -274,7 +299,13 @@ export function mountTalkMapRoutes(
         if (route === 'POST /talk-map/global') {
           const store = await storeReady
           const body = setGlobalBody.parse(await readJsonBody(request))
-          await store.setGlobal(body.global)
+          const write = async (): Promise<void> => {
+            const memory = { ...body.global.layoutMemory }
+            for (const id of Object.keys(memory)) if (runtime.trash?.isBlocked(id)) delete memory[id]
+            await store.setGlobal({ ...body.global, layoutMemory: memory })
+          }
+          if (runtime.trash) await runtime.trash.serial(write)
+          else await write()
           sendJson(response, 200, { ok: true })
           return
         }
@@ -418,7 +449,8 @@ export function mountTalkMapRoutes(
       } catch (error) {
         services.logger?.warn(`[dsh-talk-map] ${route} failed: ${String(error)}`)
         if (!response.headersSent) {
-          sendJson(response, 400, { error: String(error) })
+          const code = (error as { code?: string }).code
+          sendJson(response, code === 'SERVICE_UNAVAILABLE' ? 503 : 400, { code, error: String(error) })
         } else {
           response.end()
         }

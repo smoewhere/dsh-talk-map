@@ -27,7 +27,7 @@ const PORT = 8791
 const CDP = 9333
 const headed = process.argv.includes('--headed')
 const profileDir = path.join(os.tmpdir(), 'talkmap-edge-profile')
-const shots = path.join(ROOT, 'test/shots')
+const shots = path.join(ROOT, '.agent-tmp/probe-shots')
 
 const results = []
 function check(name, passed, detail) {
@@ -43,7 +43,9 @@ const TYPES = {
 const server = http.createServer((request, response) => {
   const url = new URL(request.url ?? '/', `http://127.0.0.1:${PORT}`)
   const rel = decodeURIComponent(url.pathname === '/' ? '/test/index.html' : url.pathname)
-  const file = path.join(ROOT, rel)
+  const file = process.argv.includes('--baseline') && rel === '/client/client.dev.js'
+    ? path.join(ROOT, '.agent-tmp/trash-test/baseline-client.js')
+    : path.join(ROOT, rel)
   if (!file.startsWith(ROOT) || !fs.existsSync(file)) {
     response.writeHead(404).end('not found')
     return
@@ -1190,8 +1192,10 @@ try {
   await page.mouse.click(deletePoint.x, deletePoint.y, { button: 'right' })
   await page.waitForTimeout(400)
   await clickMenuItem('删除会话')
+  await page.getByRole('alertdialog').getByRole('button', {name:'确认', exact:true}).click()
+  await page.waitForTimeout(500)
   const trashCall = await page.evaluate(() => window.__harness.recycleCalls().at(-1))
-  check('删除走 dsh-recycle-bin 的 trash 接口', trashCall?.action === 'trash' && trashCall?.sessionId === 's9', JSON.stringify(trashCall))
+  check('删除走内置回收站接口', trashCall?.action === 'trash' && trashCall?.sessionIds?.[0] === 's9', JSON.stringify(trashCall))
 
 
   // Batch mode: every card wears a tick box, and picking one ticks it.
@@ -1219,9 +1223,10 @@ try {
     const target = [...document.querySelectorAll('[class*="tm_batchAction"]')].find(el => el.textContent.trim() === '删除')
     target?.click()
   })
+  await page.getByRole('alertdialog').getByRole('button', {name:'确认', exact:true}).click()
   await page.waitForTimeout(800)
   const batchCall = await page.evaluate(() => window.__harness.recycleCalls().at(-1))
-  check('批量删除一次提交 trashMany', batchCall?.action === 'trashMany' && (batchCall?.sessionIds?.length ?? 0) === 2, JSON.stringify(batchCall))
+  check('批量删除一次提交内置 trash', batchCall?.action === 'trash' && (batchCall?.sessionIds?.length ?? 0) === 2, JSON.stringify(batchCall))
   check('批量删除后退出批量模式', await page.evaluate(() => document.querySelector('[class*="tm_batchBar"]') === null))
 
   // ---- 11b. the stack drawer survives jumping into a conversation --------
@@ -1719,6 +1724,8 @@ try {
   await page.mouse.click(busyPoint.x, busyPoint.y, { button: 'right' })
   await page.waitForTimeout(400)
   await clickMenuItem('删除会话')
+  await page.getByRole('alertdialog').getByRole('button', {name:'确认',exact:true}).click()
+  await page.getByRole('alertdialog', {name:'停止工作并删除？'}).getByRole('button', {name:'确认',exact:true}).click()
   await page.waitForTimeout(3000)
   const busyDelete = await page.evaluate((sid) => ({
     stopCalls: window.__harness.log.filter(entry => entry.kind === 'ui.archiveSession' && entry.detail?.options?.stopActivity === true).length,

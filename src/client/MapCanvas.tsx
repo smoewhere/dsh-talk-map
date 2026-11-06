@@ -27,9 +27,10 @@ import { buildPushText, digestIsEmpty } from './digest-text.ts'
 import { edgeSyncState, lineageSyncState } from './edge-sync.ts'
 import { pickFaces, type Obstacle } from './edge-routing.ts'
 import { lastPushFor, stampPush } from './push-log.ts'
+import { confirmAction } from './ActionSurface.tsx'
 import { DigestDialog } from './DigestDialog.tsx'
 import { closeMapPanel, currentSessionId, getServices, mapUi, openSessionInUi, uiWorkspaceService } from './map-state.ts'
-import { archiveSessions, deleteSessionsDirect, deleteWorkspaceRegistration, recycleBinReady, setPinned, trashSessions } from './session-actions.ts'
+import { archiveSessions, describeTrashResults, setPinned, trashSessions } from './session-actions.ts'
 import { allSessionTitles, setCardTable, setTitleResolver, setTitleTable } from './map-state.ts'
 import { drawerState } from './drawer-state.ts'
 import { callRpc, fetchSearchContext, fetchSessionHits, searchSessions, type ContentHit } from './rpc.ts'
@@ -1870,7 +1871,7 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
 
   /**
    * Archiving keeps the map's positions and links; only deletion removes cards.
-   * Delete uses dsh-recycle-bin's Host route, so sessions remain restorable.
+   * All deletions use the built-in Host trash transaction.
    */
   const runActions = async (kind: 'archive' | 'delete', cardIds: readonly string[]): Promise<void> => {
     if (cardIds.length === 0) return
@@ -1881,9 +1882,14 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
     setBatchBusy(true)
     try {
       if (kind === 'archive') await archiveSessions(sessionIds)
-      else await trashSessions(sessionIds, () => { showToast(t('toast.stopping')) })
-      if (kind === 'delete') for (const cardId of cardIds) canvas.removeCard(cardId)
-      showToast(t(kind === 'archive' ? 'toast.archived' : 'toast.deleted', { n: String(sessionIds.length) }))
+      else {
+        const results = await trashSessions(sessionIds)
+        if (!results.length) return
+        canvas.refresh()
+        showToast(describeTrashResults(results))
+        return
+      }
+      showToast(t('toast.archived', { n: String(sessionIds.length) }))
     } catch (error) {
       showToast(`${t(kind === 'archive' ? 'toast.archiveFailed' : 'toast.deleteFailed')}${String(error)}`)
     } finally {
@@ -2093,28 +2099,16 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       .map(cardId => visibleCards[cardId]?.sessionId)
       .filter((sessionId): sessionId is string => sessionId !== undefined)
     try {
-      // Recycle bin when one is installed (restorable, same bin as the sidebar); the Host's
-      // own delete only as the fallback when there is none.
-      const bin = await recycleBinReady()
-      if (sessionIds.length > 0) {
-        if (bin) {
-          try {
-            await trashSessions(sessionIds, () => { showToast(t('toast.stopping')) })
-          } catch (error) {
-            if (!/HTTP (404|405)|未注册|not found/i.test(String((error as Error).message))) throw error
-            await deleteSessionsDirect(sessionIds)
-            await deleteWorkspaceRegistration(groupId)
-          }
-        } else {
-          await deleteSessionsDirect(sessionIds)
-          await deleteWorkspaceRegistration(groupId)
-        }
+      if (sessionIds.length === 0) {
+        if (await confirmAction(t('confirm.removeGroup.title'), t('trash.emptyGroup'))) removeGroup(groupId)
+        return
       }
-      removeGroup(groupId)
-      showToast(t(bin ? 'toast.workspaceTrashed' : 'toast.workspaceDeleted', { n: String(sessionIds.length) }))
-    } catch (error) {
-      showToast(String((error as Error | undefined)?.message ?? error))
-    }
+      const results = await trashSessions(sessionIds, t('confirm.removeGroup.title'))
+      if (!results.length) return
+      canvas.refresh()
+      if (results.every(r => r.status === 'trashed')) removeGroup(groupId)
+      showToast(describeTrashResults(results))
+    } catch (error) { showToast(String(error)) }
   }
 
   const removeGroup = (groupId: string): void => {

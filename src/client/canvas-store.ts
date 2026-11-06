@@ -211,11 +211,31 @@ export const canvas = {
   },
 
   /** SSE mirror: applies host-confirmed changes (idempotent over our own writes). */
+  acceptTrashedSessions(sessionIds: readonly string[]): void {
+    if (sessionIds.length === 0) return
+    const ids = new Set(sessionIds)
+    const cards = Object.fromEntries(Object.entries(state.cards).filter(([, card]) => !ids.has(card.sessionId)))
+    const edges = Object.fromEntries(Object.entries(state.edges).filter(([, edge]) => cards[edge.fromCardId] && cards[edge.toCardId]))
+    const digests = Object.fromEntries(Object.entries(state.digests).filter(([id]) => !ids.has(id)))
+    for (const id of dirtyCards) if (!cards[id]) dirtyCards.delete(id)
+    undoStack.length = 0
+    redoStack.length = 0
+    bumpEdits()
+    const global = state.global === null ? null : { ...state.global, layoutMemory: Object.fromEntries(Object.entries(state.global.layoutMemory ?? {}).filter(([id]) => !ids.has(id))) }
+    setState({ cards, edges, digests, global })
+  },
+
   connect(): () => void {
     return talkMapApi.subscribeChanges((change) => {
       if (change.table === 'cards') {
         // Never clobber a position the user is actively dragging.
-        if (dirtyCards.has(change.key)) return
+        if (change.operation !== 'deleted' && dirtyCards.has(change.key)) return
+        if (change.operation === 'deleted') {
+          dirtyCards.delete(change.key)
+          undoStack.length = 0
+          redoStack.length = 0
+          bumpEdits()
+        }
         const cards = { ...state.cards }
         if (change.operation === 'deleted') delete cards[change.key]
         else cards[change.key] = change.value as Card

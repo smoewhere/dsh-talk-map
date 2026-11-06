@@ -63,31 +63,31 @@ var require_use_sync_external_store_shim_production = __commonJS({
       return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
     }
     var objectIs = "function" === typeof Object.is ? Object.is : is;
-    var useState9 = React.useState;
-    var useEffect12 = React.useEffect;
+    var useState10 = React.useState;
+    var useEffect15 = React.useEffect;
     var useLayoutEffect4 = React.useLayoutEffect;
     var useDebugValue2 = React.useDebugValue;
-    function useSyncExternalStore$2(subscribe2, getSnapshot2) {
-      var value = getSnapshot2(), _useState = useState9({ inst: { value, getSnapshot: getSnapshot2 } }), inst = _useState[0].inst, forceUpdate = _useState[1];
+    function useSyncExternalStore$2(subscribe3, getSnapshot2) {
+      var value2 = getSnapshot2(), _useState = useState10({ inst: { value: value2, getSnapshot: getSnapshot2 } }), inst = _useState[0].inst, forceUpdate = _useState[1];
       useLayoutEffect4(
         function() {
-          inst.value = value;
+          inst.value = value2;
           inst.getSnapshot = getSnapshot2;
           checkIfSnapshotChanged(inst) && forceUpdate({ inst });
         },
-        [subscribe2, value, getSnapshot2]
+        [subscribe3, value2, getSnapshot2]
       );
-      useEffect12(
+      useEffect15(
         function() {
           checkIfSnapshotChanged(inst) && forceUpdate({ inst });
-          return subscribe2(function() {
+          return subscribe3(function() {
             checkIfSnapshotChanged(inst) && forceUpdate({ inst });
           });
         },
-        [subscribe2]
+        [subscribe3]
       );
-      useDebugValue2(value);
-      return value;
+      useDebugValue2(value2);
+      return value2;
     }
     function checkIfSnapshotChanged(inst) {
       var latestGetSnapshot = inst.getSnapshot;
@@ -99,7 +99,7 @@ var require_use_sync_external_store_shim_production = __commonJS({
         return true;
       }
     }
-    function useSyncExternalStore$1(subscribe2, getSnapshot2) {
+    function useSyncExternalStore$1(subscribe3, getSnapshot2) {
       return getSnapshot2();
     }
     var shim = "undefined" === typeof window || "undefined" === typeof window.document || "undefined" === typeof window.document.createElement ? useSyncExternalStore$1 : useSyncExternalStore$2;
@@ -129,13 +129,13 @@ var require_with_selector_production = __commonJS({
       return x === y && (0 !== x || 1 / x === 1 / y) || x !== x && y !== y;
     }
     var objectIs = "function" === typeof Object.is ? Object.is : is;
-    var useSyncExternalStore6 = shim.useSyncExternalStore;
-    var useRef7 = React.useRef;
-    var useEffect12 = React.useEffect;
+    var useSyncExternalStore8 = shim.useSyncExternalStore;
+    var useRef10 = React.useRef;
+    var useEffect15 = React.useEffect;
     var useMemo4 = React.useMemo;
     var useDebugValue2 = React.useDebugValue;
-    exports.useSyncExternalStoreWithSelector = function(subscribe2, getSnapshot2, getServerSnapshot, selector, isEqual) {
-      var instRef = useRef7(null);
+    exports.useSyncExternalStoreWithSelector = function(subscribe3, getSnapshot2, getServerSnapshot, selector2, isEqual) {
+      var instRef = useRef10(null);
       if (null === instRef.current) {
         var inst = { hasValue: false, value: null };
         instRef.current = inst;
@@ -146,7 +146,7 @@ var require_with_selector_production = __commonJS({
             if (!hasMemo) {
               hasMemo = true;
               memoizedSnapshot = nextSnapshot;
-              nextSnapshot = selector(nextSnapshot);
+              nextSnapshot = selector2(nextSnapshot);
               if (void 0 !== isEqual && inst.hasValue) {
                 var currentSelection = inst.value;
                 if (isEqual(currentSelection, nextSnapshot))
@@ -156,7 +156,7 @@ var require_with_selector_production = __commonJS({
             }
             currentSelection = memoizedSelection;
             if (objectIs(memoizedSnapshot, nextSnapshot)) return currentSelection;
-            var nextSelection = selector(nextSnapshot);
+            var nextSelection = selector2(nextSnapshot);
             if (void 0 !== isEqual && isEqual(currentSelection, nextSelection))
               return memoizedSnapshot = nextSnapshot, currentSelection;
             memoizedSnapshot = nextSnapshot;
@@ -172,18 +172,18 @@ var require_with_selector_production = __commonJS({
             }
           ];
         },
-        [getSnapshot2, getServerSnapshot, selector, isEqual]
+        [getSnapshot2, getServerSnapshot, selector2, isEqual]
       );
-      var value = useSyncExternalStore6(subscribe2, instRef[0], instRef[1]);
-      useEffect12(
+      var value2 = useSyncExternalStore8(subscribe3, instRef[0], instRef[1]);
+      useEffect15(
         function() {
           inst.hasValue = true;
-          inst.value = value;
+          inst.value = value2;
         },
-        [value]
+        [value2]
       );
-      useDebugValue2(value);
-      return value;
+      useDebugValue2(value2);
+      return value2;
     };
   }
 });
@@ -210,6 +210,18 @@ __export(index_exports, {
 module.exports = __toCommonJS(index_exports);
 
 // src/client/api.ts
+var trashListeners = /* @__PURE__ */ new Set();
+function subscribeTrashChanges(listener) {
+  trashListeners.add(listener);
+  return () => {
+    trashListeners.delete(listener);
+  };
+}
+async function trashMutation(path, body) {
+  const value2 = await postJson(path, body);
+  for (const listener of trashListeners) listener();
+  return value2;
+}
 async function requestJson(path, init2) {
   const response = await fetch(path, init2);
   if (!response.ok) {
@@ -238,6 +250,18 @@ function postJson(path, body) {
   });
 }
 var talkMapApi = {
+  getTrash() {
+    return requestJson("/talk-map/trash");
+  },
+  trashSessions(sessionIds) {
+    return trashMutation("/talk-map/sessions/trash", { sessionIds });
+  },
+  restoreSessions(entryIds) {
+    return trashMutation("/talk-map/sessions/restore", { entryIds });
+  },
+  purgeSessions(entryIds) {
+    return trashMutation("/talk-map/sessions/purge", { entryIds });
+  },
   getState() {
     return requestJson("/talk-map/state");
   },
@@ -321,6 +345,29 @@ var talkMapApi = {
 
 // src/client/i18n.ts
 var zh = {
+  "trash.unavailable": "回收站服务尚未就绪，请稍后刷新",
+  "trash.loadFailed": "回收站加载失败，请重试",
+  "trash.emptyGroup": "删除这个空分组？",
+  "trash.title": "回收站",
+  "trash.confirm": "确认",
+  "trash.undo": "撤销",
+  "trash.deleteTitle": "删除会话？",
+  "trash.deleteBody": "将选中的 {n} 个会话及其子代理移入回收站，可在回收站还原。",
+  "trash.stopTitle": "停止工作并删除？",
+  "trash.stopBody": "会话仍有任务运行。确认后将停止并归档，再尝试移入回收站。",
+  "trash.purgeTitle": "永久删除？",
+  "trash.purgeBody": "永久删除选中的 {n} 个条目，此操作不可恢复。",
+  "trash.restore": "还原",
+  "trash.purge": "永久删除",
+  "trash.restoreSelected": "还原所选",
+  "trash.purgeSelected": "永久删除所选",
+  "trash.refresh": "刷新",
+  "trash.loading": "正在加载…",
+  "trash.empty": "回收站为空",
+  "trash.sessionCount": "{n} 个会话",
+  "trash.restored": "已还原 {n} 个条目",
+  "trash.purged": "已永久删除 {n} 个条目",
+  "trash.recoveryFailed": "操作需要恢复，请重启 DSH 后重试。",
   "map.title": "对话地图 ·v2",
   "map.close": "关闭地图（Esc）",
   "map.back": "返回",
@@ -329,12 +376,9 @@ var zh = {
   "statusRail.title": "队列中的任务",
   "confirm.removeGroup.title": "删除这个分组？",
   "confirm.removeGroup.body": "分组里的 {n} 个会话会被移入回收站（可在回收站恢复），卡片和分组框同时从地图上移除。仍在运行的会话会先被停止。",
-  "confirm.removeGroup.bodyHard": "这里没有回收站插件，{n} 个会话会被直接删除（无法恢复），卡片和分组框同时从地图上移除。",
   "confirm.removeGroup.ok": "移入回收站",
-  "confirm.removeGroup.okHard": "直接删除",
   "confirm.cancel": "取消",
   "toast.workspaceTrashed": "已把 {n} 个会话移入回收站，分组已从地图移除",
-  "toast.workspaceDeleted": "已直接删除 {n} 个会话，分组已从地图移除",
   "statusRail.open": "展开状态栏",
   "statusRail.close": "收起状态栏",
   "statusRail.empty": "暂时没有带状态的卡片",
@@ -505,6 +549,29 @@ var zh = {
   "menu.removeGroup": "删除分组（连同会话）"
 };
 var en = {
+  "trash.unavailable": "The recycle bin is not ready. Refresh shortly.",
+  "trash.loadFailed": "Could not load the recycle bin. Please retry.",
+  "trash.emptyGroup": "Delete this empty group?",
+  "trash.title": "Recycle bin",
+  "trash.confirm": "Confirm",
+  "trash.undo": "Undo",
+  "trash.deleteTitle": "Delete conversations?",
+  "trash.deleteBody": "Move {n} selected conversations and their subagents to the recycle bin. You can restore them later.",
+  "trash.stopTitle": "Stop work and delete?",
+  "trash.stopBody": "Work is still running. Stop and archive it, then try moving it to the recycle bin.",
+  "trash.purgeTitle": "Permanently delete?",
+  "trash.purgeBody": "Permanently delete {n} entries? This cannot be undone.",
+  "trash.restore": "Restore",
+  "trash.purge": "Delete permanently",
+  "trash.restoreSelected": "Restore selected",
+  "trash.purgeSelected": "Delete selected permanently",
+  "trash.refresh": "Refresh",
+  "trash.loading": "Loading…",
+  "trash.empty": "The recycle bin is empty",
+  "trash.sessionCount": "{n} conversations",
+  "trash.restored": "Restored {n} entries",
+  "trash.purged": "Permanently deleted {n} entries",
+  "trash.recoveryFailed": "Recovery required. Restart DSH and try again.",
   "map.title": "Talk Map ·v2",
   "map.close": "Close map (Esc)",
   "map.back": "Back",
@@ -513,12 +580,9 @@ var en = {
   "statusRail.title": "Tasks in the queue",
   "confirm.removeGroup.title": "Delete this group?",
   "confirm.removeGroup.body": "Its {n} conversations go to the recycle bin (restorable from there) and the cards and frame leave the map. Anything still running is stopped first.",
-  "confirm.removeGroup.bodyHard": "No recycle bin plugin answers here, so its {n} conversations are deleted outright (no undo) and the cards and frame leave the map.",
   "confirm.removeGroup.ok": "Move to recycle bin",
-  "confirm.removeGroup.okHard": "Delete for good",
   "confirm.cancel": "Cancel",
   "toast.workspaceTrashed": "Moved {n} conversations to the recycle bin; the group is off the map",
-  "toast.workspaceDeleted": "Deleted {n} conversations outright; the group is off the map",
   "statusRail.open": "Open the status rail",
   "statusRail.close": "Close the status rail",
   "statusRail.empty": "No card carries a status right now",
@@ -770,9 +834,9 @@ function restoreSnapshot(snapshot5) {
   });
 }
 var globalWritesInFlight = 0;
-function persistGlobal(value, label) {
+function persistGlobal(value2, label) {
   globalWritesInFlight += 1;
-  return talkMapApi.setGlobal(value).catch((error) => {
+  return talkMapApi.setGlobal(value2).catch((error) => {
     console.error(`[dsh-talk-map] ${label} save failed:`, error);
   }).finally(() => {
     globalWritesInFlight -= 1;
@@ -852,10 +916,29 @@ var canvas = {
     this.ensureLoaded();
   },
   /** SSE mirror: applies host-confirmed changes (idempotent over our own writes). */
+  acceptTrashedSessions(sessionIds) {
+    if (sessionIds.length === 0) return;
+    const ids = new Set(sessionIds);
+    const cards = Object.fromEntries(Object.entries(state.cards).filter(([, card]) => !ids.has(card.sessionId)));
+    const edges = Object.fromEntries(Object.entries(state.edges).filter(([, edge]) => cards[edge.fromCardId] && cards[edge.toCardId]));
+    const digests = Object.fromEntries(Object.entries(state.digests).filter(([id2]) => !ids.has(id2)));
+    for (const id2 of dirtyCards) if (!cards[id2]) dirtyCards.delete(id2);
+    undoStack.length = 0;
+    redoStack.length = 0;
+    bumpEdits();
+    const global = state.global === null ? null : { ...state.global, layoutMemory: Object.fromEntries(Object.entries(state.global.layoutMemory ?? {}).filter(([id2]) => !ids.has(id2))) };
+    setState({ cards, edges, digests, global });
+  },
   connect() {
     return talkMapApi.subscribeChanges((change) => {
       if (change.table === "cards") {
-        if (dirtyCards.has(change.key)) return;
+        if (change.operation !== "deleted" && dirtyCards.has(change.key)) return;
+        if (change.operation === "deleted") {
+          dirtyCards.delete(change.key);
+          undoStack.length = 0;
+          redoStack.length = 0;
+          bumpEdits();
+        }
         const cards = { ...state.cards };
         if (change.operation === "deleted") delete cards[change.key];
         else cards[change.key] = change.value;
@@ -1074,8 +1157,8 @@ function newCardId() {
 
 // src/client/hotkey.ts
 var DEFAULT_HOTKEY = "alt+KeyF";
-function parseHotkey(value) {
-  const parts = value.split("+");
+function parseHotkey(value2) {
+  const parts = value2.split("+");
   const code = parts[parts.length - 1] ?? "";
   return {
     alt: parts.includes("alt"),
@@ -1085,8 +1168,8 @@ function parseHotkey(value) {
     code
   };
 }
-function hotkeyMatches(event, value) {
-  const hotkey = parseHotkey(value);
+function hotkeyMatches(event, value2) {
+  const hotkey = parseHotkey(value2);
   return event.altKey === hotkey.alt && event.ctrlKey === hotkey.ctrl && event.metaKey === hotkey.meta && event.shiftKey === hotkey.shift && event.code === hotkey.code;
 }
 
@@ -1143,8 +1226,8 @@ function resolveUiWorkspace(current) {
   const get3 = current.ctx?.get;
   if (typeof get3 !== "function") return void 0;
   try {
-    const value = get3.call(current.ctx, "uiWorkspace");
-    return value === void 0 || value === null ? void 0 : value;
+    const value2 = get3.call(current.ctx, "uiWorkspace");
+    return value2 === void 0 || value2 === null ? void 0 : value2;
   } catch {
     return void 0;
   }
@@ -1158,8 +1241,8 @@ function resolveLayout(current) {
   const get3 = current.ctx?.get;
   if (typeof get3 !== "function") return void 0;
   try {
-    const value = get3.call(current.ctx, "layout");
-    return value === void 0 || value === null ? void 0 : value;
+    const value2 = get3.call(current.ctx, "layout");
+    return value2 === void 0 || value2 === null ? void 0 : value2;
   } catch {
     return void 0;
   }
@@ -1173,8 +1256,8 @@ function readCurrentSessionId() {
     const trimmed = raw.trim();
     if (trimmed.startsWith("{")) {
       const parsed = JSON.parse(trimmed);
-      const value = parsed.sessionId ?? parsed.id;
-      return typeof value === "string" && value !== "" ? value : void 0;
+      const value2 = parsed.sessionId ?? parsed.id;
+      return typeof value2 === "string" && value2 !== "" ? value2 : void 0;
     }
     const bare = trimmed.replace(/^"|"$/g, "");
     return bare === "" || bare === "null" ? void 0 : bare;
@@ -1297,7 +1380,7 @@ function allCards() {
 }
 
 // src/client/MapOverlay.tsx
-var import_react15 = require("react");
+var import_react17 = require("react");
 
 // src/client/font-scale.ts
 var STORAGE_KEY = "dsh.talk-map.font-step";
@@ -1306,8 +1389,8 @@ var MAX = 9;
 function read() {
   if (typeof localStorage === "undefined") return 0;
   const raw = localStorage.getItem(STORAGE_KEY);
-  const value = raw === null ? 0 : Number(raw);
-  return Number.isFinite(value) ? Math.min(MAX, Math.max(MIN, Math.round(value))) : 0;
+  const value2 = raw === null ? 0 : Number(raw);
+  return Number.isFinite(value2) ? Math.min(MAX, Math.max(MIN, Math.round(value2))) : 0;
 }
 var step = read();
 var snapshot = step;
@@ -1365,20 +1448,20 @@ var import_react = require("react");
 // src/client/snippet-text.ts
 var NOISE_MARKER = /\[(?:tool\/result|assistant\/message|user\/message|system\/message|developer\/message|dsh-[a-z-]+)[^\]]*\]/gi;
 var JSON_KEY = /"[A-Za-z0-9_$]+"\s*:\s*/g;
-function unescape(value) {
-  return value.replace(/\\r\\n|\\n|\\r/g, " ").replace(/\\t/g, " ").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
+function unescape(value2) {
+  return value2.replace(/\\r\\n|\\n|\\r/g, " ").replace(/\\t/g, " ").replace(/\\"/g, '"').replace(/\\\\/g, "\\");
 }
-function punctuationRatio(value) {
-  if (value === "") return 0;
-  const noisy = value.replace(/[^\s"{}[\],:]/g, "").length;
-  return noisy / value.length;
+function punctuationRatio(value2) {
+  if (value2 === "") return 0;
+  const noisy = value2.replace(/[^\s"{}[\],:]/g, "").length;
+  return noisy / value2.length;
 }
-function looksSerialized(value) {
-  if (/\{\s*"|"\s*:\s*("|\[|\{|\d|true|false|null)/.test(value)) return true;
-  return (value.match(/"/g) ?? []).length >= 4;
+function looksSerialized(value2) {
+  if (/\{\s*"|"\s*:\s*("|\[|\{|\d|true|false|null)/.test(value2)) return true;
+  return (value2.match(/"/g) ?? []).length >= 4;
 }
-function keepProse(value) {
-  const quoted = [...value.matchAll(/"([^"\\]*(?:\\.[^"\\]*)*)"/g)].map((match) => match[1]);
+function keepProse(value2) {
+  const quoted = [...value2.matchAll(/"([^"\\]*(?:\\.[^"\\]*)*)"/g)].map((match) => match[1]);
   const prose = quoted.map((part) => part.replace(/\\n|\\r|\\t/g, " ").trim()).filter((part) => part.length >= 6 && /[\u4e00-\u9fff]|[A-Za-z]/.test(part)).sort((a, b) => b.length - a.length).slice(0, 3);
   return prose.length > 0 ? prose.join(" … ") : "";
 }
@@ -1403,11 +1486,11 @@ function cleanSnippet(raw, query) {
     text = (start2 > 0 ? "…" : "") + window2 + (end < text.length ? "…" : "");
   }
   text = text.split(/\s{2,}|…/).filter((part) => {
-    const value = part.trim();
-    if (value === "") return false;
-    if (/^[A-Za-z0-9_$.-]{1,40}$/.test(value)) return false;
-    if (/^[A-Za-z0-9_$]{6,}\s*:/.test(value) && value.length < 60) return false;
-    if (/^[0-9a-f]{16,}$/i.test(value)) return false;
+    const value2 = part.trim();
+    if (value2 === "") return false;
+    if (/^[A-Za-z0-9_$.-]{1,40}$/.test(value2)) return false;
+    if (/^[A-Za-z0-9_$]{6,}\s*:/.test(value2) && value2.length < 60) return false;
+    if (/^[0-9a-f]{16,}$/i.test(value2)) return false;
     return true;
   }).join(" ").trim();
   return text === "" ? String(raw ?? "").trim() : text;
@@ -1415,7 +1498,7 @@ function cleanSnippet(raw, query) {
 
 // dsh-css: dsh-css:src/client/talk-map.module.css
 var __tagId = "dsh-talk-map/talk-map.module.css";
-var __css = `.tm_toggleButton { display: flex; align-items: center; justify-content: center; gap: 6px; width: 32px; height: 32px; padding: 0; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_toggleButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleButtonActive { background: var(--dsw-alias-interactive-bg-active); color: var(--dsw-alias-brand-primary); } .tm_toggleRow { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 10px; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; text-align: left; } .tm_toggleRow:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleLabel { white-space: nowrap; } .tm_toggleIcon { width: 18px; height: 18px; flex: none; } .tm_panel { height: 100%; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); } .tm_header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); flex: none; } .tm_backButton { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 38px; padding: 0 18px 0 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; line-height: 1; cursor: pointer; } .tm_backButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_globalSearch { position: relative; display: flex; align-items: center; gap: 6px; margin-right: 8px; } .tm_globalSearchInput { width: 200px; font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 9px; outline: none; } .tm_globalSearchInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_globalSearchButton { font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_globalSearchButton:hover { color: var(--dsw-alias-label-primary); } .tm_globalSearchBackdrop { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-start; justify-content: center; padding-top: 9vh; } .tm_globalSearchPanel { width: min(980px, 92vw); max-height: 76vh; display: flex; flex-direction: column; border-radius: 14px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5); overflow: hidden; } .tm_globalSearchHead { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_globalSearchTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_globalSearchBody { padding: 0 16px 14px; overflow-y: auto; overscroll-behavior: contain; } .tm_searchInlineLoading { display: flex; align-items: center; padding: 4px 0 2px 10px; } .tm_searchInlineLoading > span { width: 62%; } .tm_drawerScrollSensor { width: 100%; height: 1px; opacity: 0; } .tm_fontGroup { display: flex; align-items: center; gap: 4px; margin-right: 6px; } .tm_fontButton { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 46px; height: 28px; padding: 0 8px; line-height: 1; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_fontButton:hover:not(:disabled) { color: var(--dsw-alias-label-primary); border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_fontButton:disabled { opacity: 0.4; cursor: default; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { display: inline-block; width: calc(9px + 0px); text-align: center; line-height: 1; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_fontSign { display: inline-block; font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1; transform: translateY(-3px); } .tm_fontReset { min-width: 50px; } .tm_fontReset { min-width: 44px; } .tm_headerSpace { flex: 1; } .tm_langButton { flex: none; min-width: 72px; height: 34px; padding: 0 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_langButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_closeButton { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_closeButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_zoomResetLabel { font-size: calc(9px + var(--tm-font-step, 0px)); font-weight: 700; letter-spacing: -0.5px; } .tm_canvas { flex: 1; min-height: 0; position: relative; --rail-card-w: 224px; --rail-pad: 10px; --rail-card-outer: calc(var(--rail-card-w) + 26px); --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px); --tm-map-controls-left: 0px; } .tm_canvas[data-status-rail-open="1"] { --tm-map-controls-left: min(calc(var(--rail-w) + 12px), calc(100% - 52px)); } .tm_canvas[data-status-rail-open] .tm_mapControls { left: var(--tm-map-controls-left); z-index: 8; transition: left 320ms cubic-bezier(0.22, 0.61, 0.36, 1); } @media (prefers-reduced-motion: reduce) { .tm_canvas[data-status-rail-open] .tm_mapControls { transition: none; } } @media (prefers-reduced-motion: reduce) { .tm_canvas .react-flow__edge circle { opacity: 0.28; } } .tm_canvas .react-flow__node { transition: transform 200ms cubic-bezier(0.2, 0.8, 0.25, 1); } .tm_canvas .react-flow__node.dragging, .tm_canvas .react-flow__node.tmDragging { transition: none; } .tm_canvas .react-flow__nodesselection, .tm_canvas .react-flow__nodesselection-rect { display: none !important; pointer-events: none !important; } .tm_card { position: relative; width: 224px; min-height: 104px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1); font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_cardSelected { border-color: var(--dsw-alias-brand-primary); } .tm_cardGhost { opacity: 0.55; border-style: dashed; } .tm_cardTop { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_cardTop .tm_cardTitle { flex: 1; min-width: 0; } .tm_cardArchivedBadge { flex: none; padding: 1px 5px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 5px; background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary); font-size: calc(10px + var(--tm-font-step, 0px)); font-weight: 500; line-height: 1.4; white-space: nowrap; } .tm_card[data-talkmap-archived="1"] { border-style: dashed; } .tm_stackFace > .tm_cardArchivedBadge { position: absolute; bottom: 10px; left: 12px; } .tm_cardTitle { font-weight: 600; font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_runningDot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ffffff; animation: tm_talkmap-pulse 1.6s ease-in-out infinite; } @keyframes tm_talkmap-pulse { 50% { opacity: 0.35; } } .tm_cardNext { display: flex; align-items: baseline; gap: 6px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); min-width: 0; } .tm_cardNextLabel { flex: none; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-brand-primary); font-weight: 600; } .tm_cardNextText { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .tm_cardStale { flex: none; color: var(--dsw-alias-state-warn-primary); font-size: calc(12px + var(--tm-font-step, 0px)); } .tm_cardFooter { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_cardTime { flex: none; } .tm_cardChip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); font-weight: 600; white-space: nowrap; border: 1px solid transparent; } .tm_cardChipRunning { color: #ffffff; background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); } .tm_cardChipWaiting { color: rgb(245, 178, 46); background: rgba(245, 178, 46, 0.14); border-color: rgba(245, 178, 46, 0.42); } .tm_cardChipDone { color: rgb(52, 199, 89); background: rgba(52, 199, 89, 0.14); border-color: rgba(52, 199, 89, 0.42); } .tm_cardChipError { color: rgb(242, 78, 78); background: rgba(242, 78, 78, 0.14); border-color: rgba(242, 78, 78, 0.45); } .tm_cardChipDraft { color: rgb(255, 197, 61); background: rgba(255, 197, 61, 0.18); border-color: rgba(255, 197, 61, 0.5); } .tm_cardChipInterrupted { color: rgb(214, 158, 92); background: rgba(214, 158, 92, 0.14); border-color: rgba(214, 158, 92, 0.42); } .tm_cardSummary { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.45; color: var(--dsw-alias-label-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_cardBadgeWaiting { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-warn-label); background: var(--dsw-alias-state-warn-tertiary); } .tm_cardBadgeDone { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-success-primary); background: var(--dsw-alias-state-success-tertiary); } .tm_cardLampRunning { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34), 0 0 16px 2px rgba(255, 255, 255, 0.2), 0 0 40px 9px rgba(255, 255, 255, 0.1); } .tm_dialogBackdrop { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(2px); animation: tm_tmFadeIn 140ms ease-out; } .tm_digestDialog { box-sizing: border-box; width: min(900px, calc(100vw - 32px)); height: min(760px, 84dvh); min-height: min(360px, calc(100dvh - 32px)); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 14px; overflow: auto; resize: vertical; border-radius: 14px; background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-1)); color: var(--dsw-alias-label-primary); border: 1px solid var(--dsw-alias-border-l1); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); animation: tm_tmRiseIn 200ms cubic-bezier(0.16, 1, 0.3, 1); } .tm_digestDialog[data-empty] { height: auto; min-height: 0; resize: none; } .tm_digestDialogHead { flex: none; display: flex; align-items: baseline; gap: 8px; min-width: 0; } .tm_digestDialogTitle { flex: none; font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_digestDialogFrom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestLabel { flex: none; margin-top: 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestText { box-sizing: border-box; width: 100%; min-width: 0; flex: 1 1 0; min-height: 64px; padding: 10px 12px; overflow: auto; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.62; resize: none; } .tm_digestText:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 2px; } .tm_digestEmpty { flex: none; padding: 18px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestActions { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 4px; } @media (prefers-reduced-motion: reduce) { .tm_dialogBackdrop, .tm_digestDialog { animation: none; } } .tm_renameBackdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.42); display: flex; align-items: flex-start; justify-content: center; padding-top: 22vh; } .tm_renameDialog { width: min(420px, 90vw); background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42); padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 10px; } .tm_renameHeading { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_renameInput { width: 100%; box-sizing: border-box; font: inherit; font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 8px 10px; outline: none; } .tm_renameInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.35)); } .tm_renameError { font-size: calc(12px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_renameActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_renameButton { font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 12px; cursor: pointer; } .tm_renameButton:hover { color: var(--dsw-alias-label-primary); } .tm_renamePrimary { color: #0b0b0c; background: rgb(255, 214, 106); border-color: rgb(255, 214, 106); } .tm_renamePrimary:disabled { opacity: 0.5; cursor: default; } .tm_cardPin { display: inline-flex; align-items: center; flex: none; color: rgb(255, 214, 106); filter: drop-shadow(0 0 5px rgba(255, 214, 106, 0.85)); animation: tm_talkmap-pin-glow 2.6s ease-in-out infinite; } @keyframes tm_talkmap-pin-glow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 214, 106, 0.6)); opacity: 0.92; } 50% { filter: drop-shadow(0 0 9px rgba(255, 214, 106, 1)); opacity: 1; } } .tm_cardReticle { position: absolute; inset: -5px; pointer-events: none; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.45)); } .tm_cardReticle i { position: absolute; width: 13px; height: 13px; border: 2px solid rgba(255, 255, 255, 0.9); } .tm_cardReticle i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 4px; } .tm_cardReticle i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 4px; } .tm_cardReticle i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 4px; } .tm_cardReticle i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 4px; } .tm_cardQuiet { opacity: 0.62; transition: opacity 140ms ease; } .tm_cardQuiet:hover { opacity: 1; } .tm_stackBadgeBusy { color: rgb(255, 197, 61); border-color: rgba(255, 197, 61, 0.5); } @property --tm-ring-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; } .tm_cardLampRunning::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; padding: 2px; background: conic-gradient( from var(--tm-ring-angle), rgba(255, 255, 255, 0) 0deg, rgba(255, 255, 255, 0) 190deg, rgba(255, 255, 255, 0.18) 250deg, rgba(255, 255, 255, 0.55) 292deg, rgba(255, 255, 255, 1) 325deg, rgba(255, 255, 255, 0.4) 352deg, rgba(255, 255, 255, 0) 360deg ); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: tm_talkmap-ring-sweep 1.8s linear infinite; pointer-events: none; } @keyframes tm_talkmap-ring-sweep { to { --tm-ring-angle: 360deg; } } .tm_cardLampDone { animation: tm_talkmap-lamp-green 2.8s ease-in-out infinite; } .tm_cardLampError { animation: tm_talkmap-lamp-red 1.9s ease-in-out infinite; } .tm_cardLampWaiting { animation: tm_talkmap-lamp-amber 3.4s ease-in-out infinite; } @keyframes tm_talkmap-lamp-green { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.40), 0 0 14px 1px rgba(52, 199, 89, 0.26), 0 0 34px 8px rgba(52, 199, 89, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.72), 0 0 24px 5px rgba(52, 199, 89, 0.46), 0 0 62px 20px rgba(52, 199, 89, 0.22); } } @keyframes tm_talkmap-lamp-amber { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.42), 0 0 14px 1px rgba(245, 178, 46, 0.24), 0 0 34px 8px rgba(245, 178, 46, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.72), 0 0 24px 5px rgba(245, 178, 46, 0.44), 0 0 60px 19px rgba(245, 178, 46, 0.20); } } @keyframes tm_talkmap-lamp-red { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.46), 0 0 14px 1px rgba(242, 78, 78, 0.28), 0 0 34px 8px rgba(242, 78, 78, 0.12); } 50% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.80), 0 0 26px 6px rgba(242, 78, 78, 0.52), 0 0 66px 22px rgba(242, 78, 78, 0.26); } } .tm_cardRemove { align-self: flex-start; padding: 3px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_cardRemove:hover { background: var(--dsw-alias-interactive-bg-hover-danger); color: var(--dsw-alias-state-error-primary); } .tm_cardHandle { width: 10px; height: 10px; background: var(--dsw-alias-border-l3); border: 2px solid var(--dsw-alias-bg-layer-1); opacity: 0; } .tm_card:hover .tm_cardHandle, .tm_canvasConnecting .tm_cardHandle { opacity: 1; } .tm_cardHandle:hover { background: var(--dsw-alias-brand-primary); } .tm_cardRefresh { flex: none; margin-left: auto; width: 22px; height: 22px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--dsw-alias-label-tertiary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; opacity: 0; transition: opacity 120ms ease; } .tm_card:hover .tm_cardRefresh { opacity: 1; } .tm_cardRefresh:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_cardRefreshBusy { opacity: 1; animation: tm_talkmap-spin 1s linear infinite; } @keyframes tm_talkmap-spin { to { transform: rotate(360deg); } } .tm_spawnPanel { position: absolute; right: 24px; top: 24px; z-index: 6; width: 420px; max-width: calc(100% - 48px); display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_spawnHeading { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_spawnFrom { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_spawnModes { display: flex; gap: 6px; } .tm_spawnModeBtn { flex: 1; padding: 5px 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnModeBtn:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_spawnModeActive { border-color: var(--dsw-alias-brand-primary); color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-interactive-bg-active); } .tm_spawnHint { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_spawnTextarea { width: 100%; resize: vertical; min-height: 140px; padding: 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.5; font-family: inherit; } .tm_spawnError { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_spawnActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_spawnBtnPrimary { padding: 6px 16px; border: none; border-radius: 8px; background: var(--dsw-alias-button-primary-fill); color: var(--dsw-alias-label-primary-foreground); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnPrimary:hover { background: var(--dsw-alias-button-primary-hover); } .tm_spawnBtnPrimary:disabled { background: var(--dsw-alias-button-primary-dimmed); cursor: default; } .tm_spawnBtnGhost { padding: 6px 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnGhost:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_wsFrame { position: relative; border: 1.5px dashed var(--dsw-alias-border-l2); border-radius: 16px; background: transparent; } .tm_wsFrameBlocked { border-color: rgb(242, 78, 78) !important; box-shadow: 0 0 0 1px rgba(242, 78, 78, 0.45) inset; } .tm_wsFrameSelected { border-style: solid; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameLabel { position: absolute; top: -12px; left: 14px; display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); font-size: calc(12px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); white-space: nowrap; pointer-events: auto; cursor: grab; z-index: 5; } .tm_wsFrameLabel:active { cursor: grabbing; } .tm_wsFrameEdge { position: absolute; pointer-events: auto; cursor: grab; } .tm_wsFrameEdge:active { cursor: grabbing; } .tm_wsFrameCount { font-weight: 400; color: var(--dsw-alias-label-tertiary); } .tm_menu { position: absolute; z-index: 60; min-width: 200px; max-width: 280px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; padding: 6px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_menuTitle { flex: none; padding: 4px 10px 6px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuSearch { flex: none; box-sizing: border-box; width: calc(100% - 8px); margin: 2px 4px 6px; padding: 5px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 7px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); font-family: inherit; } .tm_menuHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-dimmed); } .tm_menuPreview { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); word-break: break-all; } .tm_menuError { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_menuEmpty { padding: 8px 10px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuItem { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 6px 10px; border: none; border-radius: 7px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_menuIcon { flex: none; width: 14px; height: 14px; color: var(--dsw-alias-label-secondary); } .tm_menuItemDanger { color: rgb(242, 78, 78); } .tm_menuItemDanger .tm_menuIcon { color: rgb(242, 78, 78); } .tm_menuItem:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_menuItem:disabled { color: var(--dsw-alias-label-dimmed); cursor: default; } .tm_wsFrameHidden { font-weight: 400; color: var(--dsw-alias-state-warn-primary); } .tm_emptyHint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); pointer-events: none; z-index: 4; } .tm_toast { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 8; max-width: 70%; padding: 7px 16px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-2); font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_stackCell { position: relative; width: 224px; height: 104px; cursor: pointer; } .tm_stackSheetBack, .tm_stackSheetMid { position: absolute; inset: 0; border-radius: 12px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); } .tm_stackSheetBack { transform: translate(11px, 11px) scale(0.95); opacity: 0.35; } .tm_stackSheetMid { transform: translate(5px, 5px) scale(0.977); opacity: 0.6; } .tm_stackFace { position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); transition: border-color 140ms ease, transform 140ms ease; } .tm_stackCell:hover .tm_stackFace { border-color: var(--dsw-alias-brand-primary); transform: translateY(-1px); } .tm_stackFaceTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .tm_stackBadge { flex: none; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); color: var(--dsw-alias-label-secondary); font-size: calc(11px + var(--tm-font-step, 0px)); font-variant-numeric: tabular-nums; } .tm_drawerBackdrop { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--dsw-alias-bg-mask-2); } .tm_drawer { width: min(1120px, 94%); max-height: 84%; box-sizing: border-box; display: flex; flex-direction: column; border: 1px solid var(--dsw-alias-border-l1); border-radius: 16px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 18px 48px var(--dsw-alias-bg-mask-2); overflow: hidden; } .tm_drawerHead { display: flex; align-items: center; gap: 10px; flex: none; padding: 12px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); } .tm_drawerTitle { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_drawerCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerSpace { flex: 1; } .tm_drawerHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerClose { flex: none; width: 30px; height: 30px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(16px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; } .tm_drawerClose:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_drawerHits > .tm_drawerHit { animation: tm_tmPopIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerHits > .tm_drawerHit:nth-child(1) { animation-delay: 20ms; } .tm_drawerHits > .tm_drawerHit:nth-child(2) { animation-delay: 34ms; } .tm_drawerHits > .tm_drawerHit:nth-child(3) { animation-delay: 48ms; } .tm_drawerHits > .tm_drawerHit:nth-child(4) { animation-delay: 62ms; } .tm_drawerHits > .tm_drawerHit:nth-child(5) { animation-delay: 76ms; } .tm_drawerHits > .tm_drawerHit:nth-child(n+6) { animation-delay: 90ms; } .tm_searchLoading { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 2px; } .tm_searchLoadingBar { position: relative; height: 2px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, 0.07); } .tm_searchLoadingBar > i { position: absolute; inset: 0 auto 0 0; width: 34%; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--dsw-alias-brand-primary), transparent); animation: tm_tmSlideBar 1150ms cubic-bezier(0.4, 0, 0.2, 1) infinite; } @keyframes tm_tmSlideBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } } .tm_searchSkeletonRow { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; } .tm_searchSkeletonTitle, .tm_searchSkeletonLine { display: block; height: 9px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05)); background-size: 220% 100%; animation: tm_tmShimmer 1300ms ease-in-out infinite; } .tm_searchSkeletonTitle { width: 38%; } .tm_searchSkeletonLine { width: 78%; } @keyframes tm_tmShimmer { 0% { background-position: 120% 0; } 100% { background-position: -60% 0; } } @media (prefers-reduced-motion: reduce) { .tm_drawerHits > .tm_drawerHit, .tm_searchLoadingBar > i, .tm_searchSkeletonTitle, .tm_searchSkeletonLine { animation: none; } } @keyframes tm_tmFadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes tm_tmFadeOut { from { opacity: 1; } to { opacity: 0; } } @keyframes tm_tmRiseIn { from { opacity: 0; transform: translateY(26px) scale(0.94); } 60% { opacity: 1; } to { opacity: 1; transform: none; } } @keyframes tm_tmRiseOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px) scale(0.985); } } @keyframes tm_tmPopIn { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } } @keyframes tm_tmCardIn { from { opacity: 0; transform: translateY(6px) scale(0.99); } to { opacity: 1; transform: none; } } .tm_drawerBackdrop { animation: tm_tmFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerBackdropOut { animation: tm_tmFadeOut 130ms ease-in both; } .tm_drawer { animation: tm_tmRiseIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_drawerOut { animation: tm_tmRiseOut 150ms cubic-bezier(0.4, 0, 0.7, 0.2) both; } .tm_globalSearchBackdrop { animation: tm_tmFadeIn 130ms ease-out both; } .tm_globalSearchPanel { animation: tm_tmRiseIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_menu { animation: tm_tmPopIn 120ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_card { transition: transform 120ms ease-out, box-shadow 160ms ease-out, opacity 160ms ease-out; } .tm_card:hover { transform: translateY(-1px); } .tm_reactFlowNodeEnter { animation: tm_tmCardIn 170ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_stackCell { transition: transform 120ms ease-out, box-shadow 160ms ease-out; } .tm_stackCell:hover { transform: translateY(-2px); } .tm_wsFrameLabel { transition: color 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out; } .tm_wsFrameLabel:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); } .tm_toast { animation: tm_tmRiseIn 160ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_snippetCode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.94em; padding: 0 3px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); } .tm_snippetLink { color: var(--dsw-alias-brand-primary); } @media (prefers-reduced-motion: reduce) { .tm_drawerBackdrop, .tm_drawerBackdropOut, .tm_drawer, .tm_drawerOut, .tm_globalSearchBackdrop, .tm_globalSearchPanel, .tm_menu, .tm_toast, .tm_reactFlowNodeEnter { animation: none; } .tm_card, .tm_stackCell, .tm_wsFrameLabel { transition: none; } .tm_card:hover, .tm_stackCell:hover { transform: none; } } .tm_drawerSearchRow { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; } .tm_drawerSearch { flex: 1; min-width: 0; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 10px; outline: none; } .tm_drawerSearch:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerSearchGo { flex: none; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_drawerSearchGo:hover { color: var(--dsw-alias-label-primary); } .tm_drawerSearchState { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); flex: none; } .tm_drawerSearchError { flex: none; max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_drawerEmpty { grid-column: 1 / -1; padding: 10px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_drawerHits { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--dsw-alias-border-l2); } .tm_drawerHitsHead { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); letter-spacing: 0.04em; } .tm_drawerHit { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 8px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; background: transparent; color: var(--dsw-alias-label-primary); font: inherit; cursor: pointer; } .tm_drawerHit:hover { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerRoleChip { flex: none; margin-right: 6px; padding: 0 5px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.6; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.07); } .tm_drawerRoleChip[data-talkmap-role="user"] { color: rgba(160, 210, 255, 0.95); background: rgba(90, 160, 255, 0.14); } .tm_hitMark { color: #0b0b0c; background: rgb(255, 214, 106); border-radius: 3px; padding: 0 2px; } .tm_drawerHitHead { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_drawerAgentChip { flex: none; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1.5; color: var(--dsw-alias-label-secondary); letter-spacing: 0.02em; } .tm_drawerAgentChipSub { color: rgb(255, 214, 106); border-color: rgba(255, 214, 106, 0.5); background: rgba(255, 214, 106, 0.1); } .tm_drawerHitTitle { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); background: transparent; border: none; padding: 0 0 2px; cursor: pointer; } .tm_drawerHitTitle:hover { color: var(--dsw-alias-brand-primary); } .tm_peek { position: fixed; z-index: 80; width: min(500px, 88vw); max-height: 42vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); } .tm_peekTitle { font-size: calc(11.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_peekLine { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.55; color: var(--dsw-alias-label-primary); white-space: pre-wrap; word-break: break-word; } .tm_peekHint { margin-top: 6px; font-size: calc(10.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); opacity: 0.7; } .tm_drawerHitMore { align-self: flex-start; margin-top: 2px; font: inherit; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; cursor: pointer; } .tm_drawerHitMore:hover { color: var(--dsw-alias-brand-primary); } .tm_drawerHitBlock { display: flex; flex-direction: column; gap: 1px; margin-top: 4px; padding-left: 2px; } .tm_drawerHitLine { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; border-left: 2px solid var(--dsw-alias-border-l2); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .tm_drawerHitLine:hover { color: var(--dsw-alias-label-primary); border-left-color: var(--dsw-alias-brand-primary); } .tm_drawerScroll { overscroll-behavior: contain; scroll-behavior: auto; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: repeat(auto-fill, 224px); justify-content: center; align-content: start; gap: 12px; padding: 16px; } .tm_drawerCard[draggable="true"] { cursor: grab; } .tm_drawerCard[data-talkmap-drag="1"] { cursor: grabbing; opacity: 0.55; transform: scale(0.98); } .tm_cardLinks { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 4px; } .tm_cardLinkChip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.7; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.06); } .tm_cardLinkChip[data-talkmap-link="out"] { color: rgba(255, 214, 106, 0.9); background: rgba(255, 214, 106, 0.12); } .tm_drawerCard { width: 224px; box-sizing: border-box; text-align: left; font: inherit; cursor: pointer; background: var(--dsw-alias-bg-layer-1); } .tm_drawerCard:hover { border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResize { position: absolute; z-index: 2; pointer-events: auto; opacity: 0.5; } .tm_wsFrameResize:hover { opacity: 1; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResizeN { cursor: ns-resize; border-top: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 14px 0 0; } .tm_wsFrameResizeS { cursor: ns-resize; border-bottom: 3px solid var(--dsw-alias-border-l3); border-radius: 0 0 14px 14px; } .tm_wsFrameResizeW { cursor: ew-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 0 0 14px; } .tm_wsFrameResizeE { cursor: ew-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-radius: 0 14px 14px 0; } .tm_wsFrameResizeNw, .tm_wsFrameResizeNe, .tm_wsFrameResizeSw, .tm_wsFrameResizeSe { width: 26px; height: 26px; z-index: 3; } .tm_wsFrameResizeNw { cursor: nwse-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-left-radius: 14px; } .tm_wsFrameResizeNe { cursor: nesw-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-right-radius: 14px; } .tm_wsFrameResizeSw { cursor: nesw-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-left-radius: 14px; } .tm_wsFrameResizeSe { cursor: nwse-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-right-radius: 14px; } .tm_batchBar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-2); } .tm_batchCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); white-space: nowrap; } .tm_batchSpace { width: 6px; } .tm_batchAction { padding: 5px 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_batchAction:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_batchAction:disabled { opacity: 0.5; cursor: default; } .tm_batchDanger { color: var(--dsw-alias-state-error-primary); } .tm_pickBox { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--dsw-alias-border-l3); border-radius: 4px; background: var(--dsw-alias-bg-base); color: transparent; font-size: calc(11px + var(--tm-font-step, 0px)); line-height: 1; pointer-events: none; } .tm_pickBoxChecked { border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-brand-primary); color: #fff; } .tm_colorToolbar { position: absolute; top: 12px; left: 12px; z-index: 20; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 6px 20px var(--dsw-alias-bg-mask-2); } .tm_colorToolbarLabel { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); margin-right: 2px; white-space: nowrap; } .tm_colorSwatch { width: 16px; height: 16px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 50%; cursor: pointer; } .tm_colorSwatch:hover { transform: scale(1.15); } .tm_colorSwatchClear { display: flex; align-items: center; justify-content: center; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1; } .tm_colorSwatchClear:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_drawerWires { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; } .tm_drawerScroll { position: relative; } .tm_drawerScroll > .tm_card, .tm_drawerScroll > [data-stack-card] { position: relative; z-index: 1; } .tm_canvas .react-flow__edges { z-index: 0 !important; } .tm_canvas .react-flow__nodes { z-index: 1 !important; } .tm_statusRail { position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none; --rail-card-w: 224px; --rail-pad: 10px; --rail-card-outer: calc(var(--rail-card-w) + 26px); --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px); --tm-rail-surface: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 95%, var(--dsw-alias-label-primary)); --tm-rail-accent: var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary)); --tm-rail-shadow: color-mix(in srgb, var(--dsw-alias-bg-mask-2) 30%, transparent); } body[data-ds-dark-theme] .tm_statusRail { --tm-rail-surface: var(--dsw-alias-bg-base); } .tm_statusRailPanel { position: absolute; left: 0; top: 0; bottom: 0; width: var(--rail-w); box-sizing: border-box; padding: var(--rail-pad); display: flex; flex-direction: column; gap: 8px; background: var(--tm-rail-surface); color: var(--dsw-alias-label-primary); border-right: 1px solid var(--dsw-alias-border-l2); box-shadow: 4px 0 16px var(--tm-rail-shadow); transform: translateX(-101%); transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 320ms ease; pointer-events: none; } .tm_statusRail[data-open="1"] .tm_statusRailPanel { transform: translateX(0); pointer-events: auto; } .tm_statusRailHead { display: flex; align-items: baseline; gap: 8px; padding: 2px 4px 0; } .tm_statusRailTitle { flex: 1; font-size: 12px; letter-spacing: 0.02em; color: var(--dsw-alias-label-secondary); } .tm_statusRailCount { font-size: 11px; color: var(--dsw-alias-label-secondary); font-variant-numeric: tabular-nums; } .tm_statusRailList { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px 0 14px; } .tm_statusRailEmpty { padding: 8px 4px; font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-secondary); } .tm_statusRailSlot { position: relative; } .tm_statusRailSlot[draggable="true"] { cursor: grab; } .tm_statusRailSlot[draggable="true"]:active { cursor: grabbing; } .tm_statusRailCard { -webkit-user-select: none; user-select: none; --tm-rail-status: var(--tm-rail-accent); --tm-rail-status-ink: color-mix(in srgb, var(--tm-rail-status) 45%, var(--dsw-alias-label-primary)); width: var(--rail-card-w); min-height: 84px; border-color: var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 1px 3px var(--tm-rail-shadow); animation: none; cursor: grab; transition: transform 120ms ease, box-shadow 120ms ease, background 140ms ease, border-color 140ms ease; } .tm_statusRailCard.tm_cardLampWaiting { --tm-rail-status: var(--dsw-alias-state-warn-primary); } .tm_statusRailCard.tm_cardLampDone { --tm-rail-status: var(--dsw-alias-state-success-primary); } .tm_statusRailCard.tm_cardLampError { --tm-rail-status: var(--dsw-alias-state-error-primary); } .tm_statusRailCard.tm_cardLampRunning::after { display: none; } .tm_statusRailCard .tm_cardChip { color: var(--tm-rail-status-ink); background: color-mix(in srgb, var(--tm-rail-status) 8%, var(--dsw-alias-bg-layer-1)); border-color: color-mix(in srgb, var(--tm-rail-status) 28%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard .tm_runningDot { background: currentColor; } .tm_statusRailCard .tm_cardTime { color: var(--dsw-alias-label-secondary); } .tm_statusRailCard:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: -2px; border-color: var(--tm-rail-accent); background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard:active { cursor: grabbing; } .tm_statusRailSlotFloating { pointer-events: none; } .tm_statusRailCardDragging { cursor: grabbing; transform: scale(1.02) rotate(-0.3deg); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 10px 24px color-mix(in srgb, var(--dsw-alias-bg-mask-2) 75%, transparent); opacity: 0.97; } .tm_statusRailCard:hover:not(:focus-visible) { transform: translateY(-1px); border-color: color-mix(in srgb, var(--tm-rail-accent) 25%, var(--dsw-alias-border-l2)); background: color-mix(in srgb, var(--tm-rail-accent) 4%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailTab { position: absolute; top: 50%; left: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 30px; padding: 13px 7px; border: 1px solid var(--dsw-alias-border-l2); border-left: none; border-radius: 0 11px 11px 0; background: var(--tm-rail-surface); box-shadow: 3px 0 10px var(--tm-rail-shadow); color: var(--dsw-alias-label-primary); cursor: pointer; font: inherit; pointer-events: auto; transition: left 320ms cubic-bezier(0.22, 0.61, 0.36, 1), color 140ms ease, background 140ms ease; } .tm_statusRail[data-open="1"] .tm_statusRailTab { left: calc(var(--rail-w) - 1px); } .tm_statusRailTab:hover { color: var(--dsw-alias-label-primary); background: color-mix(in srgb, var(--dsw-alias-label-primary) 5%, var(--tm-rail-surface)); } .tm_statusRailTab:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: 2px; } .tm_statusRailTabCount { font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 999px; background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); color: color-mix(in srgb, var(--tm-rail-accent) 45%, var(--dsw-alias-label-primary)); font-variant-numeric: tabular-nums; } @media (prefers-reduced-motion: reduce) { .tm_statusRailPanel, .tm_statusRailTab, .tm_statusRailCard { transition: none; } .tm_statusRailCard .tm_runningDot { animation: none; } } .tm_dangerBackdrop { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(8, 10, 14, 0.55); backdrop-filter: blur(2px); } .tm_dangerDialog { width: min(420px, calc(100% - 48px)); padding: 18px 18px 14px; border: 1px solid var(--dsw-alias-border-secondary); border-radius: 14px; background: var(--dsw-alias-bg-elevated, #16181f); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55); } .tm_dangerTitle { font-size: 14px; font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_dangerBody { margin-top: 8px; font-size: 12.5px; line-height: 1.6; color: var(--dsw-alias-label-secondary); } .tm_dangerActions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; } .tm_dangerCancel, .tm_dangerOk { padding: 6px 14px; border-radius: 8px; font: inherit; font-size: 12.5px; cursor: pointer; } .tm_dangerCancel { border: 1px solid var(--dsw-alias-border-secondary); background: transparent; color: var(--dsw-alias-label-secondary); } .tm_dangerCancel:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_dangerOk { border: 1px solid rgba(242, 78, 78, 0.55); background: rgba(242, 78, 78, 0.16); color: #ff6b6b; } .tm_dangerOk:hover { background: rgba(242, 78, 78, 0.28); color: #ff8a8a; } .tm_statusRailGhost { visibility: hidden; } .tm_statusRailFloating { position: fixed; z-index: 20; pointer-events: none; }`;
+var __css = `.tm_trashPanel { padding: 24px; height: 100%; overflow: auto; box-sizing: border-box; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); } .tm_trashToolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; } .tm_trashToolbar h2 { flex: 1; margin: 0; font-size: 20px; } .tm_trashToolbar button, .tm_trashEntry button, .tm_trashNotice button { padding: 8px 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; color: inherit; background: var(--dsw-alias-interactive-bg-hover); cursor: pointer; } .tm_trashPanel button:disabled { opacity: .45; cursor: default; } .tm_trashPanel button:focus-visible, .tm_trashPanel input:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 2px; } .tm_trashList { display: flex; flex-direction: column; gap: 10px; } .tm_trashEntry { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; } .tm_trashDetails { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 6px; overflow-wrap: anywhere; } .tm_trashDetails code, .tm_trashDetails small { color: var(--dsw-alias-label-secondary); } .tm_trashError { white-space: pre-wrap; color: var(--dsw-alias-state-error-primary); } .tm_trashCopy { line-height: 1.6; color: var(--dsw-alias-label-secondary); } .tm_trashDanger { color: var(--dsw-alias-color-danger); } .tm_trashNotice { position: fixed; z-index: 10000; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 14px 18px; max-width: min(720px, 90vw); max-height: 40vh; overflow: auto; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: 0 8px 32px var(--dsw-alias-interactive-bg-hover); white-space: pre-wrap; } @media (max-width: 620px) { .tm_trashPanel { padding: 12px; } .tm_trashEntry { flex-wrap: wrap; } .tm_trashDetails { flex-basis: 70%; } } .tm_toggleButton { display: flex; align-items: center; justify-content: center; gap: 6px; width: 32px; height: 32px; padding: 0; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_toggleButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleButtonActive { background: var(--dsw-alias-interactive-bg-active); color: var(--dsw-alias-brand-primary); } .tm_toggleRow { display: flex; align-items: center; gap: 8px; width: 100%; padding: 6px 10px; border: none; border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; text-align: left; } .tm_toggleRow:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_toggleLabel { white-space: nowrap; } .tm_toggleIcon { width: 18px; height: 18px; flex: none; } .tm_panel { height: 100%; min-height: 0; box-sizing: border-box; display: flex; flex-direction: column; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); } .tm_header { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); flex: none; } .tm_backButton { display: inline-flex; align-items: center; gap: 6px; flex: none; height: 38px; padding: 0 18px 0 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; line-height: 1; cursor: pointer; } .tm_backButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_globalSearch { position: relative; display: flex; align-items: center; gap: 6px; margin-right: 8px; } .tm_globalSearchInput { width: 200px; font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 9px; outline: none; } .tm_globalSearchInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_globalSearchButton { font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_globalSearchButton:hover { color: var(--dsw-alias-label-primary); } .tm_globalSearchBackdrop { position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.45); display: flex; align-items: flex-start; justify-content: center; padding-top: 9vh; } .tm_globalSearchPanel { width: min(980px, 92vw); max-height: 76vh; display: flex; flex-direction: column; border-radius: 14px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 22px 60px rgba(0, 0, 0, 0.5); overflow: hidden; } .tm_globalSearchHead { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_globalSearchTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_globalSearchBody { padding: 0 16px 14px; overflow-y: auto; overscroll-behavior: contain; } .tm_searchInlineLoading { display: flex; align-items: center; padding: 4px 0 2px 10px; } .tm_searchInlineLoading > span { width: 62%; } .tm_drawerScrollSensor { width: 100%; height: 1px; opacity: 0; } .tm_fontGroup { display: flex; align-items: center; gap: 4px; margin-right: 6px; } .tm_fontButton { display: inline-flex; align-items: center; justify-content: center; gap: 3px; min-width: 46px; height: 28px; padding: 0 8px; line-height: 1; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font: inherit; font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_fontButton:hover:not(:disabled) { color: var(--dsw-alias-label-primary); border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_fontButton:disabled { opacity: 0.4; cursor: default; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { display: inline-block; width: calc(9px + 0px); text-align: center; line-height: 1; } .tm_fontGlyphSmall, .tm_fontGlyphLarge { font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_fontSign { display: inline-block; font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1; transform: translateY(-3px); } .tm_fontReset { min-width: 50px; } .tm_fontReset { min-width: 44px; } .tm_headerSpace { flex: 1; } .tm_langButton { flex: none; min-width: 72px; height: 34px; padding: 0 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_langButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_closeButton { display: inline-flex; align-items: center; justify-content: center; flex: none; width: 38px; height: 38px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); cursor: pointer; } .tm_closeButton:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_zoomResetLabel { font-size: calc(9px + var(--tm-font-step, 0px)); font-weight: 700; letter-spacing: -0.5px; } .tm_canvas { flex: 1; min-height: 0; position: relative; --rail-card-w: 224px; --rail-pad: 10px; --rail-card-outer: calc(var(--rail-card-w) + 26px); --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px); --tm-map-controls-left: 0px; } .tm_canvas[data-status-rail-open="1"] { --tm-map-controls-left: min(calc(var(--rail-w) + 12px), calc(100% - 52px)); } .tm_canvas[data-status-rail-open] .tm_mapControls { left: var(--tm-map-controls-left); z-index: 8; transition: left 320ms cubic-bezier(0.22, 0.61, 0.36, 1); } @media (prefers-reduced-motion: reduce) { .tm_canvas[data-status-rail-open] .tm_mapControls { transition: none; } } @media (prefers-reduced-motion: reduce) { .tm_canvas .react-flow__edge circle { opacity: 0.28; } } .tm_canvas .react-flow__node { transition: transform 200ms cubic-bezier(0.2, 0.8, 0.25, 1); } .tm_canvas .react-flow__node.dragging, .tm_canvas .react-flow__node.tmDragging { transition: none; } .tm_canvas .react-flow__nodesselection, .tm_canvas .react-flow__nodesselection-rect { display: none !important; pointer-events: none !important; } .tm_card { position: relative; width: 224px; min-height: 104px; display: flex; flex-direction: column; gap: 6px; padding: 10px 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: 0 1px 3px var(--dsw-alias-bg-mask-1); font-size: calc(13px + var(--tm-font-step, 0px)); } .tm_cardSelected { border-color: var(--dsw-alias-brand-primary); } .tm_cardGhost { opacity: 0.55; border-style: dashed; } .tm_cardTop { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_cardTop .tm_cardTitle { flex: 1; min-width: 0; } .tm_cardArchivedBadge { flex: none; padding: 1px 5px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 5px; background: var(--dsw-alias-bg-layer-2); color: var(--dsw-alias-label-secondary); font-size: calc(10px + var(--tm-font-step, 0px)); font-weight: 500; line-height: 1.4; white-space: nowrap; } .tm_card[data-talkmap-archived="1"] { border-style: dashed; } .tm_stackFace > .tm_cardArchivedBadge { position: absolute; bottom: 10px; left: 12px; } .tm_cardTitle { font-weight: 600; font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_runningDot { flex: none; width: 8px; height: 8px; border-radius: 50%; background: #ffffff; animation: tm_talkmap-pulse 1.6s ease-in-out infinite; } @keyframes tm_talkmap-pulse { 50% { opacity: 0.35; } } .tm_cardNext { display: flex; align-items: baseline; gap: 6px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); min-width: 0; } .tm_cardNextLabel { flex: none; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-brand-primary); font-weight: 600; } .tm_cardNextText { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; } .tm_cardStale { flex: none; color: var(--dsw-alias-state-warn-primary); font-size: calc(12px + var(--tm-font-step, 0px)); } .tm_cardFooter { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 8px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_cardTime { flex: none; } .tm_cardChip { display: inline-flex; align-items: center; gap: 5px; padding: 1px 8px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); font-weight: 600; white-space: nowrap; border: 1px solid transparent; } .tm_cardChipRunning { color: #ffffff; background: rgba(255, 255, 255, 0.14); border-color: rgba(255, 255, 255, 0.35); } .tm_cardChipWaiting { color: rgb(245, 178, 46); background: rgba(245, 178, 46, 0.14); border-color: rgba(245, 178, 46, 0.42); } .tm_cardChipDone { color: rgb(52, 199, 89); background: rgba(52, 199, 89, 0.14); border-color: rgba(52, 199, 89, 0.42); } .tm_cardChipError { color: rgb(242, 78, 78); background: rgba(242, 78, 78, 0.14); border-color: rgba(242, 78, 78, 0.45); } .tm_cardChipDraft { color: rgb(255, 197, 61); background: rgba(255, 197, 61, 0.18); border-color: rgba(255, 197, 61, 0.5); } .tm_cardChipInterrupted { color: rgb(214, 158, 92); background: rgba(214, 158, 92, 0.14); border-color: rgba(214, 158, 92, 0.42); } .tm_cardSummary { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.45; color: var(--dsw-alias-label-secondary); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word; } .tm_cardBadgeWaiting { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-warn-label); background: var(--dsw-alias-state-warn-tertiary); } .tm_cardBadgeDone { padding: 1px 7px; border-radius: 999px; font-size: calc(10px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-success-primary); background: var(--dsw-alias-state-success-tertiary); } .tm_cardLampRunning { box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.34), 0 0 16px 2px rgba(255, 255, 255, 0.2), 0 0 40px 9px rgba(255, 255, 255, 0.1); } .tm_dialogBackdrop { position: fixed; inset: 0; z-index: 80; display: flex; align-items: center; justify-content: center; background: rgba(0, 0, 0, 0.45); backdrop-filter: blur(2px); animation: tm_tmFadeIn 140ms ease-out; } .tm_digestDialog { box-sizing: border-box; width: min(900px, calc(100vw - 32px)); height: min(760px, 84dvh); min-height: min(360px, calc(100dvh - 32px)); max-height: calc(100dvh - 32px); display: flex; flex-direction: column; gap: 8px; padding: 16px 18px 14px; overflow: auto; resize: vertical; border-radius: 14px; background: var(--dsw-alias-bg-overlay, var(--dsw-alias-bg-layer-1)); color: var(--dsw-alias-label-primary); border: 1px solid var(--dsw-alias-border-l1); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.45); animation: tm_tmRiseIn 200ms cubic-bezier(0.16, 1, 0.3, 1); } .tm_digestDialog[data-empty] { height: auto; min-height: 0; resize: none; } .tm_digestDialogHead { flex: none; display: flex; align-items: baseline; gap: 8px; min-width: 0; } .tm_digestDialogTitle { flex: none; font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_digestDialogFrom { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestLabel { flex: none; margin-top: 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestText { box-sizing: border-box; width: 100%; min-width: 0; flex: 1 1 0; min-height: 64px; padding: 10px 12px; overflow: auto; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.62; resize: none; } .tm_digestText:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 2px; } .tm_digestEmpty { flex: none; padding: 18px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_digestActions { flex: none; display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 8px; margin-top: 4px; } @media (prefers-reduced-motion: reduce) { .tm_dialogBackdrop, .tm_digestDialog { animation: none; } } .tm_renameBackdrop { position: fixed; inset: 0; z-index: 40; background: rgba(0, 0, 0, 0.42); display: flex; align-items: flex-start; justify-content: center; padding-top: 22vh; } .tm_renameDialog { width: min(420px, 90vw); background: var(--dsw-alias-bg-layer-1); border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; box-shadow: 0 18px 42px rgba(0, 0, 0, 0.42); padding: 16px 16px 12px; display: flex; flex-direction: column; gap: 10px; } .tm_renameHeading { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_renameInput { width: 100%; box-sizing: border-box; font: inherit; font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 8px 10px; outline: none; } .tm_renameInput:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.35)); } .tm_renameError { font-size: calc(12px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_renameActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_renameButton { font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 12px; cursor: pointer; } .tm_renameButton:hover { color: var(--dsw-alias-label-primary); } .tm_renamePrimary { color: #0b0b0c; background: rgb(255, 214, 106); border-color: rgb(255, 214, 106); } .tm_renamePrimary:disabled { opacity: 0.5; cursor: default; } .tm_cardPin { display: inline-flex; align-items: center; flex: none; color: rgb(255, 214, 106); filter: drop-shadow(0 0 5px rgba(255, 214, 106, 0.85)); animation: tm_talkmap-pin-glow 2.6s ease-in-out infinite; } @keyframes tm_talkmap-pin-glow { 0%, 100% { filter: drop-shadow(0 0 4px rgba(255, 214, 106, 0.6)); opacity: 0.92; } 50% { filter: drop-shadow(0 0 9px rgba(255, 214, 106, 1)); opacity: 1; } } .tm_cardReticle { position: absolute; inset: -5px; pointer-events: none; filter: drop-shadow(0 0 5px rgba(255, 255, 255, 0.45)); } .tm_cardReticle i { position: absolute; width: 13px; height: 13px; border: 2px solid rgba(255, 255, 255, 0.9); } .tm_cardReticle i:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-top-left-radius: 4px; } .tm_cardReticle i:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-top-right-radius: 4px; } .tm_cardReticle i:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-bottom-left-radius: 4px; } .tm_cardReticle i:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-bottom-right-radius: 4px; } .tm_cardQuiet { opacity: 0.62; transition: opacity 140ms ease; } .tm_cardQuiet:hover { opacity: 1; } .tm_stackBadgeBusy { color: rgb(255, 197, 61); border-color: rgba(255, 197, 61, 0.5); } @property --tm-ring-angle { syntax: "<angle>"; initial-value: 0deg; inherits: false; } .tm_cardLampRunning::after { content: ''; position: absolute; inset: -2px; border-radius: 12px; padding: 2px; background: conic-gradient( from var(--tm-ring-angle), rgba(255, 255, 255, 0) 0deg, rgba(255, 255, 255, 0) 190deg, rgba(255, 255, 255, 0.18) 250deg, rgba(255, 255, 255, 0.55) 292deg, rgba(255, 255, 255, 1) 325deg, rgba(255, 255, 255, 0.4) 352deg, rgba(255, 255, 255, 0) 360deg ); -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude; animation: tm_talkmap-ring-sweep 1.8s linear infinite; pointer-events: none; } @keyframes tm_talkmap-ring-sweep { to { --tm-ring-angle: 360deg; } } .tm_cardLampDone { animation: tm_talkmap-lamp-green 2.8s ease-in-out infinite; } .tm_cardLampError { animation: tm_talkmap-lamp-red 1.9s ease-in-out infinite; } .tm_cardLampWaiting { animation: tm_talkmap-lamp-amber 3.4s ease-in-out infinite; } @keyframes tm_talkmap-lamp-green { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.40), 0 0 14px 1px rgba(52, 199, 89, 0.26), 0 0 34px 8px rgba(52, 199, 89, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(52, 199, 89, 0.72), 0 0 24px 5px rgba(52, 199, 89, 0.46), 0 0 62px 20px rgba(52, 199, 89, 0.22); } } @keyframes tm_talkmap-lamp-amber { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.42), 0 0 14px 1px rgba(245, 178, 46, 0.24), 0 0 34px 8px rgba(245, 178, 46, 0.11); } 50% { box-shadow: inset 0 0 0 1px rgba(245, 178, 46, 0.72), 0 0 24px 5px rgba(245, 178, 46, 0.44), 0 0 60px 19px rgba(245, 178, 46, 0.20); } } @keyframes tm_talkmap-lamp-red { 0%, 100% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.46), 0 0 14px 1px rgba(242, 78, 78, 0.28), 0 0 34px 8px rgba(242, 78, 78, 0.12); } 50% { box-shadow: inset 0 0 0 1px rgba(242, 78, 78, 0.80), 0 0 26px 6px rgba(242, 78, 78, 0.52), 0 0 66px 22px rgba(242, 78, 78, 0.26); } } .tm_cardRemove { align-self: flex-start; padding: 3px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 6px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_cardRemove:hover { background: var(--dsw-alias-interactive-bg-hover-danger); color: var(--dsw-alias-state-error-primary); } .tm_cardHandle { width: 10px; height: 10px; background: var(--dsw-alias-border-l3); border: 2px solid var(--dsw-alias-bg-layer-1); opacity: 0; } .tm_card:hover .tm_cardHandle, .tm_canvasConnecting .tm_cardHandle { opacity: 1; } .tm_cardHandle:hover { background: var(--dsw-alias-brand-primary); } .tm_cardRefresh { flex: none; margin-left: auto; width: 22px; height: 22px; padding: 0; border: none; border-radius: 6px; background: transparent; color: var(--dsw-alias-label-tertiary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; opacity: 0; transition: opacity 120ms ease; } .tm_card:hover .tm_cardRefresh { opacity: 1; } .tm_cardRefresh:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_cardRefreshBusy { opacity: 1; animation: tm_talkmap-spin 1s linear infinite; } @keyframes tm_talkmap-spin { to { transform: rotate(360deg); } } .tm_spawnPanel { position: absolute; right: 24px; top: 24px; z-index: 6; width: 420px; max-width: calc(100% - 48px); display: flex; flex-direction: column; gap: 8px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_spawnHeading { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_spawnFrom { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_spawnModes { display: flex; gap: 6px; } .tm_spawnModeBtn { flex: 1; padding: 5px 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnModeBtn:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_spawnModeActive { border-color: var(--dsw-alias-brand-primary); color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-interactive-bg-active); } .tm_spawnHint { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_spawnTextarea { width: 100%; resize: vertical; min-height: 140px; padding: 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); line-height: 1.5; font-family: inherit; } .tm_spawnError { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_spawnActions { display: flex; justify-content: flex-end; gap: 8px; } .tm_spawnBtnPrimary { padding: 6px 16px; border: none; border-radius: 8px; background: var(--dsw-alias-button-primary-fill); color: var(--dsw-alias-label-primary-foreground); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnPrimary:hover { background: var(--dsw-alias-button-primary-hover); } .tm_spawnBtnPrimary:disabled { background: var(--dsw-alias-button-primary-dimmed); cursor: default; } .tm_spawnBtnGhost { padding: 6px 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; } .tm_spawnBtnGhost:hover { background: var(--dsw-alias-interactive-bg-hover); } .tm_wsFrame { position: relative; border: 1.5px dashed var(--dsw-alias-border-l2); border-radius: 16px; background: transparent; } .tm_wsFrameBlocked { border-color: rgb(242, 78, 78) !important; box-shadow: 0 0 0 1px rgba(242, 78, 78, 0.45) inset; } .tm_wsFrameSelected { border-style: solid; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameLabel { position: absolute; top: -12px; left: 14px; display: flex; align-items: center; gap: 6px; padding: 2px 10px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l1); background: var(--dsw-alias-bg-layer-1); font-size: calc(12px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); white-space: nowrap; pointer-events: auto; cursor: grab; z-index: 5; } .tm_wsFrameLabel:active { cursor: grabbing; } .tm_wsFrameEdge { position: absolute; pointer-events: auto; cursor: grab; } .tm_wsFrameEdge:active { cursor: grabbing; } .tm_wsFrameCount { font-weight: 400; color: var(--dsw-alias-label-tertiary); } .tm_menu { position: absolute; z-index: 60; min-width: 200px; max-width: 280px; max-height: 380px; overflow-y: auto; display: flex; flex-direction: column; padding: 6px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 10px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 30px var(--dsw-alias-bg-mask-2); } .tm_menuTitle { flex: none; padding: 4px 10px 6px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuSearch { flex: none; box-sizing: border-box; width: calc(100% - 8px); margin: 2px 4px 6px; padding: 5px 8px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 7px; background: var(--dsw-alias-bg-base); color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); font-family: inherit; } .tm_menuHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-dimmed); } .tm_menuPreview { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); word-break: break-all; } .tm_menuError { flex: none; padding: 0 10px 4px; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-state-error-primary); word-break: break-all; } .tm_menuEmpty { padding: 8px 10px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_menuItem { flex: none; display: flex; align-items: center; gap: 8px; width: 100%; text-align: left; padding: 6px 10px; border: none; border-radius: 7px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(13px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_menuIcon { flex: none; width: 14px; height: 14px; color: var(--dsw-alias-label-secondary); } .tm_menuItemDanger { color: rgb(242, 78, 78); } .tm_menuItemDanger .tm_menuIcon { color: rgb(242, 78, 78); } .tm_menuItem:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_menuItem:disabled { color: var(--dsw-alias-label-dimmed); cursor: default; } .tm_wsFrameHidden { font-weight: 400; color: var(--dsw-alias-state-warn-primary); } .tm_emptyHint { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); font-size: calc(13px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); pointer-events: none; z-index: 4; } .tm_toast { position: absolute; left: 50%; bottom: 28px; transform: translateX(-50%); z-index: 8; max-width: 70%; padding: 7px 16px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 4px 16px var(--dsw-alias-bg-mask-2); font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); pointer-events: none; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; } .tm_stackCell { position: relative; width: 224px; height: 104px; cursor: pointer; } .tm_stackSheetBack, .tm_stackSheetMid { position: absolute; inset: 0; border-radius: 12px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); } .tm_stackSheetBack { transform: translate(11px, 11px) scale(0.95); opacity: 0.35; } .tm_stackSheetMid { transform: translate(5px, 5px) scale(0.977); opacity: 0.6; } .tm_stackFace { position: absolute; inset: 0; box-sizing: border-box; display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; padding: 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); transition: border-color 140ms ease, transform 140ms ease; } .tm_stackCell:hover .tm_stackFace { border-color: var(--dsw-alias-brand-primary); transform: translateY(-1px); } .tm_stackFaceTitle { font-size: calc(13px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; } .tm_stackBadge { flex: none; padding: 1px 8px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); color: var(--dsw-alias-label-secondary); font-size: calc(11px + var(--tm-font-step, 0px)); font-variant-numeric: tabular-nums; } .tm_drawerBackdrop { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: var(--dsw-alias-bg-mask-2); } .tm_drawer { width: min(1120px, 94%); max-height: 84%; box-sizing: border-box; display: flex; flex-direction: column; border: 1px solid var(--dsw-alias-border-l1); border-radius: 16px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 18px 48px var(--dsw-alias-bg-mask-2); overflow: hidden; } .tm_drawerHead { display: flex; align-items: center; gap: 10px; flex: none; padding: 12px 14px; border-bottom: 1px solid var(--dsw-alias-border-l1); } .tm_drawerTitle { font-size: calc(14px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_drawerCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerSpace { flex: 1; } .tm_drawerHint { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); } .tm_drawerClose { flex: none; width: 30px; height: 30px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(16px + var(--tm-font-step, 0px)); line-height: 1; cursor: pointer; } .tm_drawerClose:hover { background: var(--dsw-alias-interactive-bg-hover); color: var(--dsw-alias-label-primary); } .tm_drawerHits > .tm_drawerHit { animation: tm_tmPopIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerHits > .tm_drawerHit:nth-child(1) { animation-delay: 20ms; } .tm_drawerHits > .tm_drawerHit:nth-child(2) { animation-delay: 34ms; } .tm_drawerHits > .tm_drawerHit:nth-child(3) { animation-delay: 48ms; } .tm_drawerHits > .tm_drawerHit:nth-child(4) { animation-delay: 62ms; } .tm_drawerHits > .tm_drawerHit:nth-child(5) { animation-delay: 76ms; } .tm_drawerHits > .tm_drawerHit:nth-child(n+6) { animation-delay: 90ms; } .tm_searchLoading { display: flex; flex-direction: column; gap: 8px; padding: 6px 0 2px; } .tm_searchLoadingBar { position: relative; height: 2px; border-radius: 2px; overflow: hidden; background: rgba(255, 255, 255, 0.07); } .tm_searchLoadingBar > i { position: absolute; inset: 0 auto 0 0; width: 34%; border-radius: 2px; background: linear-gradient(90deg, transparent, var(--dsw-alias-brand-primary), transparent); animation: tm_tmSlideBar 1150ms cubic-bezier(0.4, 0, 0.2, 1) infinite; } @keyframes tm_tmSlideBar { 0% { transform: translateX(-100%); } 100% { transform: translateX(320%); } } .tm_searchSkeletonRow { display: flex; flex-direction: column; gap: 6px; padding: 9px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; } .tm_searchSkeletonTitle, .tm_searchSkeletonLine { display: block; height: 9px; border-radius: 4px; background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.12), rgba(255,255,255,0.05)); background-size: 220% 100%; animation: tm_tmShimmer 1300ms ease-in-out infinite; } .tm_searchSkeletonTitle { width: 38%; } .tm_searchSkeletonLine { width: 78%; } @keyframes tm_tmShimmer { 0% { background-position: 120% 0; } 100% { background-position: -60% 0; } } @media (prefers-reduced-motion: reduce) { .tm_drawerHits > .tm_drawerHit, .tm_searchLoadingBar > i, .tm_searchSkeletonTitle, .tm_searchSkeletonLine { animation: none; } } @keyframes tm_tmFadeIn { from { opacity: 0; } to { opacity: 1; } } @keyframes tm_tmFadeOut { from { opacity: 1; } to { opacity: 0; } } @keyframes tm_tmRiseIn { from { opacity: 0; transform: translateY(26px) scale(0.94); } 60% { opacity: 1; } to { opacity: 1; transform: none; } } @keyframes tm_tmRiseOut { from { opacity: 1; transform: none; } to { opacity: 0; transform: translateY(10px) scale(0.985); } } @keyframes tm_tmPopIn { from { opacity: 0; transform: translateY(6px) scale(0.97); } to { opacity: 1; transform: none; } } @keyframes tm_tmCardIn { from { opacity: 0; transform: translateY(6px) scale(0.99); } to { opacity: 1; transform: none; } } .tm_drawerBackdrop { animation: tm_tmFadeIn 180ms cubic-bezier(0.16, 1, 0.3, 1) both; } .tm_drawerBackdropOut { animation: tm_tmFadeOut 130ms ease-in both; } .tm_drawer { animation: tm_tmRiseIn 260ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_drawerOut { animation: tm_tmRiseOut 150ms cubic-bezier(0.4, 0, 0.7, 0.2) both; } .tm_globalSearchBackdrop { animation: tm_tmFadeIn 130ms ease-out both; } .tm_globalSearchPanel { animation: tm_tmRiseIn 240ms cubic-bezier(0.16, 1, 0.3, 1) both; will-change: transform, opacity; } .tm_menu { animation: tm_tmPopIn 120ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_card { transition: transform 120ms ease-out, box-shadow 160ms ease-out, opacity 160ms ease-out; } .tm_card:hover { transform: translateY(-1px); } .tm_reactFlowNodeEnter { animation: tm_tmCardIn 170ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_stackCell { transition: transform 120ms ease-out, box-shadow 160ms ease-out; } .tm_stackCell:hover { transform: translateY(-2px); } .tm_wsFrameLabel { transition: color 120ms ease-out, background 120ms ease-out, box-shadow 120ms ease-out; } .tm_wsFrameLabel:hover { box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35); } .tm_toast { animation: tm_tmRiseIn 160ms cubic-bezier(0.2, 0.9, 0.25, 1) both; } .tm_snippetCode { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.94em; padding: 0 3px; border-radius: 4px; background: rgba(255, 255, 255, 0.08); } .tm_snippetLink { color: var(--dsw-alias-brand-primary); } @media (prefers-reduced-motion: reduce) { .tm_drawerBackdrop, .tm_drawerBackdropOut, .tm_drawer, .tm_drawerOut, .tm_globalSearchBackdrop, .tm_globalSearchPanel, .tm_menu, .tm_toast, .tm_reactFlowNodeEnter { animation: none; } .tm_card, .tm_stackCell, .tm_wsFrameLabel { transition: none; } .tm_card:hover, .tm_stackCell:hover { transform: none; } } .tm_drawerSearchRow { display: flex; align-items: center; gap: 8px; padding: 0 14px 8px; } .tm_drawerSearch { flex: 1; min-width: 0; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-primary); background: var(--dsw-alias-bg-layer-2, rgba(255, 255, 255, 0.06)); border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 6px 10px; outline: none; } .tm_drawerSearch:focus { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerSearchGo { flex: none; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; padding: 5px 10px; cursor: pointer; } .tm_drawerSearchGo:hover { color: var(--dsw-alias-label-primary); } .tm_drawerSearchState { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); flex: none; } .tm_drawerSearchError { flex: none; max-width: 52%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: calc(11px + var(--tm-font-step, 0px)); color: rgb(242, 78, 78); } .tm_drawerEmpty { grid-column: 1 / -1; padding: 10px 4px; font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); } .tm_drawerHits { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 6px; margin-top: 6px; padding-top: 10px; border-top: 1px solid var(--dsw-alias-border-l2); } .tm_drawerHitsHead { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); letter-spacing: 0.04em; } .tm_drawerHit { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 8px 10px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 9px; background: transparent; color: var(--dsw-alias-label-primary); font: inherit; cursor: pointer; } .tm_drawerHit:hover { border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3)); } .tm_drawerRoleChip { flex: none; margin-right: 6px; padding: 0 5px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.6; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.07); } .tm_drawerRoleChip[data-talkmap-role="user"] { color: rgba(160, 210, 255, 0.95); background: rgba(90, 160, 255, 0.14); } .tm_hitMark { color: #0b0b0c; background: rgb(255, 214, 106); border-radius: 3px; padding: 0 2px; } .tm_drawerHitHead { display: flex; align-items: center; gap: 6px; min-width: 0; } .tm_drawerAgentChip { flex: none; padding: 1px 6px; border-radius: 999px; border: 1px solid var(--dsw-alias-border-l2); font-size: calc(10px + var(--tm-font-step, 0px)); line-height: 1.5; color: var(--dsw-alias-label-secondary); letter-spacing: 0.02em; } .tm_drawerAgentChipSub { color: rgb(255, 214, 106); border-color: rgba(255, 214, 106, 0.5); background: rgba(255, 214, 106, 0.1); } .tm_drawerHitTitle { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(12.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-primary); background: transparent; border: none; padding: 0 0 2px; cursor: pointer; } .tm_drawerHitTitle:hover { color: var(--dsw-alias-brand-primary); } .tm_peek { position: fixed; z-index: 80; width: min(500px, 88vw); max-height: 42vh; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border-radius: 10px; border: 1px solid var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.55); } .tm_peekTitle { font-size: calc(11.5px + var(--tm-font-step, 0px)); font-weight: 600; color: var(--dsw-alias-label-secondary); padding-bottom: 4px; margin-bottom: 2px; border-bottom: 1px solid var(--dsw-alias-border-l2); } .tm_peekLine { font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1.55; color: var(--dsw-alias-label-primary); white-space: pre-wrap; word-break: break-word; } .tm_peekHint { margin-top: 6px; font-size: calc(10.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); opacity: 0.7; } .tm_drawerHitMore { align-self: flex-start; margin-top: 2px; font: inherit; font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; cursor: pointer; } .tm_drawerHitMore:hover { color: var(--dsw-alias-brand-primary); } .tm_drawerHitBlock { display: flex; flex-direction: column; gap: 1px; margin-top: 4px; padding-left: 2px; } .tm_drawerHitLine { display: block; width: 100%; text-align: left; font: inherit; font-size: calc(11.5px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); background: transparent; border: none; padding: 2px 0 2px 10px; border-left: 2px solid var(--dsw-alias-border-l2); cursor: pointer; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .tm_drawerHitLine:hover { color: var(--dsw-alias-label-primary); border-left-color: var(--dsw-alias-brand-primary); } .tm_drawerScroll { overscroll-behavior: contain; scroll-behavior: auto; flex: 1; min-height: 0; overflow-y: auto; overscroll-behavior: contain; display: grid; grid-template-columns: repeat(auto-fill, 224px); justify-content: center; align-content: start; gap: 12px; padding: 16px; } .tm_drawerCard[draggable="true"] { cursor: grab; } .tm_drawerCard[data-talkmap-drag="1"] { cursor: grabbing; opacity: 0.55; transform: scale(0.98); } .tm_cardLinks { display: flex; flex-wrap: wrap; gap: 4px; margin: 2px 0 4px; } .tm_cardLinkChip { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding: 0 6px; border-radius: 4px; font-size: calc(9.5px + var(--tm-font-step, 0px)); line-height: 1.7; color: var(--dsw-alias-label-secondary); background: rgba(255, 255, 255, 0.06); } .tm_cardLinkChip[data-talkmap-link="out"] { color: rgba(255, 214, 106, 0.9); background: rgba(255, 214, 106, 0.12); } .tm_drawerCard { width: 224px; box-sizing: border-box; text-align: left; font: inherit; cursor: pointer; background: var(--dsw-alias-bg-layer-1); } .tm_drawerCard:hover { border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResize { position: absolute; z-index: 2; pointer-events: auto; opacity: 0.5; } .tm_wsFrameResize:hover { opacity: 1; border-color: var(--dsw-alias-brand-primary); } .tm_wsFrameResizeN { cursor: ns-resize; border-top: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 14px 0 0; } .tm_wsFrameResizeS { cursor: ns-resize; border-bottom: 3px solid var(--dsw-alias-border-l3); border-radius: 0 0 14px 14px; } .tm_wsFrameResizeW { cursor: ew-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-radius: 14px 0 0 14px; } .tm_wsFrameResizeE { cursor: ew-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-radius: 0 14px 14px 0; } .tm_wsFrameResizeNw, .tm_wsFrameResizeNe, .tm_wsFrameResizeSw, .tm_wsFrameResizeSe { width: 26px; height: 26px; z-index: 3; } .tm_wsFrameResizeNw { cursor: nwse-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-left-radius: 14px; } .tm_wsFrameResizeNe { cursor: nesw-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-top: 3px solid var(--dsw-alias-border-l3); border-top-right-radius: 14px; } .tm_wsFrameResizeSw { cursor: nesw-resize; border-left: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-left-radius: 14px; } .tm_wsFrameResizeSe { cursor: nwse-resize; border-right: 3px solid var(--dsw-alias-border-l3); border-bottom: 3px solid var(--dsw-alias-border-l3); border-bottom-right-radius: 14px; } .tm_batchBar { position: absolute; left: 50%; bottom: 18px; transform: translateX(-50%); z-index: 20; display: flex; align-items: center; gap: 8px; padding: 8px 14px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 8px 24px var(--dsw-alias-bg-mask-2); } .tm_batchCount { font-size: calc(12px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-secondary); white-space: nowrap; } .tm_batchSpace { width: 6px; } .tm_batchAction { padding: 5px 14px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 999px; background: transparent; color: var(--dsw-alias-label-primary); font-size: calc(12px + var(--tm-font-step, 0px)); cursor: pointer; white-space: nowrap; } .tm_batchAction:hover:not(:disabled) { background: var(--dsw-alias-interactive-bg-hover); } .tm_batchAction:disabled { opacity: 0.5; cursor: default; } .tm_batchDanger { color: var(--dsw-alias-state-error-primary); } .tm_pickBox { position: absolute; top: 6px; right: 6px; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; border: 1.5px solid var(--dsw-alias-border-l3); border-radius: 4px; background: var(--dsw-alias-bg-base); color: transparent; font-size: calc(11px + var(--tm-font-step, 0px)); line-height: 1; pointer-events: none; } .tm_pickBoxChecked { border-color: var(--dsw-alias-brand-primary); background: var(--dsw-alias-brand-primary); color: #fff; } .tm_colorToolbar { position: absolute; top: 12px; left: 12px; z-index: 20; display: flex; align-items: center; gap: 6px; padding: 6px 10px; border: 1px solid var(--dsw-alias-border-l1); border-radius: 999px; background: var(--dsw-alias-bg-layer-1); box-shadow: 0 6px 20px var(--dsw-alias-bg-mask-2); } .tm_colorToolbarLabel { font-size: calc(11px + var(--tm-font-step, 0px)); color: var(--dsw-alias-label-tertiary); margin-right: 2px; white-space: nowrap; } .tm_colorSwatch { width: 16px; height: 16px; padding: 0; border: 1px solid var(--dsw-alias-border-l2); border-radius: 50%; cursor: pointer; } .tm_colorSwatch:hover { transform: scale(1.15); } .tm_colorSwatchClear { display: flex; align-items: center; justify-content: center; background: transparent; color: var(--dsw-alias-label-secondary); font-size: calc(12px + var(--tm-font-step, 0px)); line-height: 1; } .tm_colorSwatchClear:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_drawerWires { position: absolute; left: 0; top: 0; width: 100%; height: 100%; pointer-events: none; z-index: 0; overflow: visible; } .tm_drawerScroll { position: relative; } .tm_drawerScroll > .tm_card, .tm_drawerScroll > [data-stack-card] { position: relative; z-index: 1; } .tm_canvas .react-flow__edges { z-index: 0 !important; } .tm_canvas .react-flow__nodes { z-index: 1 !important; } .tm_statusRail { position: absolute; left: 0; top: 0; bottom: 0; z-index: 6; pointer-events: none; --rail-card-w: 224px; --rail-pad: 10px; --rail-card-outer: calc(var(--rail-card-w) + 26px); --rail-w: calc(var(--rail-card-outer) + var(--rail-pad) * 2 + 2px); --tm-rail-surface: color-mix(in srgb, var(--dsw-alias-bg-layer-1) 95%, var(--dsw-alias-label-primary)); --tm-rail-accent: var(--dsw-alias-state-business-primary, var(--dsw-alias-brand-primary)); --tm-rail-shadow: color-mix(in srgb, var(--dsw-alias-bg-mask-2) 30%, transparent); } body[data-ds-dark-theme] .tm_statusRail { --tm-rail-surface: var(--dsw-alias-bg-base); } .tm_statusRailPanel { position: absolute; left: 0; top: 0; bottom: 0; width: var(--rail-w); box-sizing: border-box; padding: var(--rail-pad); display: flex; flex-direction: column; gap: 8px; background: var(--tm-rail-surface); color: var(--dsw-alias-label-primary); border-right: 1px solid var(--dsw-alias-border-l2); box-shadow: 4px 0 16px var(--tm-rail-shadow); transform: translateX(-101%); transition: transform 320ms cubic-bezier(0.22, 0.61, 0.36, 1), box-shadow 320ms ease; pointer-events: none; } .tm_statusRail[data-open="1"] .tm_statusRailPanel { transform: translateX(0); pointer-events: auto; } .tm_statusRailHead { display: flex; align-items: baseline; gap: 8px; padding: 2px 4px 0; } .tm_statusRailTitle { flex: 1; font-size: 12px; letter-spacing: 0.02em; color: var(--dsw-alias-label-secondary); } .tm_statusRailCount { font-size: 11px; color: var(--dsw-alias-label-secondary); font-variant-numeric: tabular-nums; } .tm_statusRailList { flex: 1; min-height: 0; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding: 2px 0 14px; } .tm_statusRailEmpty { padding: 8px 4px; font-size: 12px; line-height: 1.5; color: var(--dsw-alias-label-secondary); } .tm_statusRailSlot { position: relative; } .tm_statusRailSlot[draggable="true"] { cursor: grab; } .tm_statusRailSlot[draggable="true"]:active { cursor: grabbing; } .tm_statusRailCard { -webkit-user-select: none; user-select: none; --tm-rail-status: var(--tm-rail-accent); --tm-rail-status-ink: color-mix(in srgb, var(--tm-rail-status) 45%, var(--dsw-alias-label-primary)); width: var(--rail-card-w); min-height: 84px; border-color: var(--dsw-alias-border-l2); background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 1px 3px var(--tm-rail-shadow); animation: none; cursor: grab; transition: transform 120ms ease, box-shadow 120ms ease, background 140ms ease, border-color 140ms ease; } .tm_statusRailCard.tm_cardLampWaiting { --tm-rail-status: var(--dsw-alias-state-warn-primary); } .tm_statusRailCard.tm_cardLampDone { --tm-rail-status: var(--dsw-alias-state-success-primary); } .tm_statusRailCard.tm_cardLampError { --tm-rail-status: var(--dsw-alias-state-error-primary); } .tm_statusRailCard.tm_cardLampRunning::after { display: none; } .tm_statusRailCard .tm_cardChip { color: var(--tm-rail-status-ink); background: color-mix(in srgb, var(--tm-rail-status) 8%, var(--dsw-alias-bg-layer-1)); border-color: color-mix(in srgb, var(--tm-rail-status) 28%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard .tm_runningDot { background: currentColor; } .tm_statusRailCard .tm_cardTime { color: var(--dsw-alias-label-secondary); } .tm_statusRailCard:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: -2px; border-color: var(--tm-rail-accent); background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailCard:active { cursor: grabbing; } .tm_statusRailSlotFloating { pointer-events: none; } .tm_statusRailCardDragging { cursor: grabbing; transform: scale(1.02) rotate(-0.3deg); box-shadow: inset 3px 0 0 var(--tm-rail-status), 0 10px 24px color-mix(in srgb, var(--dsw-alias-bg-mask-2) 75%, transparent); opacity: 0.97; } .tm_statusRailCard:hover:not(:focus-visible) { transform: translateY(-1px); border-color: color-mix(in srgb, var(--tm-rail-accent) 25%, var(--dsw-alias-border-l2)); background: color-mix(in srgb, var(--tm-rail-accent) 4%, var(--dsw-alias-bg-layer-1)); } .tm_statusRailTab { position: absolute; top: 50%; left: 0; transform: translateY(-50%); display: flex; flex-direction: column; align-items: center; gap: 5px; min-width: 30px; padding: 13px 7px; border: 1px solid var(--dsw-alias-border-l2); border-left: none; border-radius: 0 11px 11px 0; background: var(--tm-rail-surface); box-shadow: 3px 0 10px var(--tm-rail-shadow); color: var(--dsw-alias-label-primary); cursor: pointer; font: inherit; pointer-events: auto; transition: left 320ms cubic-bezier(0.22, 0.61, 0.36, 1), color 140ms ease, background 140ms ease; } .tm_statusRail[data-open="1"] .tm_statusRailTab { left: calc(var(--rail-w) - 1px); } .tm_statusRailTab:hover { color: var(--dsw-alias-label-primary); background: color-mix(in srgb, var(--dsw-alias-label-primary) 5%, var(--tm-rail-surface)); } .tm_statusRailTab:focus-visible { outline: 2px solid var(--tm-rail-accent); outline-offset: 2px; } .tm_statusRailTabCount { font-size: 10px; line-height: 1; padding: 2px 4px; border-radius: 999px; background: color-mix(in srgb, var(--tm-rail-accent) 10%, var(--dsw-alias-bg-layer-1)); color: color-mix(in srgb, var(--tm-rail-accent) 45%, var(--dsw-alias-label-primary)); font-variant-numeric: tabular-nums; } @media (prefers-reduced-motion: reduce) { .tm_statusRailPanel, .tm_statusRailTab, .tm_statusRailCard { transition: none; } .tm_statusRailCard .tm_runningDot { animation: none; } } .tm_dangerBackdrop { position: absolute; inset: 0; z-index: 40; display: flex; align-items: center; justify-content: center; background: rgba(8, 10, 14, 0.55); backdrop-filter: blur(2px); } .tm_dangerDialog { width: min(420px, calc(100% - 48px)); padding: 18px 18px 14px; border: 1px solid var(--dsw-alias-border-secondary); border-radius: 14px; background: var(--dsw-alias-bg-elevated, #16181f); box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55); } .tm_dangerTitle { font-size: 14px; font-weight: 600; color: var(--dsw-alias-label-primary); } .tm_dangerBody { margin-top: 8px; font-size: 12.5px; line-height: 1.6; color: var(--dsw-alias-label-secondary); } .tm_dangerActions { margin-top: 16px; display: flex; justify-content: flex-end; gap: 8px; } .tm_dangerCancel, .tm_dangerOk { padding: 6px 14px; border-radius: 8px; font: inherit; font-size: 12.5px; cursor: pointer; } .tm_dangerCancel { border: 1px solid var(--dsw-alias-border-secondary); background: transparent; color: var(--dsw-alias-label-secondary); } .tm_dangerCancel:hover { color: var(--dsw-alias-label-primary); background: var(--dsw-alias-interactive-bg-hover); } .tm_dangerOk { border: 1px solid rgba(242, 78, 78, 0.55); background: rgba(242, 78, 78, 0.16); color: #ff6b6b; } .tm_dangerOk:hover { background: rgba(242, 78, 78, 0.28); color: #ff8a8a; } .tm_statusRailGhost { visibility: hidden; } .tm_statusRailFloating { position: fixed; z-index: 20; pointer-events: none; }`;
 if (typeof document !== "undefined") {
   const __selector = "style[data-plugin-css=" + JSON.stringify(__tagId) + "]";
   if (document.querySelector(__selector) === null) {
@@ -1426,7 +1509,7 @@ if (typeof document !== "undefined") {
     document.head.appendChild(__tag);
   }
 }
-var talk_map_default = { "backButton": "tm_backButton", "batchAction": "tm_batchAction", "batchBar": "tm_batchBar", "batchCount": "tm_batchCount", "batchDanger": "tm_batchDanger", "batchSpace": "tm_batchSpace", "canvas": "tm_canvas", "canvasConnecting": "tm_canvasConnecting", "card": "tm_card", "cardArchivedBadge": "tm_cardArchivedBadge", "cardBadgeDone": "tm_cardBadgeDone", "cardBadgeWaiting": "tm_cardBadgeWaiting", "cardChip": "tm_cardChip", "cardChipDone": "tm_cardChipDone", "cardChipDraft": "tm_cardChipDraft", "cardChipError": "tm_cardChipError", "cardChipInterrupted": "tm_cardChipInterrupted", "cardChipRunning": "tm_cardChipRunning", "cardChipWaiting": "tm_cardChipWaiting", "cardFooter": "tm_cardFooter", "cardGhost": "tm_cardGhost", "cardHandle": "tm_cardHandle", "cardLampDone": "tm_cardLampDone", "cardLampError": "tm_cardLampError", "cardLampRunning": "tm_cardLampRunning", "cardLampWaiting": "tm_cardLampWaiting", "cardLinkChip": "tm_cardLinkChip", "cardLinks": "tm_cardLinks", "cardNext": "tm_cardNext", "cardNextLabel": "tm_cardNextLabel", "cardNextText": "tm_cardNextText", "cardPin": "tm_cardPin", "cardQuiet": "tm_cardQuiet", "cardRefresh": "tm_cardRefresh", "cardRefreshBusy": "tm_cardRefreshBusy", "cardRemove": "tm_cardRemove", "cardReticle": "tm_cardReticle", "cardSelected": "tm_cardSelected", "cardStale": "tm_cardStale", "cardSummary": "tm_cardSummary", "cardTime": "tm_cardTime", "cardTitle": "tm_cardTitle", "cardTop": "tm_cardTop", "closeButton": "tm_closeButton", "colorSwatch": "tm_colorSwatch", "colorSwatchClear": "tm_colorSwatchClear", "colorToolbar": "tm_colorToolbar", "colorToolbarLabel": "tm_colorToolbarLabel", "dangerActions": "tm_dangerActions", "dangerBackdrop": "tm_dangerBackdrop", "dangerBody": "tm_dangerBody", "dangerCancel": "tm_dangerCancel", "dangerDialog": "tm_dangerDialog", "dangerOk": "tm_dangerOk", "dangerTitle": "tm_dangerTitle", "dialogBackdrop": "tm_dialogBackdrop", "digestActions": "tm_digestActions", "digestDialog": "tm_digestDialog", "digestDialogFrom": "tm_digestDialogFrom", "digestDialogHead": "tm_digestDialogHead", "digestDialogTitle": "tm_digestDialogTitle", "digestEmpty": "tm_digestEmpty", "digestLabel": "tm_digestLabel", "digestText": "tm_digestText", "drawer": "tm_drawer", "drawerAgentChip": "tm_drawerAgentChip", "drawerAgentChipSub": "tm_drawerAgentChipSub", "drawerBackdrop": "tm_drawerBackdrop", "drawerBackdropOut": "tm_drawerBackdropOut", "drawerCard": "tm_drawerCard", "drawerClose": "tm_drawerClose", "drawerCount": "tm_drawerCount", "drawerEmpty": "tm_drawerEmpty", "drawerHead": "tm_drawerHead", "drawerHint": "tm_drawerHint", "drawerHit": "tm_drawerHit", "drawerHitBlock": "tm_drawerHitBlock", "drawerHitHead": "tm_drawerHitHead", "drawerHitLine": "tm_drawerHitLine", "drawerHitMore": "tm_drawerHitMore", "drawerHitTitle": "tm_drawerHitTitle", "drawerHits": "tm_drawerHits", "drawerHitsHead": "tm_drawerHitsHead", "drawerOut": "tm_drawerOut", "drawerRoleChip": "tm_drawerRoleChip", "drawerScroll": "tm_drawerScroll", "drawerScrollSensor": "tm_drawerScrollSensor", "drawerSearch": "tm_drawerSearch", "drawerSearchError": "tm_drawerSearchError", "drawerSearchGo": "tm_drawerSearchGo", "drawerSearchRow": "tm_drawerSearchRow", "drawerSearchState": "tm_drawerSearchState", "drawerSpace": "tm_drawerSpace", "drawerTitle": "tm_drawerTitle", "drawerWires": "tm_drawerWires", "emptyHint": "tm_emptyHint", "fontButton": "tm_fontButton", "fontGlyphLarge": "tm_fontGlyphLarge", "fontGlyphSmall": "tm_fontGlyphSmall", "fontGroup": "tm_fontGroup", "fontReset": "tm_fontReset", "fontSign": "tm_fontSign", "globalSearch": "tm_globalSearch", "globalSearchBackdrop": "tm_globalSearchBackdrop", "globalSearchBody": "tm_globalSearchBody", "globalSearchButton": "tm_globalSearchButton", "globalSearchHead": "tm_globalSearchHead", "globalSearchInput": "tm_globalSearchInput", "globalSearchPanel": "tm_globalSearchPanel", "globalSearchTitle": "tm_globalSearchTitle", "header": "tm_header", "headerSpace": "tm_headerSpace", "hitMark": "tm_hitMark", "langButton": "tm_langButton", "mapControls": "tm_mapControls", "menu": "tm_menu", "menuEmpty": "tm_menuEmpty", "menuError": "tm_menuError", "menuHint": "tm_menuHint", "menuIcon": "tm_menuIcon", "menuItem": "tm_menuItem", "menuItemDanger": "tm_menuItemDanger", "menuPreview": "tm_menuPreview", "menuSearch": "tm_menuSearch", "menuTitle": "tm_menuTitle", "panel": "tm_panel", "peek": "tm_peek", "peekHint": "tm_peekHint", "peekLine": "tm_peekLine", "peekTitle": "tm_peekTitle", "pickBox": "tm_pickBox", "pickBoxChecked": "tm_pickBoxChecked", "reactFlowNodeEnter": "tm_reactFlowNodeEnter", "renameActions": "tm_renameActions", "renameBackdrop": "tm_renameBackdrop", "renameButton": "tm_renameButton", "renameDialog": "tm_renameDialog", "renameError": "tm_renameError", "renameHeading": "tm_renameHeading", "renameInput": "tm_renameInput", "renamePrimary": "tm_renamePrimary", "runningDot": "tm_runningDot", "searchInlineLoading": "tm_searchInlineLoading", "searchLoading": "tm_searchLoading", "searchLoadingBar": "tm_searchLoadingBar", "searchSkeletonLine": "tm_searchSkeletonLine", "searchSkeletonRow": "tm_searchSkeletonRow", "searchSkeletonTitle": "tm_searchSkeletonTitle", "snippetCode": "tm_snippetCode", "snippetLink": "tm_snippetLink", "spawnActions": "tm_spawnActions", "spawnBtnGhost": "tm_spawnBtnGhost", "spawnBtnPrimary": "tm_spawnBtnPrimary", "spawnError": "tm_spawnError", "spawnFrom": "tm_spawnFrom", "spawnHeading": "tm_spawnHeading", "spawnHint": "tm_spawnHint", "spawnModeActive": "tm_spawnModeActive", "spawnModeBtn": "tm_spawnModeBtn", "spawnModes": "tm_spawnModes", "spawnPanel": "tm_spawnPanel", "spawnTextarea": "tm_spawnTextarea", "stackBadge": "tm_stackBadge", "stackBadgeBusy": "tm_stackBadgeBusy", "stackCell": "tm_stackCell", "stackFace": "tm_stackFace", "stackFaceTitle": "tm_stackFaceTitle", "stackSheetBack": "tm_stackSheetBack", "stackSheetMid": "tm_stackSheetMid", "statusRail": "tm_statusRail", "statusRailCard": "tm_statusRailCard", "statusRailCardDragging": "tm_statusRailCardDragging", "statusRailCount": "tm_statusRailCount", "statusRailEmpty": "tm_statusRailEmpty", "statusRailFloating": "tm_statusRailFloating", "statusRailGhost": "tm_statusRailGhost", "statusRailHead": "tm_statusRailHead", "statusRailList": "tm_statusRailList", "statusRailPanel": "tm_statusRailPanel", "statusRailSlot": "tm_statusRailSlot", "statusRailSlotFloating": "tm_statusRailSlotFloating", "statusRailTab": "tm_statusRailTab", "statusRailTabCount": "tm_statusRailTabCount", "statusRailTitle": "tm_statusRailTitle", "toast": "tm_toast", "toggleButton": "tm_toggleButton", "toggleButtonActive": "tm_toggleButtonActive", "toggleIcon": "tm_toggleIcon", "toggleLabel": "tm_toggleLabel", "toggleRow": "tm_toggleRow", "wsFrame": "tm_wsFrame", "wsFrameBlocked": "tm_wsFrameBlocked", "wsFrameCount": "tm_wsFrameCount", "wsFrameEdge": "tm_wsFrameEdge", "wsFrameHidden": "tm_wsFrameHidden", "wsFrameLabel": "tm_wsFrameLabel", "wsFrameResize": "tm_wsFrameResize", "wsFrameResizeE": "tm_wsFrameResizeE", "wsFrameResizeN": "tm_wsFrameResizeN", "wsFrameResizeNe": "tm_wsFrameResizeNe", "wsFrameResizeNw": "tm_wsFrameResizeNw", "wsFrameResizeS": "tm_wsFrameResizeS", "wsFrameResizeSe": "tm_wsFrameResizeSe", "wsFrameResizeSw": "tm_wsFrameResizeSw", "wsFrameResizeW": "tm_wsFrameResizeW", "wsFrameSelected": "tm_wsFrameSelected", "zoomResetLabel": "tm_zoomResetLabel" };
+var talk_map_default = { "backButton": "tm_backButton", "batchAction": "tm_batchAction", "batchBar": "tm_batchBar", "batchCount": "tm_batchCount", "batchDanger": "tm_batchDanger", "batchSpace": "tm_batchSpace", "canvas": "tm_canvas", "canvasConnecting": "tm_canvasConnecting", "card": "tm_card", "cardArchivedBadge": "tm_cardArchivedBadge", "cardBadgeDone": "tm_cardBadgeDone", "cardBadgeWaiting": "tm_cardBadgeWaiting", "cardChip": "tm_cardChip", "cardChipDone": "tm_cardChipDone", "cardChipDraft": "tm_cardChipDraft", "cardChipError": "tm_cardChipError", "cardChipInterrupted": "tm_cardChipInterrupted", "cardChipRunning": "tm_cardChipRunning", "cardChipWaiting": "tm_cardChipWaiting", "cardFooter": "tm_cardFooter", "cardGhost": "tm_cardGhost", "cardHandle": "tm_cardHandle", "cardLampDone": "tm_cardLampDone", "cardLampError": "tm_cardLampError", "cardLampRunning": "tm_cardLampRunning", "cardLampWaiting": "tm_cardLampWaiting", "cardLinkChip": "tm_cardLinkChip", "cardLinks": "tm_cardLinks", "cardNext": "tm_cardNext", "cardNextLabel": "tm_cardNextLabel", "cardNextText": "tm_cardNextText", "cardPin": "tm_cardPin", "cardQuiet": "tm_cardQuiet", "cardRefresh": "tm_cardRefresh", "cardRefreshBusy": "tm_cardRefreshBusy", "cardRemove": "tm_cardRemove", "cardReticle": "tm_cardReticle", "cardSelected": "tm_cardSelected", "cardStale": "tm_cardStale", "cardSummary": "tm_cardSummary", "cardTime": "tm_cardTime", "cardTitle": "tm_cardTitle", "cardTop": "tm_cardTop", "closeButton": "tm_closeButton", "colorSwatch": "tm_colorSwatch", "colorSwatchClear": "tm_colorSwatchClear", "colorToolbar": "tm_colorToolbar", "colorToolbarLabel": "tm_colorToolbarLabel", "dangerActions": "tm_dangerActions", "dangerBackdrop": "tm_dangerBackdrop", "dangerBody": "tm_dangerBody", "dangerCancel": "tm_dangerCancel", "dangerDialog": "tm_dangerDialog", "dangerOk": "tm_dangerOk", "dangerTitle": "tm_dangerTitle", "dialogBackdrop": "tm_dialogBackdrop", "digestActions": "tm_digestActions", "digestDialog": "tm_digestDialog", "digestDialogFrom": "tm_digestDialogFrom", "digestDialogHead": "tm_digestDialogHead", "digestDialogTitle": "tm_digestDialogTitle", "digestEmpty": "tm_digestEmpty", "digestLabel": "tm_digestLabel", "digestText": "tm_digestText", "drawer": "tm_drawer", "drawerAgentChip": "tm_drawerAgentChip", "drawerAgentChipSub": "tm_drawerAgentChipSub", "drawerBackdrop": "tm_drawerBackdrop", "drawerBackdropOut": "tm_drawerBackdropOut", "drawerCard": "tm_drawerCard", "drawerClose": "tm_drawerClose", "drawerCount": "tm_drawerCount", "drawerEmpty": "tm_drawerEmpty", "drawerHead": "tm_drawerHead", "drawerHint": "tm_drawerHint", "drawerHit": "tm_drawerHit", "drawerHitBlock": "tm_drawerHitBlock", "drawerHitHead": "tm_drawerHitHead", "drawerHitLine": "tm_drawerHitLine", "drawerHitMore": "tm_drawerHitMore", "drawerHitTitle": "tm_drawerHitTitle", "drawerHits": "tm_drawerHits", "drawerHitsHead": "tm_drawerHitsHead", "drawerOut": "tm_drawerOut", "drawerRoleChip": "tm_drawerRoleChip", "drawerScroll": "tm_drawerScroll", "drawerScrollSensor": "tm_drawerScrollSensor", "drawerSearch": "tm_drawerSearch", "drawerSearchError": "tm_drawerSearchError", "drawerSearchGo": "tm_drawerSearchGo", "drawerSearchRow": "tm_drawerSearchRow", "drawerSearchState": "tm_drawerSearchState", "drawerSpace": "tm_drawerSpace", "drawerTitle": "tm_drawerTitle", "drawerWires": "tm_drawerWires", "emptyHint": "tm_emptyHint", "fontButton": "tm_fontButton", "fontGlyphLarge": "tm_fontGlyphLarge", "fontGlyphSmall": "tm_fontGlyphSmall", "fontGroup": "tm_fontGroup", "fontReset": "tm_fontReset", "fontSign": "tm_fontSign", "globalSearch": "tm_globalSearch", "globalSearchBackdrop": "tm_globalSearchBackdrop", "globalSearchBody": "tm_globalSearchBody", "globalSearchButton": "tm_globalSearchButton", "globalSearchHead": "tm_globalSearchHead", "globalSearchInput": "tm_globalSearchInput", "globalSearchPanel": "tm_globalSearchPanel", "globalSearchTitle": "tm_globalSearchTitle", "header": "tm_header", "headerSpace": "tm_headerSpace", "hitMark": "tm_hitMark", "langButton": "tm_langButton", "mapControls": "tm_mapControls", "menu": "tm_menu", "menuEmpty": "tm_menuEmpty", "menuError": "tm_menuError", "menuHint": "tm_menuHint", "menuIcon": "tm_menuIcon", "menuItem": "tm_menuItem", "menuItemDanger": "tm_menuItemDanger", "menuPreview": "tm_menuPreview", "menuSearch": "tm_menuSearch", "menuTitle": "tm_menuTitle", "panel": "tm_panel", "peek": "tm_peek", "peekHint": "tm_peekHint", "peekLine": "tm_peekLine", "peekTitle": "tm_peekTitle", "pickBox": "tm_pickBox", "pickBoxChecked": "tm_pickBoxChecked", "reactFlowNodeEnter": "tm_reactFlowNodeEnter", "renameActions": "tm_renameActions", "renameBackdrop": "tm_renameBackdrop", "renameButton": "tm_renameButton", "renameDialog": "tm_renameDialog", "renameError": "tm_renameError", "renameHeading": "tm_renameHeading", "renameInput": "tm_renameInput", "renamePrimary": "tm_renamePrimary", "runningDot": "tm_runningDot", "searchInlineLoading": "tm_searchInlineLoading", "searchLoading": "tm_searchLoading", "searchLoadingBar": "tm_searchLoadingBar", "searchSkeletonLine": "tm_searchSkeletonLine", "searchSkeletonRow": "tm_searchSkeletonRow", "searchSkeletonTitle": "tm_searchSkeletonTitle", "snippetCode": "tm_snippetCode", "snippetLink": "tm_snippetLink", "spawnActions": "tm_spawnActions", "spawnBtnGhost": "tm_spawnBtnGhost", "spawnBtnPrimary": "tm_spawnBtnPrimary", "spawnError": "tm_spawnError", "spawnFrom": "tm_spawnFrom", "spawnHeading": "tm_spawnHeading", "spawnHint": "tm_spawnHint", "spawnModeActive": "tm_spawnModeActive", "spawnModeBtn": "tm_spawnModeBtn", "spawnModes": "tm_spawnModes", "spawnPanel": "tm_spawnPanel", "spawnTextarea": "tm_spawnTextarea", "stackBadge": "tm_stackBadge", "stackBadgeBusy": "tm_stackBadgeBusy", "stackCell": "tm_stackCell", "stackFace": "tm_stackFace", "stackFaceTitle": "tm_stackFaceTitle", "stackSheetBack": "tm_stackSheetBack", "stackSheetMid": "tm_stackSheetMid", "statusRail": "tm_statusRail", "statusRailCard": "tm_statusRailCard", "statusRailCardDragging": "tm_statusRailCardDragging", "statusRailCount": "tm_statusRailCount", "statusRailEmpty": "tm_statusRailEmpty", "statusRailFloating": "tm_statusRailFloating", "statusRailGhost": "tm_statusRailGhost", "statusRailHead": "tm_statusRailHead", "statusRailList": "tm_statusRailList", "statusRailPanel": "tm_statusRailPanel", "statusRailSlot": "tm_statusRailSlot", "statusRailSlotFloating": "tm_statusRailSlotFloating", "statusRailTab": "tm_statusRailTab", "statusRailTabCount": "tm_statusRailTabCount", "statusRailTitle": "tm_statusRailTitle", "toast": "tm_toast", "toggleButton": "tm_toggleButton", "toggleButtonActive": "tm_toggleButtonActive", "toggleIcon": "tm_toggleIcon", "toggleLabel": "tm_toggleLabel", "toggleRow": "tm_toggleRow", "trashCopy": "tm_trashCopy", "trashDanger": "tm_trashDanger", "trashDetails": "tm_trashDetails", "trashEntry": "tm_trashEntry", "trashError": "tm_trashError", "trashList": "tm_trashList", "trashNotice": "tm_trashNotice", "trashPanel": "tm_trashPanel", "trashToolbar": "tm_trashToolbar", "wsFrame": "tm_wsFrame", "wsFrameBlocked": "tm_wsFrameBlocked", "wsFrameCount": "tm_wsFrameCount", "wsFrameEdge": "tm_wsFrameEdge", "wsFrameHidden": "tm_wsFrameHidden", "wsFrameLabel": "tm_wsFrameLabel", "wsFrameResize": "tm_wsFrameResize", "wsFrameResizeE": "tm_wsFrameResizeE", "wsFrameResizeN": "tm_wsFrameResizeN", "wsFrameResizeNe": "tm_wsFrameResizeNe", "wsFrameResizeNw": "tm_wsFrameResizeNw", "wsFrameResizeS": "tm_wsFrameResizeS", "wsFrameResizeSe": "tm_wsFrameResizeSe", "wsFrameResizeSw": "tm_wsFrameResizeSw", "wsFrameResizeW": "tm_wsFrameResizeW", "wsFrameSelected": "tm_wsFrameSelected", "zoomResetLabel": "tm_zoomResetLabel" };
 
 // src/client/markdown-inline.tsx
 var import_jsx_runtime = require("react/jsx-runtime");
@@ -1540,10 +1623,10 @@ var TTL_MS = 12 * 60 * 60 * 1e3;
 function keyFor(scope) {
   return `dsh.talk-map.search.${scope}.v1`;
 }
-function saveSearch(scope, value) {
+function saveSearch(scope, value2) {
   try {
     if (typeof localStorage === "undefined") return;
-    const payload = { ...value, at: Date.now() };
+    const payload = { ...value2, at: Date.now() };
     localStorage.setItem(keyFor(scope), JSON.stringify(payload));
   } catch {
   }
@@ -1599,14 +1682,14 @@ function GlobalSearch(props) {
     setQuery("");
     clearSearch(GLOBAL_SCOPE);
   };
-  const run = (value) => {
-    const needle = value.trim().toLowerCase();
+  const run = (value2) => {
+    const needle = value2.trim().toLowerCase();
     if (needle === "") {
       setSubmitted("");
       setHits([]);
       return;
     }
-    setSubmitted(value.trim());
+    setSubmitted(value2.trim());
     setSearching(false);
     setError(null);
     const views = allCards().filter((card) => card.title.toLowerCase().includes(needle) || card.preview.toLowerCase().includes(needle)).map((card) => {
@@ -1622,7 +1705,7 @@ function GlobalSearch(props) {
       };
     });
     setHits(views);
-    saveSearch(GLOBAL_SCOPE, { query: value.trim(), hits: views });
+    saveSearch(GLOBAL_SCOPE, { query: value2.trim(), hits: views });
   };
   return /* @__PURE__ */ (0, import_jsx_runtime3.jsxs)("div", { className: talk_map_default["globalSearch"], children: [
     /* @__PURE__ */ (0, import_jsx_runtime3.jsx)(
@@ -1702,12 +1785,327 @@ function GlobalSearch(props) {
   ] });
 }
 
+// src/client/TrashPanel.tsx
+var import_react3 = require("react");
+
+// src/client/ActionSurface.tsx
+var import_react2 = require("react");
+var import_jsx_runtime4 = require("react/jsx-runtime");
+var confirmation;
+var notice;
+var listeners4 = /* @__PURE__ */ new Set();
+var subscribe = (fn) => {
+  listeners4.add(fn);
+  return () => {
+    listeners4.delete(fn);
+  };
+};
+var publish2 = () => {
+  for (const fn of listeners4) fn();
+};
+function confirmAction(title, body) {
+  if (confirmation) return Promise.resolve(false);
+  return new Promise((resolve) => {
+    confirmation = { title, body, accept: resolve };
+    publish2();
+  });
+}
+function actionNotice(text, undo) {
+  notice = { text, undo };
+  publish2();
+}
+function finish(ok) {
+  const current = confirmation;
+  confirmation = void 0;
+  publish2();
+  current?.accept(ok);
+}
+function ActionSurface() {
+  const current = (0, import_react2.useSyncExternalStore)(subscribe, () => confirmation);
+  const message = (0, import_react2.useSyncExternalStore)(subscribe, () => notice);
+  const dialog = (0, import_react2.useRef)(null);
+  const cancel = (0, import_react2.useRef)(null);
+  (0, import_react2.useEffect)(() => {
+    if (!current) return;
+    const before = document.activeElement;
+    const release = mapUi.claimEscape("trash-confirmation");
+    cancel.current?.focus();
+    const key = (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        finish(false);
+      }
+      if (event.key === "Tab") {
+        const buttons = dialog.current?.querySelectorAll("button");
+        if (!buttons?.length) return;
+        const next = event.shiftKey ? buttons[0] : buttons[buttons.length - 1];
+        if (document.activeElement === next) {
+          event.preventDefault();
+          (event.shiftKey ? buttons[buttons.length - 1] : buttons[0]).focus();
+        }
+      }
+    };
+    window.addEventListener("keydown", key, true);
+    return () => {
+      window.removeEventListener("keydown", key, true);
+      release();
+      before?.focus();
+    };
+  }, [current]);
+  (0, import_react2.useEffect)(
+    () => () => {
+      finish(false);
+    },
+    []
+  );
+  return /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [
+    current && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: talk_map_default["renameBackdrop"], onClick: () => finish(false), children: /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)(
+      "div",
+      {
+        ref: dialog,
+        className: talk_map_default["renameDialog"],
+        role: "alertdialog",
+        "aria-modal": "true",
+        "aria-label": current.title,
+        "aria-describedby": "talk-map-confirm-description",
+        onClick: (e) => e.stopPropagation(),
+        children: [
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("div", { className: talk_map_default["renameHeading"], children: current.title }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("p", { id: "talk-map-confirm-description", className: talk_map_default["trashCopy"], children: current.body }),
+          /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: talk_map_default["renameActions"], children: [
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+              "button",
+              {
+                ref: cancel,
+                type: "button",
+                className: talk_map_default["renameButton"],
+                onClick: () => finish(false),
+                children: t("confirm.cancel")
+              }
+            ),
+            /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+              "button",
+              {
+                type: "button",
+                className: `${talk_map_default["renameButton"]} ${talk_map_default["trashDanger"]}`,
+                onClick: () => finish(true),
+                children: t("trash.confirm")
+              }
+            )
+          ] })
+        ]
+      }
+    ) }),
+    message && !current && /* @__PURE__ */ (0, import_jsx_runtime4.jsxs)("div", { className: talk_map_default["trashNotice"], role: "status", children: [
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)("span", { children: message.text }),
+      message.undo && /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "button",
+        {
+          type: "button",
+          onClick: () => {
+            notice = void 0;
+            publish2();
+            message.undo?.();
+          },
+          children: t("trash.undo")
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime4.jsx)(
+        "button",
+        {
+          type: "button",
+          "aria-label": t("map.close"),
+          onClick: () => {
+            notice = void 0;
+            publish2();
+          },
+          children: "×"
+        }
+      )
+    ] })
+  ] });
+}
+
+// src/client/TrashPanel.tsx
+var import_jsx_runtime5 = require("react/jsx-runtime");
+var TRASH_PANEL_ID = "talk-map-trash";
+function openTrashPanel() {
+  const services2 = getServices();
+  const layout = services2?.layout ?? services2?.ctx?.get?.("layout");
+  layout?.selectPanel(TRASH_PANEL_ID);
+}
+function TrashButton({ wide = true }) {
+  (0, import_react3.useSyncExternalStore)(subscribeLocale, activeLocale);
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+    "button",
+    {
+      type: "button",
+      className: talk_map_default[wide ? "toggleRow" : "toggleButton"],
+      title: t("trash.title"),
+      "aria-label": t("trash.title"),
+      onClick: openTrashPanel,
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+          "svg",
+          {
+            width: "18",
+            height: "18",
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: "1.8",
+            "aria-hidden": "true",
+            children: /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("path", { d: "M3 6h18M9 6V3h6v3M6 6l1 15h10l1-15M10 10v7M14 10v7" })
+          }
+        ),
+        wide && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { children: t("trash.title") })
+      ]
+    }
+  );
+}
+function TrashPanel() {
+  (0, import_react3.useSyncExternalStore)(subscribeLocale, activeLocale);
+  const [entries, setEntries] = (0, import_react3.useState)([]);
+  const [selected2, setSelected] = (0, import_react3.useState)(/* @__PURE__ */ new Set());
+  const [busy, setBusy] = (0, import_react3.useState)(false);
+  const [error, setError] = (0, import_react3.useState)("");
+  const [loading, setLoading] = (0, import_react3.useState)(true);
+  const request = (0, import_react3.useRef)(0);
+  const load = async () => {
+    const current = ++request.current;
+    try {
+      const value2 = await talkMapApi.getTrash();
+      if (current !== request.current) return;
+      setEntries(value2.entries);
+      setError("");
+      setSelected(/* @__PURE__ */ new Set());
+    } catch (e) {
+      if (current === request.current)
+        setError(
+          e.code === "SERVICE_UNAVAILABLE" ? t("trash.unavailable") : t("trash.loadFailed")
+        );
+    } finally {
+      if (current === request.current) setLoading(false);
+    }
+  };
+  (0, import_react3.useEffect)(() => {
+    void load();
+    const off = subscribeTrashChanges(() => void load());
+    return () => {
+      off();
+      request.current++;
+    };
+  }, []);
+  const run = async (action, ids) => {
+    if (busy || !ids.length) return;
+    if (action === "purge" && !await confirmAction(t("trash.purgeTitle"), t("trash.purgeBody", { n: String(ids.length) })))
+      return;
+    setBusy(true);
+    try {
+      const { results } = await (action === "restore" ? talkMapApi.restoreSessions(ids) : talkMapApi.purgeSessions(ids));
+      const failures = results.filter((r) => r.status === "failed");
+      await load();
+      if (failures.length)
+        setError(
+          failures.map((r) => `${r.sessionId ?? r.requestId}: ${r.error?.message}`).join("\n")
+        );
+      else
+        actionNotice(
+          t(action === "restore" ? "trash.restored" : "trash.purged", {
+            n: String(results.length)
+          })
+        );
+    } catch (e) {
+      setError(String(e));
+    } finally {
+      setBusy(false);
+    }
+  };
+  return /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("section", { className: talk_map_default["trashPanel"], "aria-label": t("trash.title"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: talk_map_default["trashToolbar"], children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("h2", { children: t("trash.title") }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", disabled: busy, onClick: () => void load(), children: t("trash.refresh") }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "button",
+        {
+          type: "button",
+          disabled: busy || !selected2.size,
+          onClick: () => void run("restore", [...selected2]),
+          children: t("trash.restoreSelected")
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "button",
+        {
+          type: "button",
+          disabled: busy || !selected2.size,
+          onClick: () => void run("purge", [...selected2]),
+          children: t("trash.purgeSelected")
+        }
+      )
+    ] }),
+    error && /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { role: "alert", className: talk_map_default["trashError"], children: error }),
+    loading ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { children: t("trash.loading") }) : entries.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("p", { children: t("trash.empty") }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: talk_map_default["trashList"], children: entries.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("article", { className: talk_map_default["trashEntry"], children: [
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "input",
+        {
+          type: "checkbox",
+          "aria-label": entry.title,
+          disabled: busy || entry.state !== "trashed",
+          checked: selected2.has(entry.entryId),
+          onChange: (e) => setSelected((prev) => {
+            const next = new Set(prev);
+            e.target.checked ? next.add(entry.entryId) : next.delete(entry.entryId);
+            return next;
+          })
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: talk_map_default["trashDetails"], children: [
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("strong", { children: entry.title }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("code", { children: entry.sessionId }),
+        /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("small", { children: [
+          entry.workspace,
+          " · ",
+          new Date(entry.deletedAt).toLocaleString(activeLocale()),
+          " ·",
+          " ",
+          t("trash.sessionCount", { n: String(entry.sessionCount) })
+        ] }),
+        entry.state !== "trashed" && /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("span", { role: "alert", children: [
+          t("trash.recoveryFailed"),
+          " ",
+          entry.error
+        ] })
+      ] }),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "button",
+        {
+          type: "button",
+          disabled: busy || entry.state !== "trashed",
+          onClick: () => void run("restore", [entry.entryId]),
+          children: t("trash.restore")
+        }
+      ),
+      /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+        "button",
+        {
+          type: "button",
+          disabled: busy || entry.state !== "trashed",
+          onClick: () => void run("purge", [entry.entryId]),
+          children: t("trash.purge")
+        }
+      )
+    ] }, entry.entryId)) })
+  ] });
+}
+
 // src/client/MapCanvas.tsx
-var import_react13 = require("react");
+var import_react15 = require("react");
 
 // node_modules/@xyflow/react/dist/esm/index.js
-var import_jsx_runtime4 = require("react/jsx-runtime");
-var import_react3 = require("react");
+var import_jsx_runtime6 = require("react/jsx-runtime");
+var import_react5 = require("react");
 
 // node_modules/classcat/index.js
 function cc(names) {
@@ -1727,13 +2125,13 @@ function cc(names) {
   return out;
 }
 
-// node_modules/d3-dispatch/src/dispatch.js
+// node_modules/d3-dispatch/dist/d3-dispatch.mjs
 var noop = { value: () => {
 } };
 function dispatch() {
-  for (var i = 0, n = arguments.length, _ = {}, t2; i < n; ++i) {
-    if (!(t2 = arguments[i] + "") || t2 in _ || /[\s.]/.test(t2)) throw new Error("illegal type: " + t2);
-    _[t2] = [];
+  for (var i = 0, n = arguments.length, _ = {}, t4; i < n; ++i) {
+    if (!(t4 = arguments[i] + "") || t4 in _ || /[\s.]/.test(t4)) throw new Error("illegal type: " + t4);
+    _[t4] = [];
   }
   return new Dispatch(_);
 }
@@ -1741,41 +2139,41 @@ function Dispatch(_) {
   this._ = _;
 }
 function parseTypenames(typenames, types) {
-  return typenames.trim().split(/^|\s+/).map(function(t2) {
-    var name2 = "", i = t2.indexOf(".");
-    if (i >= 0) name2 = t2.slice(i + 1), t2 = t2.slice(0, i);
-    if (t2 && !types.hasOwnProperty(t2)) throw new Error("unknown type: " + t2);
-    return { type: t2, name: name2 };
+  return typenames.trim().split(/^|\s+/).map(function(t4) {
+    var name2 = "", i = t4.indexOf(".");
+    if (i >= 0) name2 = t4.slice(i + 1), t4 = t4.slice(0, i);
+    if (t4 && !types.hasOwnProperty(t4)) throw new Error("unknown type: " + t4);
+    return { type: t4, name: name2 };
   });
 }
 Dispatch.prototype = dispatch.prototype = {
   constructor: Dispatch,
   on: function(typename, callback) {
-    var _ = this._, T = parseTypenames(typename + "", _), t2, i = -1, n = T.length;
+    var _ = this._, T = parseTypenames(typename + "", _), t4, i = -1, n = T.length;
     if (arguments.length < 2) {
-      while (++i < n) if ((t2 = (typename = T[i]).type) && (t2 = get(_[t2], typename.name))) return t2;
+      while (++i < n) if ((t4 = (typename = T[i]).type) && (t4 = get(_[t4], typename.name))) return t4;
       return;
     }
     if (callback != null && typeof callback !== "function") throw new Error("invalid callback: " + callback);
     while (++i < n) {
-      if (t2 = (typename = T[i]).type) _[t2] = set(_[t2], typename.name, callback);
-      else if (callback == null) for (t2 in _) _[t2] = set(_[t2], typename.name, null);
+      if (t4 = (typename = T[i]).type) _[t4] = set(_[t4], typename.name, callback);
+      else if (callback == null) for (t4 in _) _[t4] = set(_[t4], typename.name, null);
     }
     return this;
   },
   copy: function() {
     var copy = {}, _ = this._;
-    for (var t2 in _) copy[t2] = _[t2].slice();
+    for (var t4 in _) copy[t4] = _[t4].slice();
     return new Dispatch(copy);
   },
   call: function(type, that) {
-    if ((n = arguments.length - 2) > 0) for (var args = new Array(n), i = 0, n, t2; i < n; ++i) args[i] = arguments[i + 2];
+    if ((n = arguments.length - 2) > 0) for (var args = new Array(n), i = 0, n, t4; i < n; ++i) args[i] = arguments[i + 2];
     if (!this._.hasOwnProperty(type)) throw new Error("unknown type: " + type);
-    for (t2 = this._[type], i = 0, n = t2.length; i < n; ++i) t2[i].value.apply(that, args);
+    for (t4 = this._[type], i = 0, n = t4.length; i < n; ++i) t4[i].value.apply(that, args);
   },
   apply: function(type, that, args) {
     if (!this._.hasOwnProperty(type)) throw new Error("unknown type: " + type);
-    for (var t2 = this._[type], i = 0, n = t2.length; i < n; ++i) t2[i].value.apply(that, args);
+    for (var t4 = this._[type], i = 0, n = t4.length; i < n; ++i) t4[i].value.apply(that, args);
   }
 };
 function get(type, name2) {
@@ -1795,26 +2193,21 @@ function set(type, name2, callback) {
   if (callback != null) type.push({ name: name2, value: callback });
   return type;
 }
-var dispatch_default = dispatch;
 
-// node_modules/d3-selection/src/namespaces.js
+// node_modules/d3-selection/dist/d3-selection.mjs
 var xhtml = "http://www.w3.org/1999/xhtml";
-var namespaces_default = {
+var namespaces = {
   svg: "http://www.w3.org/2000/svg",
   xhtml,
   xlink: "http://www.w3.org/1999/xlink",
   xml: "http://www.w3.org/XML/1998/namespace",
   xmlns: "http://www.w3.org/2000/xmlns/"
 };
-
-// node_modules/d3-selection/src/namespace.js
-function namespace_default(name2) {
+function namespace(name2) {
   var prefix = name2 += "", i = prefix.indexOf(":");
   if (i >= 0 && (prefix = name2.slice(0, i)) !== "xmlns") name2 = name2.slice(i + 1);
-  return namespaces_default.hasOwnProperty(prefix) ? { space: namespaces_default[prefix], local: name2 } : name2;
+  return namespaces.hasOwnProperty(prefix) ? { space: namespaces[prefix], local: name2 } : name2;
 }
-
-// node_modules/d3-selection/src/creator.js
 function creatorInherit(name2) {
   return function() {
     var document2 = this.ownerDocument, uri = this.namespaceURI;
@@ -1826,26 +2219,22 @@ function creatorFixed(fullname) {
     return this.ownerDocument.createElementNS(fullname.space, fullname.local);
   };
 }
-function creator_default(name2) {
-  var fullname = namespace_default(name2);
+function creator(name2) {
+  var fullname = namespace(name2);
   return (fullname.local ? creatorFixed : creatorInherit)(fullname);
 }
-
-// node_modules/d3-selection/src/selector.js
 function none() {
 }
-function selector_default(selector) {
-  return selector == null ? none : function() {
-    return this.querySelector(selector);
+function selector(selector2) {
+  return selector2 == null ? none : function() {
+    return this.querySelector(selector2);
   };
 }
-
-// node_modules/d3-selection/src/selection/select.js
-function select_default(select) {
-  if (typeof select !== "function") select = selector_default(select);
+function selection_select(select2) {
+  if (typeof select2 !== "function") select2 = selector(select2);
   for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, subgroup = subgroups[j] = new Array(n), node, subnode, i = 0; i < n; ++i) {
-      if ((node = group[i]) && (subnode = select.call(node, node.__data__, i, group))) {
+      if ((node = group[i]) && (subnode = select2.call(node, node.__data__, i, group))) {
         if ("__data__" in node) subnode.__data__ = node.__data__;
         subgroup[i] = subnode;
       }
@@ -1853,55 +2242,45 @@ function select_default(select) {
   }
   return new Selection(subgroups, this._parents);
 }
-
-// node_modules/d3-selection/src/array.js
 function array(x) {
   return x == null ? [] : Array.isArray(x) ? x : Array.from(x);
 }
-
-// node_modules/d3-selection/src/selectorAll.js
 function empty() {
   return [];
 }
-function selectorAll_default(selector) {
-  return selector == null ? empty : function() {
-    return this.querySelectorAll(selector);
+function selectorAll(selector2) {
+  return selector2 == null ? empty : function() {
+    return this.querySelectorAll(selector2);
   };
 }
-
-// node_modules/d3-selection/src/selection/selectAll.js
-function arrayAll(select) {
+function arrayAll(select2) {
   return function() {
-    return array(select.apply(this, arguments));
+    return array(select2.apply(this, arguments));
   };
 }
-function selectAll_default(select) {
-  if (typeof select === "function") select = arrayAll(select);
-  else select = selectorAll_default(select);
+function selection_selectAll(select2) {
+  if (typeof select2 === "function") select2 = arrayAll(select2);
+  else select2 = selectorAll(select2);
   for (var groups = this._groups, m = groups.length, subgroups = [], parents = [], j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
       if (node = group[i]) {
-        subgroups.push(select.call(node, node.__data__, i, group));
+        subgroups.push(select2.call(node, node.__data__, i, group));
         parents.push(node);
       }
     }
   }
   return new Selection(subgroups, parents);
 }
-
-// node_modules/d3-selection/src/matcher.js
-function matcher_default(selector) {
+function matcher(selector2) {
   return function() {
-    return this.matches(selector);
+    return this.matches(selector2);
   };
 }
-function childMatcher(selector) {
+function childMatcher(selector2) {
   return function(node) {
-    return node.matches(selector);
+    return node.matches(selector2);
   };
 }
-
-// node_modules/d3-selection/src/selection/selectChild.js
 var find = Array.prototype.find;
 function childFind(match) {
   return function() {
@@ -1911,11 +2290,9 @@ function childFind(match) {
 function childFirst() {
   return this.firstElementChild;
 }
-function selectChild_default(match) {
+function selection_selectChild(match) {
   return this.select(match == null ? childFirst : childFind(typeof match === "function" ? match : childMatcher(match)));
 }
-
-// node_modules/d3-selection/src/selection/selectChildren.js
 var filter = Array.prototype.filter;
 function children() {
   return Array.from(this.children);
@@ -1925,13 +2302,11 @@ function childrenFilter(match) {
     return filter.call(this.children, match);
   };
 }
-function selectChildren_default(match) {
+function selection_selectChildren(match) {
   return this.selectAll(match == null ? children : childrenFilter(typeof match === "function" ? match : childMatcher(match)));
 }
-
-// node_modules/d3-selection/src/selection/filter.js
-function filter_default(match) {
-  if (typeof match !== "function") match = matcher_default(match);
+function selection_filter(match) {
+  if (typeof match !== "function") match = matcher(match);
   for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
       if ((node = group[i]) && match.call(node, node.__data__, i, group)) {
@@ -1941,15 +2316,11 @@ function filter_default(match) {
   }
   return new Selection(subgroups, this._parents);
 }
-
-// node_modules/d3-selection/src/selection/sparse.js
-function sparse_default(update) {
+function sparse(update) {
   return new Array(update.length);
 }
-
-// node_modules/d3-selection/src/selection/enter.js
-function enter_default() {
-  return new Selection(this._enter || this._groups.map(sparse_default), this._parents);
+function selection_enter() {
+  return new Selection(this._enter || this._groups.map(sparse), this._parents);
 }
 function EnterNode(parent, datum2) {
   this.ownerDocument = parent.ownerDocument;
@@ -1966,22 +2337,18 @@ EnterNode.prototype = {
   insertBefore: function(child, next) {
     return this._parent.insertBefore(child, next);
   },
-  querySelector: function(selector) {
-    return this._parent.querySelector(selector);
+  querySelector: function(selector2) {
+    return this._parent.querySelector(selector2);
   },
-  querySelectorAll: function(selector) {
-    return this._parent.querySelectorAll(selector);
+  querySelectorAll: function(selector2) {
+    return this._parent.querySelectorAll(selector2);
   }
 };
-
-// node_modules/d3-selection/src/constant.js
-function constant_default(x) {
+function constant(x) {
   return function() {
     return x;
   };
 }
-
-// node_modules/d3-selection/src/selection/data.js
 function bindIndex(parent, group, enter, update, exit, data) {
   var i = 0, node, groupLength = group.length, dataLength = data.length;
   for (; i < dataLength; ++i) {
@@ -2029,12 +2396,12 @@ function bindKey(parent, group, enter, update, exit, data, key) {
 function datum(node) {
   return node.__data__;
 }
-function data_default(value, key) {
+function selection_data(value2, key) {
   if (!arguments.length) return Array.from(this, datum);
   var bind = key ? bindKey : bindIndex, parents = this._parents, groups = this._groups;
-  if (typeof value !== "function") value = constant_default(value);
+  if (typeof value2 !== "function") value2 = constant(value2);
   for (var m = groups.length, update = new Array(m), enter = new Array(m), exit = new Array(m), j = 0; j < m; ++j) {
-    var parent = parents[j], group = groups[j], groupLength = group.length, data = arraylike(value.call(parent, parent && parent.__data__, j, parents)), dataLength = data.length, enterGroup = enter[j] = new Array(dataLength), updateGroup = update[j] = new Array(dataLength), exitGroup = exit[j] = new Array(groupLength);
+    var parent = parents[j], group = groups[j], groupLength = group.length, data = arraylike(value2.call(parent, parent && parent.__data__, j, parents)), dataLength = data.length, enterGroup = enter[j] = new Array(dataLength), updateGroup = update[j] = new Array(dataLength), exitGroup = exit[j] = new Array(groupLength);
     bind(parent, group, enterGroup, updateGroup, exitGroup, data, key);
     for (var i0 = 0, i1 = 0, previous, next; i0 < dataLength; ++i0) {
       if (previous = enterGroup[i0]) {
@@ -2052,14 +2419,10 @@ function data_default(value, key) {
 function arraylike(data) {
   return typeof data === "object" && "length" in data ? data : Array.from(data);
 }
-
-// node_modules/d3-selection/src/selection/exit.js
-function exit_default() {
-  return new Selection(this._exit || this._groups.map(sparse_default), this._parents);
+function selection_exit() {
+  return new Selection(this._exit || this._groups.map(sparse), this._parents);
 }
-
-// node_modules/d3-selection/src/selection/join.js
-function join_default(onenter, onupdate, onexit) {
+function selection_join(onenter, onupdate, onexit) {
   var enter = this.enter(), update = this, exit = this.exit();
   if (typeof onenter === "function") {
     enter = onenter(enter);
@@ -2075,9 +2438,7 @@ function join_default(onenter, onupdate, onexit) {
   else onexit(exit);
   return enter && update ? enter.merge(update).order() : update;
 }
-
-// node_modules/d3-selection/src/selection/merge.js
-function merge_default(context) {
+function selection_merge(context) {
   var selection2 = context.selection ? context.selection() : context;
   for (var groups0 = this._groups, groups1 = selection2._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) {
     for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) {
@@ -2091,9 +2452,7 @@ function merge_default(context) {
   }
   return new Selection(merges, this._parents);
 }
-
-// node_modules/d3-selection/src/selection/order.js
-function order_default() {
+function selection_order() {
   for (var groups = this._groups, j = -1, m = groups.length; ++j < m; ) {
     for (var group = groups[j], i = group.length - 1, next = group[i], node; --i >= 0; ) {
       if (node = group[i]) {
@@ -2104,9 +2463,7 @@ function order_default() {
   }
   return this;
 }
-
-// node_modules/d3-selection/src/selection/sort.js
-function sort_default(compare) {
+function selection_sort(compare) {
   if (!compare) compare = ascending;
   function compareNode(a, b) {
     return a && b ? compare(a.__data__, b.__data__) : !a - !b;
@@ -2124,22 +2481,16 @@ function sort_default(compare) {
 function ascending(a, b) {
   return a < b ? -1 : a > b ? 1 : a >= b ? 0 : NaN;
 }
-
-// node_modules/d3-selection/src/selection/call.js
-function call_default() {
+function selection_call() {
   var callback = arguments[0];
   arguments[0] = this;
   callback.apply(null, arguments);
   return this;
 }
-
-// node_modules/d3-selection/src/selection/nodes.js
-function nodes_default() {
+function selection_nodes() {
   return Array.from(this);
 }
-
-// node_modules/d3-selection/src/selection/node.js
-function node_default() {
+function selection_node() {
   for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
     for (var group = groups[j], i = 0, n = group.length; i < n; ++i) {
       var node = group[i];
@@ -2148,21 +2499,15 @@ function node_default() {
   }
   return null;
 }
-
-// node_modules/d3-selection/src/selection/size.js
-function size_default() {
+function selection_size() {
   let size = 0;
   for (const node of this) ++size;
   return size;
 }
-
-// node_modules/d3-selection/src/selection/empty.js
-function empty_default() {
+function selection_empty() {
   return !this.node();
 }
-
-// node_modules/d3-selection/src/selection/each.js
-function each_default(callback) {
+function selection_each(callback) {
   for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
     for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) {
       if (node = group[i]) callback.call(node, node.__data__, i, group);
@@ -2170,8 +2515,6 @@ function each_default(callback) {
   }
   return this;
 }
-
-// node_modules/d3-selection/src/selection/attr.js
 function attrRemove(name2) {
   return function() {
     this.removeAttribute(name2);
@@ -2182,94 +2525,86 @@ function attrRemoveNS(fullname) {
     this.removeAttributeNS(fullname.space, fullname.local);
   };
 }
-function attrConstant(name2, value) {
+function attrConstant(name2, value2) {
   return function() {
-    this.setAttribute(name2, value);
+    this.setAttribute(name2, value2);
   };
 }
-function attrConstantNS(fullname, value) {
+function attrConstantNS(fullname, value2) {
   return function() {
-    this.setAttributeNS(fullname.space, fullname.local, value);
+    this.setAttributeNS(fullname.space, fullname.local, value2);
   };
 }
-function attrFunction(name2, value) {
+function attrFunction(name2, value2) {
   return function() {
-    var v = value.apply(this, arguments);
+    var v = value2.apply(this, arguments);
     if (v == null) this.removeAttribute(name2);
     else this.setAttribute(name2, v);
   };
 }
-function attrFunctionNS(fullname, value) {
+function attrFunctionNS(fullname, value2) {
   return function() {
-    var v = value.apply(this, arguments);
+    var v = value2.apply(this, arguments);
     if (v == null) this.removeAttributeNS(fullname.space, fullname.local);
     else this.setAttributeNS(fullname.space, fullname.local, v);
   };
 }
-function attr_default(name2, value) {
-  var fullname = namespace_default(name2);
+function selection_attr(name2, value2) {
+  var fullname = namespace(name2);
   if (arguments.length < 2) {
     var node = this.node();
     return fullname.local ? node.getAttributeNS(fullname.space, fullname.local) : node.getAttribute(fullname);
   }
-  return this.each((value == null ? fullname.local ? attrRemoveNS : attrRemove : typeof value === "function" ? fullname.local ? attrFunctionNS : attrFunction : fullname.local ? attrConstantNS : attrConstant)(fullname, value));
+  return this.each((value2 == null ? fullname.local ? attrRemoveNS : attrRemove : typeof value2 === "function" ? fullname.local ? attrFunctionNS : attrFunction : fullname.local ? attrConstantNS : attrConstant)(fullname, value2));
 }
-
-// node_modules/d3-selection/src/window.js
-function window_default(node) {
+function defaultView(node) {
   return node.ownerDocument && node.ownerDocument.defaultView || node.document && node || node.defaultView;
 }
-
-// node_modules/d3-selection/src/selection/style.js
 function styleRemove(name2) {
   return function() {
     this.style.removeProperty(name2);
   };
 }
-function styleConstant(name2, value, priority) {
+function styleConstant(name2, value2, priority) {
   return function() {
-    this.style.setProperty(name2, value, priority);
+    this.style.setProperty(name2, value2, priority);
   };
 }
-function styleFunction(name2, value, priority) {
+function styleFunction(name2, value2, priority) {
   return function() {
-    var v = value.apply(this, arguments);
+    var v = value2.apply(this, arguments);
     if (v == null) this.style.removeProperty(name2);
     else this.style.setProperty(name2, v, priority);
   };
 }
-function style_default(name2, value, priority) {
-  return arguments.length > 1 ? this.each((value == null ? styleRemove : typeof value === "function" ? styleFunction : styleConstant)(name2, value, priority == null ? "" : priority)) : styleValue(this.node(), name2);
+function selection_style(name2, value2, priority) {
+  return arguments.length > 1 ? this.each((value2 == null ? styleRemove : typeof value2 === "function" ? styleFunction : styleConstant)(name2, value2, priority == null ? "" : priority)) : styleValue(this.node(), name2);
 }
 function styleValue(node, name2) {
-  return node.style.getPropertyValue(name2) || window_default(node).getComputedStyle(node, null).getPropertyValue(name2);
+  return node.style.getPropertyValue(name2) || defaultView(node).getComputedStyle(node, null).getPropertyValue(name2);
 }
-
-// node_modules/d3-selection/src/selection/property.js
 function propertyRemove(name2) {
   return function() {
     delete this[name2];
   };
 }
-function propertyConstant(name2, value) {
+function propertyConstant(name2, value2) {
   return function() {
-    this[name2] = value;
+    this[name2] = value2;
   };
 }
-function propertyFunction(name2, value) {
+function propertyFunction(name2, value2) {
   return function() {
-    var v = value.apply(this, arguments);
+    var v = value2.apply(this, arguments);
     if (v == null) delete this[name2];
     else this[name2] = v;
   };
 }
-function property_default(name2, value) {
-  return arguments.length > 1 ? this.each((value == null ? propertyRemove : typeof value === "function" ? propertyFunction : propertyConstant)(name2, value)) : this.node()[name2];
+function selection_property(name2, value2) {
+  return arguments.length > 1 ? this.each((value2 == null ? propertyRemove : typeof value2 === "function" ? propertyFunction : propertyConstant)(name2, value2)) : this.node()[name2];
 }
-
-// node_modules/d3-selection/src/selection/classed.js
-function classArray(string) {
-  return string.trim().split(/^|\s+/);
+function classArray(string2) {
+  return string2.trim().split(/^|\s+/);
 }
 function classList(node) {
   return node.classList || new ClassList(node);
@@ -2315,104 +2650,88 @@ function classedFalse(names) {
     classedRemove(this, names);
   };
 }
-function classedFunction(names, value) {
+function classedFunction(names, value2) {
   return function() {
-    (value.apply(this, arguments) ? classedAdd : classedRemove)(this, names);
+    (value2.apply(this, arguments) ? classedAdd : classedRemove)(this, names);
   };
 }
-function classed_default(name2, value) {
+function selection_classed(name2, value2) {
   var names = classArray(name2 + "");
   if (arguments.length < 2) {
     var list = classList(this.node()), i = -1, n = names.length;
     while (++i < n) if (!list.contains(names[i])) return false;
     return true;
   }
-  return this.each((typeof value === "function" ? classedFunction : value ? classedTrue : classedFalse)(names, value));
+  return this.each((typeof value2 === "function" ? classedFunction : value2 ? classedTrue : classedFalse)(names, value2));
 }
-
-// node_modules/d3-selection/src/selection/text.js
 function textRemove() {
   this.textContent = "";
 }
-function textConstant(value) {
+function textConstant(value2) {
   return function() {
-    this.textContent = value;
+    this.textContent = value2;
   };
 }
-function textFunction(value) {
+function textFunction(value2) {
   return function() {
-    var v = value.apply(this, arguments);
+    var v = value2.apply(this, arguments);
     this.textContent = v == null ? "" : v;
   };
 }
-function text_default(value) {
-  return arguments.length ? this.each(value == null ? textRemove : (typeof value === "function" ? textFunction : textConstant)(value)) : this.node().textContent;
+function selection_text(value2) {
+  return arguments.length ? this.each(value2 == null ? textRemove : (typeof value2 === "function" ? textFunction : textConstant)(value2)) : this.node().textContent;
 }
-
-// node_modules/d3-selection/src/selection/html.js
 function htmlRemove() {
   this.innerHTML = "";
 }
-function htmlConstant(value) {
+function htmlConstant(value2) {
   return function() {
-    this.innerHTML = value;
+    this.innerHTML = value2;
   };
 }
-function htmlFunction(value) {
+function htmlFunction(value2) {
   return function() {
-    var v = value.apply(this, arguments);
+    var v = value2.apply(this, arguments);
     this.innerHTML = v == null ? "" : v;
   };
 }
-function html_default(value) {
-  return arguments.length ? this.each(value == null ? htmlRemove : (typeof value === "function" ? htmlFunction : htmlConstant)(value)) : this.node().innerHTML;
+function selection_html(value2) {
+  return arguments.length ? this.each(value2 == null ? htmlRemove : (typeof value2 === "function" ? htmlFunction : htmlConstant)(value2)) : this.node().innerHTML;
 }
-
-// node_modules/d3-selection/src/selection/raise.js
 function raise() {
   if (this.nextSibling) this.parentNode.appendChild(this);
 }
-function raise_default() {
+function selection_raise() {
   return this.each(raise);
 }
-
-// node_modules/d3-selection/src/selection/lower.js
 function lower() {
   if (this.previousSibling) this.parentNode.insertBefore(this, this.parentNode.firstChild);
 }
-function lower_default() {
+function selection_lower() {
   return this.each(lower);
 }
-
-// node_modules/d3-selection/src/selection/append.js
-function append_default(name2) {
-  var create2 = typeof name2 === "function" ? name2 : creator_default(name2);
+function selection_append(name2) {
+  var create2 = typeof name2 === "function" ? name2 : creator(name2);
   return this.select(function() {
     return this.appendChild(create2.apply(this, arguments));
   });
 }
-
-// node_modules/d3-selection/src/selection/insert.js
 function constantNull() {
   return null;
 }
-function insert_default(name2, before) {
-  var create2 = typeof name2 === "function" ? name2 : creator_default(name2), select = before == null ? constantNull : typeof before === "function" ? before : selector_default(before);
+function selection_insert(name2, before) {
+  var create2 = typeof name2 === "function" ? name2 : creator(name2), select2 = before == null ? constantNull : typeof before === "function" ? before : selector(before);
   return this.select(function() {
-    return this.insertBefore(create2.apply(this, arguments), select.apply(this, arguments) || null);
+    return this.insertBefore(create2.apply(this, arguments), select2.apply(this, arguments) || null);
   });
 }
-
-// node_modules/d3-selection/src/selection/remove.js
 function remove() {
   var parent = this.parentNode;
   if (parent) parent.removeChild(this);
 }
-function remove_default() {
+function selection_remove() {
   return this.each(remove);
 }
-
-// node_modules/d3-selection/src/selection/clone.js
 function selection_cloneShallow() {
   var clone = this.cloneNode(false), parent = this.parentNode;
   return parent ? parent.insertBefore(clone, this.nextSibling) : clone;
@@ -2421,26 +2740,22 @@ function selection_cloneDeep() {
   var clone = this.cloneNode(true), parent = this.parentNode;
   return parent ? parent.insertBefore(clone, this.nextSibling) : clone;
 }
-function clone_default(deep) {
+function selection_clone(deep) {
   return this.select(deep ? selection_cloneDeep : selection_cloneShallow);
 }
-
-// node_modules/d3-selection/src/selection/datum.js
-function datum_default(value) {
-  return arguments.length ? this.property("__data__", value) : this.node().__data__;
+function selection_datum(value2) {
+  return arguments.length ? this.property("__data__", value2) : this.node().__data__;
 }
-
-// node_modules/d3-selection/src/selection/on.js
 function contextListener(listener) {
   return function(event) {
     listener.call(this, event, this.__data__);
   };
 }
 function parseTypenames2(typenames) {
-  return typenames.trim().split(/^|\s+/).map(function(t2) {
-    var name2 = "", i = t2.indexOf(".");
-    if (i >= 0) name2 = t2.slice(i + 1), t2 = t2.slice(0, i);
-    return { type: t2, name: name2 };
+  return typenames.trim().split(/^|\s+/).map(function(t4) {
+    var name2 = "", i = t4.indexOf(".");
+    if (i >= 0) name2 = t4.slice(i + 1), t4 = t4.slice(0, i);
+    return { type: t4, name: name2 };
   });
 }
 function onRemove(typename) {
@@ -2458,44 +2773,42 @@ function onRemove(typename) {
     else delete this.__on;
   };
 }
-function onAdd(typename, value, options) {
+function onAdd(typename, value2, options) {
   return function() {
-    var on = this.__on, o, listener = contextListener(value);
+    var on = this.__on, o, listener = contextListener(value2);
     if (on) for (var j = 0, m = on.length; j < m; ++j) {
       if ((o = on[j]).type === typename.type && o.name === typename.name) {
         this.removeEventListener(o.type, o.listener, o.options);
         this.addEventListener(o.type, o.listener = listener, o.options = options);
-        o.value = value;
+        o.value = value2;
         return;
       }
     }
     this.addEventListener(typename.type, listener, options);
-    o = { type: typename.type, name: typename.name, value, listener, options };
+    o = { type: typename.type, name: typename.name, value: value2, listener, options };
     if (!on) this.__on = [o];
     else on.push(o);
   };
 }
-function on_default(typename, value, options) {
-  var typenames = parseTypenames2(typename + ""), i, n = typenames.length, t2;
+function selection_on(typename, value2, options) {
+  var typenames = parseTypenames2(typename + ""), i, n = typenames.length, t4;
   if (arguments.length < 2) {
     var on = this.node().__on;
     if (on) for (var j = 0, m = on.length, o; j < m; ++j) {
       for (i = 0, o = on[j]; i < n; ++i) {
-        if ((t2 = typenames[i]).type === o.type && t2.name === o.name) {
+        if ((t4 = typenames[i]).type === o.type && t4.name === o.name) {
           return o.value;
         }
       }
     }
     return;
   }
-  on = value ? onAdd : onRemove;
-  for (i = 0; i < n; ++i) this.each(on(typenames[i], value, options));
+  on = value2 ? onAdd : onRemove;
+  for (i = 0; i < n; ++i) this.each(on(typenames[i], value2, options));
   return this;
 }
-
-// node_modules/d3-selection/src/selection/dispatch.js
 function dispatchEvent(node, type, params) {
-  var window2 = window_default(node), event = window2.CustomEvent;
+  var window2 = defaultView(node), event = window2.CustomEvent;
   if (typeof event === "function") {
     event = new event(type, params);
   } else {
@@ -2515,20 +2828,16 @@ function dispatchFunction(type, params) {
     return dispatchEvent(this, type, params.apply(this, arguments));
   };
 }
-function dispatch_default2(type, params) {
+function selection_dispatch(type, params) {
   return this.each((typeof params === "function" ? dispatchFunction : dispatchConstant)(type, params));
 }
-
-// node_modules/d3-selection/src/selection/iterator.js
-function* iterator_default() {
+function* selection_iterator() {
   for (var groups = this._groups, j = 0, m = groups.length; j < m; ++j) {
     for (var group = groups[j], i = 0, n = group.length, node; i < n; ++i) {
       if (node = group[i]) yield node;
     }
   }
 }
-
-// node_modules/d3-selection/src/selection/index.js
 var root = [null];
 function Selection(groups, parents) {
   this._groups = groups;
@@ -2542,59 +2851,76 @@ function selection_selection() {
 }
 Selection.prototype = selection.prototype = {
   constructor: Selection,
-  select: select_default,
-  selectAll: selectAll_default,
-  selectChild: selectChild_default,
-  selectChildren: selectChildren_default,
-  filter: filter_default,
-  data: data_default,
-  enter: enter_default,
-  exit: exit_default,
-  join: join_default,
-  merge: merge_default,
+  select: selection_select,
+  selectAll: selection_selectAll,
+  selectChild: selection_selectChild,
+  selectChildren: selection_selectChildren,
+  filter: selection_filter,
+  data: selection_data,
+  enter: selection_enter,
+  exit: selection_exit,
+  join: selection_join,
+  merge: selection_merge,
   selection: selection_selection,
-  order: order_default,
-  sort: sort_default,
-  call: call_default,
-  nodes: nodes_default,
-  node: node_default,
-  size: size_default,
-  empty: empty_default,
-  each: each_default,
-  attr: attr_default,
-  style: style_default,
-  property: property_default,
-  classed: classed_default,
-  text: text_default,
-  html: html_default,
-  raise: raise_default,
-  lower: lower_default,
-  append: append_default,
-  insert: insert_default,
-  remove: remove_default,
-  clone: clone_default,
-  datum: datum_default,
-  on: on_default,
-  dispatch: dispatch_default2,
-  [Symbol.iterator]: iterator_default
+  order: selection_order,
+  sort: selection_sort,
+  call: selection_call,
+  nodes: selection_nodes,
+  node: selection_node,
+  size: selection_size,
+  empty: selection_empty,
+  each: selection_each,
+  attr: selection_attr,
+  style: selection_style,
+  property: selection_property,
+  classed: selection_classed,
+  text: selection_text,
+  html: selection_html,
+  raise: selection_raise,
+  lower: selection_lower,
+  append: selection_append,
+  insert: selection_insert,
+  remove: selection_remove,
+  clone: selection_clone,
+  datum: selection_datum,
+  on: selection_on,
+  dispatch: selection_dispatch,
+  [Symbol.iterator]: selection_iterator
 };
-var selection_default = selection;
-
-// node_modules/d3-selection/src/select.js
-function select_default2(selector) {
-  return typeof selector === "string" ? new Selection([[document.querySelector(selector)]], [document.documentElement]) : new Selection([[selector]], root);
+function select(selector2) {
+  return typeof selector2 === "string" ? new Selection([[document.querySelector(selector2)]], [document.documentElement]) : new Selection([[selector2]], root);
 }
-
-// node_modules/d3-selection/src/sourceEvent.js
-function sourceEvent_default(event) {
-  let sourceEvent;
-  while (sourceEvent = event.sourceEvent) event = sourceEvent;
+var nextId = 0;
+function local() {
+  return new Local();
+}
+function Local() {
+  this._ = "@" + (++nextId).toString(36);
+}
+Local.prototype = local.prototype = {
+  constructor: Local,
+  get: function(node) {
+    var id2 = this._;
+    while (!(id2 in node)) if (!(node = node.parentNode)) return;
+    return node[id2];
+  },
+  set: function(node, value2) {
+    return node[this._] = value2;
+  },
+  remove: function(node) {
+    return this._ in node && delete node[this._];
+  },
+  toString: function() {
+    return this._;
+  }
+};
+function sourceEvent(event) {
+  let sourceEvent2;
+  while (sourceEvent2 = event.sourceEvent) event = sourceEvent2;
   return event;
 }
-
-// node_modules/d3-selection/src/pointer.js
-function pointer_default(event, node) {
-  event = sourceEvent_default(event);
+function pointer(event, node) {
+  event = sourceEvent(event);
   if (node === void 0) node = event.currentTarget;
   if (node) {
     var svg = node.ownerSVGElement || node;
@@ -2612,31 +2938,29 @@ function pointer_default(event, node) {
   return [event.pageX, event.pageY];
 }
 
-// node_modules/d3-drag/src/noevent.js
+// node_modules/d3-drag/dist/d3-drag.mjs
 var nonpassive = { passive: false };
 var nonpassivecapture = { capture: true, passive: false };
 function nopropagation(event) {
   event.stopImmediatePropagation();
 }
-function noevent_default(event) {
+function noevent(event) {
   event.preventDefault();
   event.stopImmediatePropagation();
 }
-
-// node_modules/d3-drag/src/nodrag.js
-function nodrag_default(view) {
-  var root2 = view.document.documentElement, selection2 = select_default2(view).on("dragstart.drag", noevent_default, nonpassivecapture);
+function nodrag(view) {
+  var root2 = view.document.documentElement, selection2 = select(view).on("dragstart.drag", noevent, nonpassivecapture);
   if ("onselectstart" in root2) {
-    selection2.on("selectstart.drag", noevent_default, nonpassivecapture);
+    selection2.on("selectstart.drag", noevent, nonpassivecapture);
   } else {
     root2.__noselect = root2.style.MozUserSelect;
     root2.style.MozUserSelect = "none";
   }
 }
 function yesdrag(view, noclick) {
-  var root2 = view.document.documentElement, selection2 = select_default2(view).on("dragstart.drag", null);
+  var root2 = view.document.documentElement, selection2 = select(view).on("dragstart.drag", null);
   if (noclick) {
-    selection2.on("click.drag", noevent_default, nonpassivecapture);
+    selection2.on("click.drag", noevent, nonpassivecapture);
     setTimeout(function() {
       selection2.on("click.drag", null);
     }, 0);
@@ -2648,13 +2972,9 @@ function yesdrag(view, noclick) {
     delete root2.__noselect;
   }
 }
-
-// node_modules/d3-drag/src/constant.js
-var constant_default2 = (x) => () => x;
-
-// node_modules/d3-drag/src/event.js
+var constant2 = (x) => () => x;
 function DragEvent(type, {
-  sourceEvent,
+  sourceEvent: sourceEvent2,
   subject,
   target,
   identifier,
@@ -2667,7 +2987,7 @@ function DragEvent(type, {
 }) {
   Object.defineProperties(this, {
     type: { value: type, enumerable: true, configurable: true },
-    sourceEvent: { value: sourceEvent, enumerable: true, configurable: true },
+    sourceEvent: { value: sourceEvent2, enumerable: true, configurable: true },
     subject: { value: subject, enumerable: true, configurable: true },
     target: { value: target, enumerable: true, configurable: true },
     identifier: { value: identifier, enumerable: true, configurable: true },
@@ -2680,11 +3000,9 @@ function DragEvent(type, {
   });
 }
 DragEvent.prototype.on = function() {
-  var value = this._.on.apply(this._, arguments);
-  return value === this._ ? this : value;
+  var value2 = this._.on.apply(this._, arguments);
+  return value2 === this._ ? this : value2;
 };
-
-// node_modules/d3-drag/src/drag.js
 function defaultFilter(event) {
   return !event.ctrlKey && !event.button;
 }
@@ -2697,17 +3015,17 @@ function defaultSubject(event, d) {
 function defaultTouchable() {
   return navigator.maxTouchPoints || "ontouchstart" in this;
 }
-function drag_default() {
-  var filter2 = defaultFilter, container = defaultContainer, subject = defaultSubject, touchable = defaultTouchable, gestures = {}, listeners6 = dispatch_default("start", "drag", "end"), active = 0, mousedownx, mousedowny, mousemoving, touchending, clickDistance2 = 0;
-  function drag(selection2) {
+function drag() {
+  var filter2 = defaultFilter, container = defaultContainer, subject = defaultSubject, touchable = defaultTouchable, gestures = {}, listeners7 = dispatch("start", "drag", "end"), active = 0, mousedownx, mousedowny, mousemoving, touchending, clickDistance2 = 0;
+  function drag2(selection2) {
     selection2.on("mousedown.drag", mousedowned).filter(touchable).on("touchstart.drag", touchstarted).on("touchmove.drag", touchmoved, nonpassive).on("touchend.drag touchcancel.drag", touchended).style("touch-action", "none").style("-webkit-tap-highlight-color", "rgba(0,0,0,0)");
   }
   function mousedowned(event, d) {
     if (touchending || !filter2.call(this, event, d)) return;
     var gesture = beforestart(this, container.call(this, event, d), event, d, "mouse");
     if (!gesture) return;
-    select_default2(event.view).on("mousemove.drag", mousemoved, nonpassivecapture).on("mouseup.drag", mouseupped, nonpassivecapture);
-    nodrag_default(event.view);
+    select(event.view).on("mousemove.drag", mousemoved, nonpassivecapture).on("mouseup.drag", mouseupped, nonpassivecapture);
+    nodrag(event.view);
     nopropagation(event);
     mousemoving = false;
     mousedownx = event.clientX;
@@ -2715,7 +3033,7 @@ function drag_default() {
     gesture("start", event);
   }
   function mousemoved(event) {
-    noevent_default(event);
+    noevent(event);
     if (!mousemoving) {
       var dx = event.clientX - mousedownx, dy = event.clientY - mousedowny;
       mousemoving = dx * dx + dy * dy > clickDistance2;
@@ -2723,9 +3041,9 @@ function drag_default() {
     gestures.mouse("drag", event);
   }
   function mouseupped(event) {
-    select_default2(event.view).on("mousemove.drag mouseup.drag", null);
+    select(event.view).on("mousemove.drag mouseup.drag", null);
     yesdrag(event.view, mousemoving);
-    noevent_default(event);
+    noevent(event);
     gestures.mouse("end", event);
   }
   function touchstarted(event, d) {
@@ -2742,7 +3060,7 @@ function drag_default() {
     var touches = event.changedTouches, n = touches.length, i, gesture;
     for (i = 0; i < n; ++i) {
       if (gesture = gestures[touches[i].identifier]) {
-        noevent_default(event);
+        noevent(event);
         gesture("drag", event, touches[i]);
       }
     }
@@ -2761,10 +3079,10 @@ function drag_default() {
     }
   }
   function beforestart(that, container2, event, d, identifier, touch) {
-    var dispatch2 = listeners6.copy(), p = pointer_default(touch || event, container2), dx, dy, s;
+    var dispatch2 = listeners7.copy(), p = pointer(touch || event, container2), dx, dy, s;
     if ((s = subject.call(that, new DragEvent("beforestart", {
       sourceEvent: event,
-      target: drag,
+      target: drag2,
       identifier,
       active,
       x: p[0],
@@ -2785,7 +3103,7 @@ function drag_default() {
           delete gestures[identifier], --active;
         // falls through
         case "drag":
-          p = pointer_default(touch2 || event2, container2), n = active;
+          p = pointer(touch2 || event2, container2), n = active;
           break;
       }
       dispatch2.call(
@@ -2794,7 +3112,7 @@ function drag_default() {
         new DragEvent(type, {
           sourceEvent: event2,
           subject: s,
-          target: drag,
+          target: drag2,
           identifier,
           active: n,
           x: p[0] + dx,
@@ -2807,30 +3125,30 @@ function drag_default() {
       );
     };
   }
-  drag.filter = function(_) {
-    return arguments.length ? (filter2 = typeof _ === "function" ? _ : constant_default2(!!_), drag) : filter2;
+  drag2.filter = function(_) {
+    return arguments.length ? (filter2 = typeof _ === "function" ? _ : constant2(!!_), drag2) : filter2;
   };
-  drag.container = function(_) {
-    return arguments.length ? (container = typeof _ === "function" ? _ : constant_default2(_), drag) : container;
+  drag2.container = function(_) {
+    return arguments.length ? (container = typeof _ === "function" ? _ : constant2(_), drag2) : container;
   };
-  drag.subject = function(_) {
-    return arguments.length ? (subject = typeof _ === "function" ? _ : constant_default2(_), drag) : subject;
+  drag2.subject = function(_) {
+    return arguments.length ? (subject = typeof _ === "function" ? _ : constant2(_), drag2) : subject;
   };
-  drag.touchable = function(_) {
-    return arguments.length ? (touchable = typeof _ === "function" ? _ : constant_default2(!!_), drag) : touchable;
+  drag2.touchable = function(_) {
+    return arguments.length ? (touchable = typeof _ === "function" ? _ : constant2(!!_), drag2) : touchable;
   };
-  drag.on = function() {
-    var value = listeners6.on.apply(listeners6, arguments);
-    return value === listeners6 ? drag : value;
+  drag2.on = function() {
+    var value2 = listeners7.on.apply(listeners7, arguments);
+    return value2 === listeners7 ? drag2 : value2;
   };
-  drag.clickDistance = function(_) {
-    return arguments.length ? (clickDistance2 = (_ = +_) * _, drag) : Math.sqrt(clickDistance2);
+  drag2.clickDistance = function(_) {
+    return arguments.length ? (clickDistance2 = (_ = +_) * _, drag2) : Math.sqrt(clickDistance2);
   };
-  return drag;
+  return drag2;
 }
 
-// node_modules/d3-color/src/define.js
-function define_default(constructor, factory, prototype) {
+// node_modules/d3-color/dist/d3-color.mjs
+function define(constructor, factory, prototype) {
   constructor.prototype = factory.prototype = prototype;
   prototype.constructor = constructor;
 }
@@ -2839,8 +3157,6 @@ function extend(parent, definition) {
   for (var key in definition) prototype[key] = definition[key];
   return prototype;
 }
-
-// node_modules/d3-color/src/color.js
 function Color() {
 }
 var darker = 0.7;
@@ -3005,7 +3321,7 @@ var named = {
   yellow: 16776960,
   yellowgreen: 10145074
 };
-define_default(Color, color, {
+define(Color, color, {
   copy(channels) {
     return Object.assign(new this.constructor(), this, channels);
   },
@@ -3059,7 +3375,7 @@ function Rgb(r, g, b, opacity) {
   this.b = +b;
   this.opacity = +opacity;
 }
-define_default(Rgb, rgb, extend(Color, {
+define(Rgb, rgb, extend(Color, {
   brighter(k) {
     k = k == null ? brighter : Math.pow(brighter, k);
     return new Rgb(this.r * k, this.g * k, this.b * k, this.opacity);
@@ -3097,12 +3413,12 @@ function rgb_formatRgb() {
 function clampa(opacity) {
   return isNaN(opacity) ? 1 : Math.max(0, Math.min(1, opacity));
 }
-function clampi(value) {
-  return Math.max(0, Math.min(255, Math.round(value) || 0));
+function clampi(value2) {
+  return Math.max(0, Math.min(255, Math.round(value2) || 0));
 }
-function hex(value) {
-  value = clampi(value);
-  return (value < 16 ? "0" : "") + value.toString(16);
+function hex(value2) {
+  value2 = clampi(value2);
+  return (value2 < 16 ? "0" : "") + value2.toString(16);
 }
 function hsla(h, s, l, a) {
   if (a <= 0) h = s = l = NaN;
@@ -3137,7 +3453,7 @@ function Hsl(h, s, l, opacity) {
   this.l = +l;
   this.opacity = +opacity;
 }
-define_default(Hsl, hsl, extend(Color, {
+define(Hsl, hsl, extend(Color, {
   brighter(k) {
     k = k == null ? brighter : Math.pow(brighter, k);
     return new Hsl(this.h, this.s, this.l * k, this.opacity);
@@ -3166,78 +3482,211 @@ define_default(Hsl, hsl, extend(Color, {
     return `${a === 1 ? "hsl(" : "hsla("}${clamph(this.h)}, ${clampt(this.s) * 100}%, ${clampt(this.l) * 100}%${a === 1 ? ")" : `, ${a})`}`;
   }
 }));
-function clamph(value) {
-  value = (value || 0) % 360;
-  return value < 0 ? value + 360 : value;
+function clamph(value2) {
+  value2 = (value2 || 0) % 360;
+  return value2 < 0 ? value2 + 360 : value2;
 }
-function clampt(value) {
-  return Math.max(0, Math.min(1, value || 0));
+function clampt(value2) {
+  return Math.max(0, Math.min(1, value2 || 0));
 }
 function hsl2rgb(h, m1, m2) {
   return (h < 60 ? m1 + (m2 - m1) * h / 60 : h < 180 ? m2 : h < 240 ? m1 + (m2 - m1) * (240 - h) / 60 : m1) * 255;
 }
-
-// node_modules/d3-interpolate/src/basis.js
-function basis(t1, v0, v1, v2, v3) {
-  var t2 = t1 * t1, t3 = t2 * t1;
-  return ((1 - 3 * t1 + 3 * t2 - t3) * v0 + (4 - 6 * t2 + 3 * t3) * v1 + (1 + 3 * t1 + 3 * t2 - 3 * t3) * v2 + t3 * v3) / 6;
+var radians = Math.PI / 180;
+var degrees = 180 / Math.PI;
+var K = 18;
+var Xn = 0.96422;
+var Yn = 1;
+var Zn = 0.82521;
+var t0 = 4 / 29;
+var t1 = 6 / 29;
+var t2 = 3 * t1 * t1;
+var t3 = t1 * t1 * t1;
+function labConvert(o) {
+  if (o instanceof Lab) return new Lab(o.l, o.a, o.b, o.opacity);
+  if (o instanceof Hcl) return hcl2lab(o);
+  if (!(o instanceof Rgb)) o = rgbConvert(o);
+  var r = rgb2lrgb(o.r), g = rgb2lrgb(o.g), b = rgb2lrgb(o.b), y = xyz2lab((0.2225045 * r + 0.7168786 * g + 0.0606169 * b) / Yn), x, z;
+  if (r === g && g === b) x = z = y;
+  else {
+    x = xyz2lab((0.4360747 * r + 0.3850649 * g + 0.1430804 * b) / Xn);
+    z = xyz2lab((0.0139322 * r + 0.0971045 * g + 0.7141733 * b) / Zn);
+  }
+  return new Lab(116 * y - 16, 500 * (x - y), 200 * (y - z), o.opacity);
 }
-function basis_default(values) {
+function lab(l, a, b, opacity) {
+  return arguments.length === 1 ? labConvert(l) : new Lab(l, a, b, opacity == null ? 1 : opacity);
+}
+function Lab(l, a, b, opacity) {
+  this.l = +l;
+  this.a = +a;
+  this.b = +b;
+  this.opacity = +opacity;
+}
+define(Lab, lab, extend(Color, {
+  brighter(k) {
+    return new Lab(this.l + K * (k == null ? 1 : k), this.a, this.b, this.opacity);
+  },
+  darker(k) {
+    return new Lab(this.l - K * (k == null ? 1 : k), this.a, this.b, this.opacity);
+  },
+  rgb() {
+    var y = (this.l + 16) / 116, x = isNaN(this.a) ? y : y + this.a / 500, z = isNaN(this.b) ? y : y - this.b / 200;
+    x = Xn * lab2xyz(x);
+    y = Yn * lab2xyz(y);
+    z = Zn * lab2xyz(z);
+    return new Rgb(
+      lrgb2rgb(3.1338561 * x - 1.6168667 * y - 0.4906146 * z),
+      lrgb2rgb(-0.9787684 * x + 1.9161415 * y + 0.033454 * z),
+      lrgb2rgb(0.0719453 * x - 0.2289914 * y + 1.4052427 * z),
+      this.opacity
+    );
+  }
+}));
+function xyz2lab(t4) {
+  return t4 > t3 ? Math.pow(t4, 1 / 3) : t4 / t2 + t0;
+}
+function lab2xyz(t4) {
+  return t4 > t1 ? t4 * t4 * t4 : t2 * (t4 - t0);
+}
+function lrgb2rgb(x) {
+  return 255 * (x <= 31308e-7 ? 12.92 * x : 1.055 * Math.pow(x, 1 / 2.4) - 0.055);
+}
+function rgb2lrgb(x) {
+  return (x /= 255) <= 0.04045 ? x / 12.92 : Math.pow((x + 0.055) / 1.055, 2.4);
+}
+function hclConvert(o) {
+  if (o instanceof Hcl) return new Hcl(o.h, o.c, o.l, o.opacity);
+  if (!(o instanceof Lab)) o = labConvert(o);
+  if (o.a === 0 && o.b === 0) return new Hcl(NaN, 0 < o.l && o.l < 100 ? 0 : NaN, o.l, o.opacity);
+  var h = Math.atan2(o.b, o.a) * degrees;
+  return new Hcl(h < 0 ? h + 360 : h, Math.sqrt(o.a * o.a + o.b * o.b), o.l, o.opacity);
+}
+function hcl(h, c, l, opacity) {
+  return arguments.length === 1 ? hclConvert(h) : new Hcl(h, c, l, opacity == null ? 1 : opacity);
+}
+function Hcl(h, c, l, opacity) {
+  this.h = +h;
+  this.c = +c;
+  this.l = +l;
+  this.opacity = +opacity;
+}
+function hcl2lab(o) {
+  if (isNaN(o.h)) return new Lab(o.l, 0, 0, o.opacity);
+  var h = o.h * radians;
+  return new Lab(o.l, Math.cos(h) * o.c, Math.sin(h) * o.c, o.opacity);
+}
+define(Hcl, hcl, extend(Color, {
+  brighter(k) {
+    return new Hcl(this.h, this.c, this.l + K * (k == null ? 1 : k), this.opacity);
+  },
+  darker(k) {
+    return new Hcl(this.h, this.c, this.l - K * (k == null ? 1 : k), this.opacity);
+  },
+  rgb() {
+    return hcl2lab(this).rgb();
+  }
+}));
+var A = -0.14861;
+var B = 1.78277;
+var C = -0.29227;
+var D = -0.90649;
+var E = 1.97294;
+var ED = E * D;
+var EB = E * B;
+var BC_DA = B * C - D * A;
+function cubehelixConvert(o) {
+  if (o instanceof Cubehelix) return new Cubehelix(o.h, o.s, o.l, o.opacity);
+  if (!(o instanceof Rgb)) o = rgbConvert(o);
+  var r = o.r / 255, g = o.g / 255, b = o.b / 255, l = (BC_DA * b + ED * r - EB * g) / (BC_DA + ED - EB), bl = b - l, k = (E * (g - l) - C * bl) / D, s = Math.sqrt(k * k + bl * bl) / (E * l * (1 - l)), h = s ? Math.atan2(k, bl) * degrees - 120 : NaN;
+  return new Cubehelix(h < 0 ? h + 360 : h, s, l, o.opacity);
+}
+function cubehelix(h, s, l, opacity) {
+  return arguments.length === 1 ? cubehelixConvert(h) : new Cubehelix(h, s, l, opacity == null ? 1 : opacity);
+}
+function Cubehelix(h, s, l, opacity) {
+  this.h = +h;
+  this.s = +s;
+  this.l = +l;
+  this.opacity = +opacity;
+}
+define(Cubehelix, cubehelix, extend(Color, {
+  brighter(k) {
+    k = k == null ? brighter : Math.pow(brighter, k);
+    return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
+  },
+  darker(k) {
+    k = k == null ? darker : Math.pow(darker, k);
+    return new Cubehelix(this.h, this.s, this.l * k, this.opacity);
+  },
+  rgb() {
+    var h = isNaN(this.h) ? 0 : (this.h + 120) * radians, l = +this.l, a = isNaN(this.s) ? 0 : this.s * l * (1 - l), cosh2 = Math.cos(h), sinh2 = Math.sin(h);
+    return new Rgb(
+      255 * (l + a * (A * cosh2 + B * sinh2)),
+      255 * (l + a * (C * cosh2 + D * sinh2)),
+      255 * (l + a * (E * cosh2)),
+      this.opacity
+    );
+  }
+}));
+
+// node_modules/d3-interpolate/dist/d3-interpolate.mjs
+function basis(t12, v0, v1, v2, v3) {
+  var t22 = t12 * t12, t32 = t22 * t12;
+  return ((1 - 3 * t12 + 3 * t22 - t32) * v0 + (4 - 6 * t22 + 3 * t32) * v1 + (1 + 3 * t12 + 3 * t22 - 3 * t32) * v2 + t32 * v3) / 6;
+}
+function basis$1(values) {
   var n = values.length - 1;
-  return function(t2) {
-    var i = t2 <= 0 ? t2 = 0 : t2 >= 1 ? (t2 = 1, n - 1) : Math.floor(t2 * n), v1 = values[i], v2 = values[i + 1], v0 = i > 0 ? values[i - 1] : 2 * v1 - v2, v3 = i < n - 1 ? values[i + 2] : 2 * v2 - v1;
-    return basis((t2 - i / n) * n, v0, v1, v2, v3);
+  return function(t4) {
+    var i = t4 <= 0 ? t4 = 0 : t4 >= 1 ? (t4 = 1, n - 1) : Math.floor(t4 * n), v1 = values[i], v2 = values[i + 1], v0 = i > 0 ? values[i - 1] : 2 * v1 - v2, v3 = i < n - 1 ? values[i + 2] : 2 * v2 - v1;
+    return basis((t4 - i / n) * n, v0, v1, v2, v3);
   };
 }
-
-// node_modules/d3-interpolate/src/basisClosed.js
-function basisClosed_default(values) {
+function basisClosed(values) {
   var n = values.length;
-  return function(t2) {
-    var i = Math.floor(((t2 %= 1) < 0 ? ++t2 : t2) * n), v0 = values[(i + n - 1) % n], v1 = values[i % n], v2 = values[(i + 1) % n], v3 = values[(i + 2) % n];
-    return basis((t2 - i / n) * n, v0, v1, v2, v3);
+  return function(t4) {
+    var i = Math.floor(((t4 %= 1) < 0 ? ++t4 : t4) * n), v0 = values[(i + n - 1) % n], v1 = values[i % n], v2 = values[(i + 1) % n], v3 = values[(i + 2) % n];
+    return basis((t4 - i / n) * n, v0, v1, v2, v3);
   };
 }
-
-// node_modules/d3-interpolate/src/constant.js
-var constant_default3 = (x) => () => x;
-
-// node_modules/d3-interpolate/src/color.js
+var constant3 = (x) => () => x;
 function linear(a, d) {
-  return function(t2) {
-    return a + t2 * d;
+  return function(t4) {
+    return a + t4 * d;
   };
 }
 function exponential(a, b, y) {
-  return a = Math.pow(a, y), b = Math.pow(b, y) - a, y = 1 / y, function(t2) {
-    return Math.pow(a + t2 * b, y);
+  return a = Math.pow(a, y), b = Math.pow(b, y) - a, y = 1 / y, function(t4) {
+    return Math.pow(a + t4 * b, y);
   };
+}
+function hue$1(a, b) {
+  var d = b - a;
+  return d ? linear(a, d > 180 || d < -180 ? d - 360 * Math.round(d / 360) : d) : constant3(isNaN(a) ? b : a);
 }
 function gamma(y) {
   return (y = +y) === 1 ? nogamma : function(a, b) {
-    return b - a ? exponential(a, b, y) : constant_default3(isNaN(a) ? b : a);
+    return b - a ? exponential(a, b, y) : constant3(isNaN(a) ? b : a);
   };
 }
 function nogamma(a, b) {
   var d = b - a;
-  return d ? linear(a, d) : constant_default3(isNaN(a) ? b : a);
+  return d ? linear(a, d) : constant3(isNaN(a) ? b : a);
 }
-
-// node_modules/d3-interpolate/src/rgb.js
-var rgb_default = (function rgbGamma(y) {
+var rgb2 = (function rgbGamma(y) {
   var color2 = gamma(y);
-  function rgb2(start2, end) {
+  function rgb3(start2, end) {
     var r = color2((start2 = rgb(start2)).r, (end = rgb(end)).r), g = color2(start2.g, end.g), b = color2(start2.b, end.b), opacity = nogamma(start2.opacity, end.opacity);
-    return function(t2) {
-      start2.r = r(t2);
-      start2.g = g(t2);
-      start2.b = b(t2);
-      start2.opacity = opacity(t2);
+    return function(t4) {
+      start2.r = r(t4);
+      start2.g = g(t4);
+      start2.b = b(t4);
+      start2.opacity = opacity(t4);
       return start2 + "";
     };
   }
-  rgb2.gamma = rgbGamma;
-  return rgb2;
+  rgb3.gamma = rgbGamma;
+  return rgb3;
 })(1);
 function rgbSpline(spline) {
   return function(colors) {
@@ -3252,75 +3701,63 @@ function rgbSpline(spline) {
     g = spline(g);
     b = spline(b);
     color2.opacity = 1;
-    return function(t2) {
-      color2.r = r(t2);
-      color2.g = g(t2);
-      color2.b = b(t2);
+    return function(t4) {
+      color2.r = r(t4);
+      color2.g = g(t4);
+      color2.b = b(t4);
       return color2 + "";
     };
   };
 }
-var rgbBasis = rgbSpline(basis_default);
-var rgbBasisClosed = rgbSpline(basisClosed_default);
-
-// node_modules/d3-interpolate/src/numberArray.js
-function numberArray_default(a, b) {
+var rgbBasis = rgbSpline(basis$1);
+var rgbBasisClosed = rgbSpline(basisClosed);
+function numberArray(a, b) {
   if (!b) b = [];
   var n = a ? Math.min(b.length, a.length) : 0, c = b.slice(), i;
-  return function(t2) {
-    for (i = 0; i < n; ++i) c[i] = a[i] * (1 - t2) + b[i] * t2;
+  return function(t4) {
+    for (i = 0; i < n; ++i) c[i] = a[i] * (1 - t4) + b[i] * t4;
     return c;
   };
 }
 function isNumberArray(x) {
   return ArrayBuffer.isView(x) && !(x instanceof DataView);
 }
-
-// node_modules/d3-interpolate/src/array.js
 function genericArray(a, b) {
   var nb = b ? b.length : 0, na = a ? Math.min(nb, a.length) : 0, x = new Array(na), c = new Array(nb), i;
-  for (i = 0; i < na; ++i) x[i] = value_default(a[i], b[i]);
+  for (i = 0; i < na; ++i) x[i] = value(a[i], b[i]);
   for (; i < nb; ++i) c[i] = b[i];
-  return function(t2) {
-    for (i = 0; i < na; ++i) c[i] = x[i](t2);
+  return function(t4) {
+    for (i = 0; i < na; ++i) c[i] = x[i](t4);
     return c;
   };
 }
-
-// node_modules/d3-interpolate/src/date.js
-function date_default(a, b) {
+function date(a, b) {
   var d = /* @__PURE__ */ new Date();
-  return a = +a, b = +b, function(t2) {
-    return d.setTime(a * (1 - t2) + b * t2), d;
+  return a = +a, b = +b, function(t4) {
+    return d.setTime(a * (1 - t4) + b * t4), d;
   };
 }
-
-// node_modules/d3-interpolate/src/number.js
-function number_default(a, b) {
-  return a = +a, b = +b, function(t2) {
-    return a * (1 - t2) + b * t2;
+function number(a, b) {
+  return a = +a, b = +b, function(t4) {
+    return a * (1 - t4) + b * t4;
   };
 }
-
-// node_modules/d3-interpolate/src/object.js
-function object_default(a, b) {
+function object(a, b) {
   var i = {}, c = {}, k;
   if (a === null || typeof a !== "object") a = {};
   if (b === null || typeof b !== "object") b = {};
   for (k in b) {
     if (k in a) {
-      i[k] = value_default(a[k], b[k]);
+      i[k] = value(a[k], b[k]);
     } else {
       c[k] = b[k];
     }
   }
-  return function(t2) {
-    for (k in i) c[k] = i[k](t2);
+  return function(t4) {
+    for (k in i) c[k] = i[k](t4);
     return c;
   };
 }
-
-// node_modules/d3-interpolate/src/string.js
 var reA = /[-+]?(?:\d+\.?\d*|\.?\d+)(?:[eE][-+]?\d+)?/g;
 var reB = new RegExp(reA.source, "g");
 function zero(b) {
@@ -3329,11 +3766,11 @@ function zero(b) {
   };
 }
 function one(b) {
-  return function(t2) {
-    return b(t2) + "";
+  return function(t4) {
+    return b(t4) + "";
   };
 }
-function string_default(a, b) {
+function string(a, b) {
   var bi = reA.lastIndex = reB.lastIndex = 0, am, bm, bs, i = -1, s = [], q = [];
   a = a + "", b = b + "";
   while ((am = reA.exec(a)) && (bm = reB.exec(b))) {
@@ -3347,7 +3784,7 @@ function string_default(a, b) {
       else s[++i] = bm;
     } else {
       s[++i] = null;
-      q.push({ i, x: number_default(am, bm) });
+      q.push({ i, x: number(am, bm) });
     }
     bi = reB.lastIndex;
   }
@@ -3356,20 +3793,16 @@ function string_default(a, b) {
     if (s[i]) s[i] += bs;
     else s[++i] = bs;
   }
-  return s.length < 2 ? q[0] ? one(q[0].x) : zero(b) : (b = q.length, function(t2) {
-    for (var i2 = 0, o; i2 < b; ++i2) s[(o = q[i2]).i] = o.x(t2);
+  return s.length < 2 ? q[0] ? one(q[0].x) : zero(b) : (b = q.length, function(t4) {
+    for (var i2 = 0, o; i2 < b; ++i2) s[(o = q[i2]).i] = o.x(t4);
     return s.join("");
   });
 }
-
-// node_modules/d3-interpolate/src/value.js
-function value_default(a, b) {
-  var t2 = typeof b, c;
-  return b == null || t2 === "boolean" ? constant_default3(b) : (t2 === "number" ? number_default : t2 === "string" ? (c = color(b)) ? (b = c, rgb_default) : string_default : b instanceof color ? rgb_default : b instanceof Date ? date_default : isNumberArray(b) ? numberArray_default : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object_default : number_default)(a, b);
+function value(a, b) {
+  var t4 = typeof b, c;
+  return b == null || t4 === "boolean" ? constant3(b) : (t4 === "number" ? number : t4 === "string" ? (c = color(b)) ? (b = c, rgb2) : string : b instanceof color ? rgb2 : b instanceof Date ? date : isNumberArray(b) ? numberArray : Array.isArray(b) ? genericArray : typeof b.valueOf !== "function" && typeof b.toString !== "function" || isNaN(b) ? object : number)(a, b);
 }
-
-// node_modules/d3-interpolate/src/transform/decompose.js
-var degrees = 180 / Math.PI;
+var degrees2 = 180 / Math.PI;
 var identity = {
   translateX: 0,
   translateY: 0,
@@ -3378,7 +3811,7 @@ var identity = {
   scaleX: 1,
   scaleY: 1
 };
-function decompose_default(a, b, c, d, e, f) {
+function decompose(a, b, c, d, e, f) {
   var scaleX, scaleY, skewX;
   if (scaleX = Math.sqrt(a * a + b * b)) a /= scaleX, b /= scaleX;
   if (skewX = a * c + b * d) c -= a * skewX, d -= b * skewX;
@@ -3387,29 +3820,25 @@ function decompose_default(a, b, c, d, e, f) {
   return {
     translateX: e,
     translateY: f,
-    rotate: Math.atan2(b, a) * degrees,
-    skewX: Math.atan(skewX) * degrees,
+    rotate: Math.atan2(b, a) * degrees2,
+    skewX: Math.atan(skewX) * degrees2,
     scaleX,
     scaleY
   };
 }
-
-// node_modules/d3-interpolate/src/transform/parse.js
 var svgNode;
-function parseCss(value) {
-  const m = new (typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix)(value + "");
-  return m.isIdentity ? identity : decompose_default(m.a, m.b, m.c, m.d, m.e, m.f);
+function parseCss(value2) {
+  const m = new (typeof DOMMatrix === "function" ? DOMMatrix : WebKitCSSMatrix)(value2 + "");
+  return m.isIdentity ? identity : decompose(m.a, m.b, m.c, m.d, m.e, m.f);
 }
-function parseSvg(value) {
-  if (value == null) return identity;
+function parseSvg(value2) {
+  if (value2 == null) return identity;
   if (!svgNode) svgNode = document.createElementNS("http://www.w3.org/2000/svg", "g");
-  svgNode.setAttribute("transform", value);
-  if (!(value = svgNode.transform.baseVal.consolidate())) return identity;
-  value = value.matrix;
-  return decompose_default(value.a, value.b, value.c, value.d, value.e, value.f);
+  svgNode.setAttribute("transform", value2);
+  if (!(value2 = svgNode.transform.baseVal.consolidate())) return identity;
+  value2 = value2.matrix;
+  return decompose(value2.a, value2.b, value2.c, value2.d, value2.e, value2.f);
 }
-
-// node_modules/d3-interpolate/src/transform/index.js
 function interpolateTransform(parse, pxComma, pxParen, degParen) {
   function pop(s) {
     return s.length ? s.pop() + " " : "";
@@ -3417,7 +3846,7 @@ function interpolateTransform(parse, pxComma, pxParen, degParen) {
   function translate(xa, ya, xb, yb, s, q) {
     if (xa !== xb || ya !== yb) {
       var i = s.push("translate(", null, pxComma, null, pxParen);
-      q.push({ i: i - 4, x: number_default(xa, xb) }, { i: i - 2, x: number_default(ya, yb) });
+      q.push({ i: i - 4, x: number(xa, xb) }, { i: i - 2, x: number(ya, yb) });
     } else if (xb || yb) {
       s.push("translate(" + xb + pxComma + yb + pxParen);
     }
@@ -3426,14 +3855,14 @@ function interpolateTransform(parse, pxComma, pxParen, degParen) {
     if (a !== b) {
       if (a - b > 180) b += 360;
       else if (b - a > 180) a += 360;
-      q.push({ i: s.push(pop(s) + "rotate(", null, degParen) - 2, x: number_default(a, b) });
+      q.push({ i: s.push(pop(s) + "rotate(", null, degParen) - 2, x: number(a, b) });
     } else if (b) {
       s.push(pop(s) + "rotate(" + b + degParen);
     }
   }
   function skewX(a, b, s, q) {
     if (a !== b) {
-      q.push({ i: s.push(pop(s) + "skewX(", null, degParen) - 2, x: number_default(a, b) });
+      q.push({ i: s.push(pop(s) + "skewX(", null, degParen) - 2, x: number(a, b) });
     } else if (b) {
       s.push(pop(s) + "skewX(" + b + degParen);
     }
@@ -3441,7 +3870,7 @@ function interpolateTransform(parse, pxComma, pxParen, degParen) {
   function scale(xa, ya, xb, yb, s, q) {
     if (xa !== xb || ya !== yb) {
       var i = s.push(pop(s) + "scale(", null, ",", null, ")");
-      q.push({ i: i - 4, x: number_default(xa, xb) }, { i: i - 2, x: number_default(ya, yb) });
+      q.push({ i: i - 4, x: number(xa, xb) }, { i: i - 2, x: number(ya, yb) });
     } else if (xb !== 1 || yb !== 1) {
       s.push(pop(s) + "scale(" + xb + "," + yb + ")");
     }
@@ -3454,17 +3883,15 @@ function interpolateTransform(parse, pxComma, pxParen, degParen) {
     skewX(a.skewX, b.skewX, s, q);
     scale(a.scaleX, a.scaleY, b.scaleX, b.scaleY, s, q);
     a = b = null;
-    return function(t2) {
+    return function(t4) {
       var i = -1, n = q.length, o;
-      while (++i < n) s[(o = q[i]).i] = o.x(t2);
+      while (++i < n) s[(o = q[i]).i] = o.x(t4);
       return s.join("");
     };
   };
 }
 var interpolateTransformCss = interpolateTransform(parseCss, "px, ", "px)", "deg)");
 var interpolateTransformSvg = interpolateTransform(parseSvg, ", ", ")", ")");
-
-// node_modules/d3-interpolate/src/zoom.js
 var epsilon2 = 1e-12;
 function cosh(x) {
   return ((x = Math.exp(x)) + 1 / x) / 2;
@@ -3475,23 +3902,23 @@ function sinh(x) {
 function tanh(x) {
   return ((x = Math.exp(2 * x)) - 1) / (x + 1);
 }
-var zoom_default = (function zoomRho(rho, rho2, rho4) {
-  function zoom(p0, p1) {
+var zoom = (function zoomRho(rho, rho2, rho4) {
+  function zoom3(p0, p1) {
     var ux0 = p0[0], uy0 = p0[1], w0 = p0[2], ux1 = p1[0], uy1 = p1[1], w1 = p1[2], dx = ux1 - ux0, dy = uy1 - uy0, d2 = dx * dx + dy * dy, i, S;
     if (d2 < epsilon2) {
       S = Math.log(w1 / w0) / rho;
-      i = function(t2) {
+      i = function(t4) {
         return [
-          ux0 + t2 * dx,
-          uy0 + t2 * dy,
-          w0 * Math.exp(rho * t2 * S)
+          ux0 + t4 * dx,
+          uy0 + t4 * dy,
+          w0 * Math.exp(rho * t4 * S)
         ];
       };
     } else {
-      var d1 = Math.sqrt(d2), b0 = (w1 * w1 - w0 * w0 + rho4 * d2) / (2 * w0 * rho2 * d1), b1 = (w1 * w1 - w0 * w0 - rho4 * d2) / (2 * w1 * rho2 * d1), r0 = Math.log(Math.sqrt(b0 * b0 + 1) - b0), r1 = Math.log(Math.sqrt(b1 * b1 + 1) - b1);
+      var d1 = Math.sqrt(d2), b02 = (w1 * w1 - w0 * w0 + rho4 * d2) / (2 * w0 * rho2 * d1), b12 = (w1 * w1 - w0 * w0 - rho4 * d2) / (2 * w1 * rho2 * d1), r0 = Math.log(Math.sqrt(b02 * b02 + 1) - b02), r1 = Math.log(Math.sqrt(b12 * b12 + 1) - b12);
       S = (r1 - r0) / rho;
-      i = function(t2) {
-        var s = t2 * S, coshr0 = cosh(r0), u = w0 / (rho2 * d1) * (coshr0 * tanh(rho * s + r0) - sinh(r0));
+      i = function(t4) {
+        var s = t4 * S, coshr0 = cosh(r0), u = w0 / (rho2 * d1) * (coshr0 * tanh(rho * s + r0) - sinh(r0));
         return [
           ux0 + u * dx,
           uy0 + u * dy,
@@ -3499,20 +3926,67 @@ var zoom_default = (function zoomRho(rho, rho2, rho4) {
         ];
       };
     }
-    i.duration = S * 1e3 * rho / Math.SQRT2;
+    i.duration = Math.abs(S) * 1e3 * rho / Math.SQRT2;
     return i;
   }
-  zoom.rho = function(_) {
+  zoom3.rho = function(_) {
     var _1 = Math.max(1e-3, +_), _2 = _1 * _1, _4 = _2 * _2;
     return zoomRho(_1, _2, _4);
   };
-  return zoom;
+  return zoom3;
 })(Math.SQRT2, 2, 4);
+function hsl2(hue) {
+  return function(start2, end) {
+    var h = hue((start2 = hsl(start2)).h, (end = hsl(end)).h), s = nogamma(start2.s, end.s), l = nogamma(start2.l, end.l), opacity = nogamma(start2.opacity, end.opacity);
+    return function(t4) {
+      start2.h = h(t4);
+      start2.s = s(t4);
+      start2.l = l(t4);
+      start2.opacity = opacity(t4);
+      return start2 + "";
+    };
+  };
+}
+var hsl_default = hsl2(hue$1);
+var hslLong = hsl2(nogamma);
+function hcl2(hue) {
+  return function(start2, end) {
+    var h = hue((start2 = hcl(start2)).h, (end = hcl(end)).h), c = nogamma(start2.c, end.c), l = nogamma(start2.l, end.l), opacity = nogamma(start2.opacity, end.opacity);
+    return function(t4) {
+      start2.h = h(t4);
+      start2.c = c(t4);
+      start2.l = l(t4);
+      start2.opacity = opacity(t4);
+      return start2 + "";
+    };
+  };
+}
+var hcl_default = hcl2(hue$1);
+var hclLong = hcl2(nogamma);
+function cubehelix2(hue) {
+  return (function cubehelixGamma(y) {
+    y = +y;
+    function cubehelix3(start2, end) {
+      var h = hue((start2 = cubehelix(start2)).h, (end = cubehelix(end)).h), s = nogamma(start2.s, end.s), l = nogamma(start2.l, end.l), opacity = nogamma(start2.opacity, end.opacity);
+      return function(t4) {
+        start2.h = h(t4);
+        start2.s = s(t4);
+        start2.l = l(Math.pow(t4, y));
+        start2.opacity = opacity(t4);
+        return start2 + "";
+      };
+    }
+    cubehelix3.gamma = cubehelixGamma;
+    return cubehelix3;
+  })(1);
+}
+var cubehelix_default = cubehelix2(hue$1);
+var cubehelixLong = cubehelix2(nogamma);
 
-// node_modules/d3-timer/src/timer.js
+// node_modules/d3-timer/dist/d3-timer.mjs
 var frame = 0;
-var timeout = 0;
-var interval = 0;
+var timeout$1 = 0;
+var interval$1 = 0;
 var pokeDelay = 1e3;
 var taskHead;
 var taskTail;
@@ -3555,23 +4029,23 @@ Timer.prototype = timer.prototype = {
   }
 };
 function timer(callback, delay, time) {
-  var t2 = new Timer();
-  t2.restart(callback, delay, time);
-  return t2;
+  var t4 = new Timer();
+  t4.restart(callback, delay, time);
+  return t4;
 }
 function timerFlush() {
   now();
   ++frame;
-  var t2 = taskHead, e;
-  while (t2) {
-    if ((e = clockNow - t2._time) >= 0) t2._call.call(void 0, e);
-    t2 = t2._next;
+  var t4 = taskHead, e;
+  while (t4) {
+    if ((e = clockNow - t4._time) >= 0) t4._call.call(void 0, e);
+    t4 = t4._next;
   }
   --frame;
 }
 function wake() {
   clockNow = (clockLast = clock.now()) + clockSkew;
-  frame = timeout = 0;
+  frame = timeout$1 = 0;
   try {
     timerFlush();
   } finally {
@@ -3585,45 +4059,155 @@ function poke() {
   if (delay > pokeDelay) clockSkew -= delay, clockLast = now2;
 }
 function nap() {
-  var t0, t1 = taskHead, t2, time = Infinity;
-  while (t1) {
-    if (t1._call) {
-      if (time > t1._time) time = t1._time;
-      t0 = t1, t1 = t1._next;
+  var t02, t12 = taskHead, t22, time = Infinity;
+  while (t12) {
+    if (t12._call) {
+      if (time > t12._time) time = t12._time;
+      t02 = t12, t12 = t12._next;
     } else {
-      t2 = t1._next, t1._next = null;
-      t1 = t0 ? t0._next = t2 : taskHead = t2;
+      t22 = t12._next, t12._next = null;
+      t12 = t02 ? t02._next = t22 : taskHead = t22;
     }
   }
-  taskTail = t0;
+  taskTail = t02;
   sleep(time);
 }
 function sleep(time) {
   if (frame) return;
-  if (timeout) timeout = clearTimeout(timeout);
+  if (timeout$1) timeout$1 = clearTimeout(timeout$1);
   var delay = time - clockNow;
   if (delay > 24) {
-    if (time < Infinity) timeout = setTimeout(wake, time - clock.now() - clockSkew);
-    if (interval) interval = clearInterval(interval);
+    if (time < Infinity) timeout$1 = setTimeout(wake, Math.ceil(time - clock.now() - clockSkew) + 1);
+    if (interval$1) interval$1 = clearInterval(interval$1);
   } else {
-    if (!interval) clockLast = clock.now(), interval = setInterval(poke, pokeDelay);
+    if (!interval$1) clockLast = clock.now(), interval$1 = setInterval(poke, pokeDelay);
     frame = 1, setFrame(wake);
   }
 }
-
-// node_modules/d3-timer/src/timeout.js
-function timeout_default(callback, delay, time) {
-  var t2 = new Timer();
+function timeout(callback, delay, time) {
+  var t4 = new Timer();
   delay = delay == null ? 0 : +delay;
-  t2.restart((elapsed) => {
-    t2.stop();
+  t4.restart((elapsed) => {
+    t4.stop();
     callback(elapsed + delay);
   }, delay, time);
-  return t2;
+  return t4;
 }
 
-// node_modules/d3-transition/src/transition/schedule.js
-var emptyOn = dispatch_default("start", "end", "cancel", "interrupt");
+// node_modules/d3-ease/dist/d3-ease.mjs
+function cubicInOut(t4) {
+  return ((t4 *= 2) <= 1 ? t4 * t4 * t4 : (t4 -= 2) * t4 * t4 + 2) / 2;
+}
+var exponent = 3;
+var polyIn = (function custom(e) {
+  e = +e;
+  function polyIn2(t4) {
+    return Math.pow(t4, e);
+  }
+  polyIn2.exponent = custom;
+  return polyIn2;
+})(exponent);
+var polyOut = (function custom2(e) {
+  e = +e;
+  function polyOut2(t4) {
+    return 1 - Math.pow(1 - t4, e);
+  }
+  polyOut2.exponent = custom2;
+  return polyOut2;
+})(exponent);
+var polyInOut = (function custom3(e) {
+  e = +e;
+  function polyInOut2(t4) {
+    return ((t4 *= 2) <= 1 ? Math.pow(t4, e) : 2 - Math.pow(2 - t4, e)) / 2;
+  }
+  polyInOut2.exponent = custom3;
+  return polyInOut2;
+})(exponent);
+var pi = Math.PI;
+var halfPi = pi / 2;
+function tpmt(x) {
+  return (Math.pow(2, -10 * x) - 9765625e-10) * 1.0009775171065494;
+}
+var b1 = 4 / 11;
+var b2 = 6 / 11;
+var b3 = 8 / 11;
+var b4 = 3 / 4;
+var b5 = 9 / 11;
+var b6 = 10 / 11;
+var b7 = 15 / 16;
+var b8 = 21 / 22;
+var b9 = 63 / 64;
+var b0 = 1 / b1 / b1;
+var overshoot = 1.70158;
+var backIn = (function custom4(s) {
+  s = +s;
+  function backIn2(t4) {
+    return (t4 = +t4) * t4 * (s * (t4 - 1) + t4);
+  }
+  backIn2.overshoot = custom4;
+  return backIn2;
+})(overshoot);
+var backOut = (function custom5(s) {
+  s = +s;
+  function backOut2(t4) {
+    return --t4 * t4 * ((t4 + 1) * s + t4) + 1;
+  }
+  backOut2.overshoot = custom5;
+  return backOut2;
+})(overshoot);
+var backInOut = (function custom6(s) {
+  s = +s;
+  function backInOut2(t4) {
+    return ((t4 *= 2) < 1 ? t4 * t4 * ((s + 1) * t4 - s) : (t4 -= 2) * t4 * ((s + 1) * t4 + s) + 2) / 2;
+  }
+  backInOut2.overshoot = custom6;
+  return backInOut2;
+})(overshoot);
+var tau = 2 * Math.PI;
+var amplitude = 1;
+var period = 0.3;
+var elasticIn = (function custom7(a, p) {
+  var s = Math.asin(1 / (a = Math.max(1, a))) * (p /= tau);
+  function elasticIn2(t4) {
+    return a * tpmt(- --t4) * Math.sin((s - t4) / p);
+  }
+  elasticIn2.amplitude = function(a2) {
+    return custom7(a2, p * tau);
+  };
+  elasticIn2.period = function(p2) {
+    return custom7(a, p2);
+  };
+  return elasticIn2;
+})(amplitude, period);
+var elasticOut = (function custom8(a, p) {
+  var s = Math.asin(1 / (a = Math.max(1, a))) * (p /= tau);
+  function elasticOut2(t4) {
+    return 1 - a * tpmt(t4 = +t4) * Math.sin((t4 + s) / p);
+  }
+  elasticOut2.amplitude = function(a2) {
+    return custom8(a2, p * tau);
+  };
+  elasticOut2.period = function(p2) {
+    return custom8(a, p2);
+  };
+  return elasticOut2;
+})(amplitude, period);
+var elasticInOut = (function custom9(a, p) {
+  var s = Math.asin(1 / (a = Math.max(1, a))) * (p /= tau);
+  function elasticInOut2(t4) {
+    return ((t4 = t4 * 2 - 1) < 0 ? a * tpmt(-t4) * Math.sin((s - t4) / p) : 2 - a * tpmt(t4) * Math.sin((s + t4) / p)) / 2;
+  }
+  elasticInOut2.amplitude = function(a2) {
+    return custom9(a2, p * tau);
+  };
+  elasticInOut2.period = function(p2) {
+    return custom9(a, p2);
+  };
+  return elasticInOut2;
+})(amplitude, period);
+
+// node_modules/d3-transition/dist/d3-transition.mjs
+var emptyOn = dispatch("start", "end", "cancel", "interrupt");
 var emptyTween = [];
 var CREATED = 0;
 var SCHEDULED = 1;
@@ -3632,7 +4216,7 @@ var STARTED = 3;
 var RUNNING = 4;
 var ENDING = 5;
 var ENDED = 6;
-function schedule_default(node, name2, id2, index2, group, timing) {
+function schedule(node, name2, id2, index2, group, timing) {
   var schedules = node.__transition;
   if (!schedules) node.__transition = {};
   else if (id2 in schedules) return;
@@ -3653,25 +4237,25 @@ function schedule_default(node, name2, id2, index2, group, timing) {
   });
 }
 function init(node, id2) {
-  var schedule = get2(node, id2);
-  if (schedule.state > CREATED) throw new Error("too late; already scheduled");
-  return schedule;
+  var schedule2 = get2(node, id2);
+  if (schedule2.state > CREATED) throw new Error("too late; already scheduled");
+  return schedule2;
 }
 function set2(node, id2) {
-  var schedule = get2(node, id2);
-  if (schedule.state > STARTED) throw new Error("too late; already running");
-  return schedule;
+  var schedule2 = get2(node, id2);
+  if (schedule2.state > STARTED) throw new Error("too late; already running");
+  return schedule2;
 }
 function get2(node, id2) {
-  var schedule = node.__transition;
-  if (!schedule || !(schedule = schedule[id2])) throw new Error("transition not found");
-  return schedule;
+  var schedule2 = node.__transition;
+  if (!schedule2 || !(schedule2 = schedule2[id2])) throw new Error("transition not found");
+  return schedule2;
 }
 function create(node, id2, self) {
   var schedules = node.__transition, tween;
   schedules[id2] = self;
-  self.timer = timer(schedule, 0, self.time);
-  function schedule(elapsed) {
+  self.timer = timer(schedule2, 0, self.time);
+  function schedule2(elapsed) {
     self.state = SCHEDULED;
     self.timer.restart(start2, self.delay, self.time);
     if (self.delay <= elapsed) start2(elapsed - self.delay);
@@ -3682,7 +4266,7 @@ function create(node, id2, self) {
     for (i in schedules) {
       o = schedules[i];
       if (o.name !== self.name) continue;
-      if (o.state === STARTED) return timeout_default(start2);
+      if (o.state === STARTED) return timeout(start2);
       if (o.state === RUNNING) {
         o.state = ENDED;
         o.timer.stop();
@@ -3695,7 +4279,7 @@ function create(node, id2, self) {
         delete schedules[i];
       }
     }
-    timeout_default(function() {
+    timeout(function() {
       if (self.state === STARTED) {
         self.state = RUNNING;
         self.timer.restart(tick, self.delay, self.time);
@@ -3715,9 +4299,9 @@ function create(node, id2, self) {
     tween.length = j + 1;
   }
   function tick(elapsed) {
-    var t2 = elapsed < self.duration ? self.ease.call(null, elapsed / self.duration) : (self.timer.restart(stop), self.state = ENDING, 1), i = -1, n = tween.length;
+    var t4 = elapsed < self.duration ? self.ease.call(null, elapsed / self.duration) : (self.timer.restart(stop), self.state = ENDING, 1), i = -1, n = tween.length;
     while (++i < n) {
-      tween[i].call(node, t2);
+      tween[i].call(node, t4);
     }
     if (self.state === ENDING) {
       self.on.call("end", node, node.__data__, self.index, self.group);
@@ -3732,38 +4316,32 @@ function create(node, id2, self) {
     delete node.__transition;
   }
 }
-
-// node_modules/d3-transition/src/interrupt.js
-function interrupt_default(node, name2) {
-  var schedules = node.__transition, schedule, active, empty2 = true, i;
+function interrupt(node, name2) {
+  var schedules = node.__transition, schedule2, active, empty2 = true, i;
   if (!schedules) return;
   name2 = name2 == null ? null : name2 + "";
   for (i in schedules) {
-    if ((schedule = schedules[i]).name !== name2) {
+    if ((schedule2 = schedules[i]).name !== name2) {
       empty2 = false;
       continue;
     }
-    active = schedule.state > STARTING && schedule.state < ENDING;
-    schedule.state = ENDED;
-    schedule.timer.stop();
-    schedule.on.call(active ? "interrupt" : "cancel", node, node.__data__, schedule.index, schedule.group);
+    active = schedule2.state > STARTING && schedule2.state < ENDING;
+    schedule2.state = ENDED;
+    schedule2.timer.stop();
+    schedule2.on.call(active ? "interrupt" : "cancel", node, node.__data__, schedule2.index, schedule2.group);
     delete schedules[i];
   }
   if (empty2) delete node.__transition;
 }
-
-// node_modules/d3-transition/src/selection/interrupt.js
-function interrupt_default2(name2) {
+function selection_interrupt(name2) {
   return this.each(function() {
-    interrupt_default(this, name2);
+    interrupt(this, name2);
   });
 }
-
-// node_modules/d3-transition/src/transition/tween.js
 function tweenRemove(id2, name2) {
   var tween0, tween1;
   return function() {
-    var schedule = set2(this, id2), tween = schedule.tween;
+    var schedule2 = set2(this, id2), tween = schedule2.tween;
     if (tween !== tween0) {
       tween1 = tween0 = tween;
       for (var i = 0, n = tween1.length; i < n; ++i) {
@@ -3774,59 +4352,55 @@ function tweenRemove(id2, name2) {
         }
       }
     }
-    schedule.tween = tween1;
+    schedule2.tween = tween1;
   };
 }
-function tweenFunction(id2, name2, value) {
+function tweenFunction(id2, name2, value2) {
   var tween0, tween1;
-  if (typeof value !== "function") throw new Error();
+  if (typeof value2 !== "function") throw new Error();
   return function() {
-    var schedule = set2(this, id2), tween = schedule.tween;
+    var schedule2 = set2(this, id2), tween = schedule2.tween;
     if (tween !== tween0) {
       tween1 = (tween0 = tween).slice();
-      for (var t2 = { name: name2, value }, i = 0, n = tween1.length; i < n; ++i) {
+      for (var t4 = { name: name2, value: value2 }, i = 0, n = tween1.length; i < n; ++i) {
         if (tween1[i].name === name2) {
-          tween1[i] = t2;
+          tween1[i] = t4;
           break;
         }
       }
-      if (i === n) tween1.push(t2);
+      if (i === n) tween1.push(t4);
     }
-    schedule.tween = tween1;
+    schedule2.tween = tween1;
   };
 }
-function tween_default(name2, value) {
+function transition_tween(name2, value2) {
   var id2 = this._id;
   name2 += "";
   if (arguments.length < 2) {
     var tween = get2(this.node(), id2).tween;
-    for (var i = 0, n = tween.length, t2; i < n; ++i) {
-      if ((t2 = tween[i]).name === name2) {
-        return t2.value;
+    for (var i = 0, n = tween.length, t4; i < n; ++i) {
+      if ((t4 = tween[i]).name === name2) {
+        return t4.value;
       }
     }
     return null;
   }
-  return this.each((value == null ? tweenRemove : tweenFunction)(id2, name2, value));
+  return this.each((value2 == null ? tweenRemove : tweenFunction)(id2, name2, value2));
 }
-function tweenValue(transition2, name2, value) {
+function tweenValue(transition2, name2, value2) {
   var id2 = transition2._id;
   transition2.each(function() {
-    var schedule = set2(this, id2);
-    (schedule.value || (schedule.value = {}))[name2] = value.apply(this, arguments);
+    var schedule2 = set2(this, id2);
+    (schedule2.value || (schedule2.value = {}))[name2] = value2.apply(this, arguments);
   });
   return function(node) {
     return get2(node, id2).value[name2];
   };
 }
-
-// node_modules/d3-transition/src/transition/interpolate.js
-function interpolate_default(a, b) {
+function interpolate(a, b) {
   var c;
-  return (typeof b === "number" ? number_default : b instanceof color ? rgb_default : (c = color(b)) ? (b = c, rgb_default) : string_default)(a, b);
+  return (typeof b === "number" ? number : b instanceof color ? rgb2 : (c = color(b)) ? (b = c, rgb2) : string)(a, b);
 }
-
-// node_modules/d3-transition/src/transition/attr.js
 function attrRemove2(name2) {
   return function() {
     this.removeAttribute(name2);
@@ -3837,145 +4411,133 @@ function attrRemoveNS2(fullname) {
     this.removeAttributeNS(fullname.space, fullname.local);
   };
 }
-function attrConstant2(name2, interpolate, value1) {
+function attrConstant2(name2, interpolate2, value1) {
   var string00, string1 = value1 + "", interpolate0;
   return function() {
     var string0 = this.getAttribute(name2);
-    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate(string00 = string0, value1);
+    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, value1);
   };
 }
-function attrConstantNS2(fullname, interpolate, value1) {
+function attrConstantNS2(fullname, interpolate2, value1) {
   var string00, string1 = value1 + "", interpolate0;
   return function() {
     var string0 = this.getAttributeNS(fullname.space, fullname.local);
-    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate(string00 = string0, value1);
+    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, value1);
   };
 }
-function attrFunction2(name2, interpolate, value) {
+function attrFunction2(name2, interpolate2, value2) {
   var string00, string10, interpolate0;
   return function() {
-    var string0, value1 = value(this), string1;
+    var string0, value1 = value2(this), string1;
     if (value1 == null) return void this.removeAttribute(name2);
     string0 = this.getAttribute(name2);
     string1 = value1 + "";
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate(string00 = string0, value1));
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate2(string00 = string0, value1));
   };
 }
-function attrFunctionNS2(fullname, interpolate, value) {
+function attrFunctionNS2(fullname, interpolate2, value2) {
   var string00, string10, interpolate0;
   return function() {
-    var string0, value1 = value(this), string1;
+    var string0, value1 = value2(this), string1;
     if (value1 == null) return void this.removeAttributeNS(fullname.space, fullname.local);
     string0 = this.getAttributeNS(fullname.space, fullname.local);
     string1 = value1 + "";
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate(string00 = string0, value1));
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate2(string00 = string0, value1));
   };
 }
-function attr_default2(name2, value) {
-  var fullname = namespace_default(name2), i = fullname === "transform" ? interpolateTransformSvg : interpolate_default;
-  return this.attrTween(name2, typeof value === "function" ? (fullname.local ? attrFunctionNS2 : attrFunction2)(fullname, i, tweenValue(this, "attr." + name2, value)) : value == null ? (fullname.local ? attrRemoveNS2 : attrRemove2)(fullname) : (fullname.local ? attrConstantNS2 : attrConstant2)(fullname, i, value));
+function transition_attr(name2, value2) {
+  var fullname = namespace(name2), i = fullname === "transform" ? interpolateTransformSvg : interpolate;
+  return this.attrTween(name2, typeof value2 === "function" ? (fullname.local ? attrFunctionNS2 : attrFunction2)(fullname, i, tweenValue(this, "attr." + name2, value2)) : value2 == null ? (fullname.local ? attrRemoveNS2 : attrRemove2)(fullname) : (fullname.local ? attrConstantNS2 : attrConstant2)(fullname, i, value2));
 }
-
-// node_modules/d3-transition/src/transition/attrTween.js
 function attrInterpolate(name2, i) {
-  return function(t2) {
-    this.setAttribute(name2, i.call(this, t2));
+  return function(t4) {
+    this.setAttribute(name2, i.call(this, t4));
   };
 }
 function attrInterpolateNS(fullname, i) {
-  return function(t2) {
-    this.setAttributeNS(fullname.space, fullname.local, i.call(this, t2));
+  return function(t4) {
+    this.setAttributeNS(fullname.space, fullname.local, i.call(this, t4));
   };
 }
-function attrTweenNS(fullname, value) {
-  var t0, i0;
+function attrTweenNS(fullname, value2) {
+  var t02, i0;
   function tween() {
-    var i = value.apply(this, arguments);
-    if (i !== i0) t0 = (i0 = i) && attrInterpolateNS(fullname, i);
-    return t0;
+    var i = value2.apply(this, arguments);
+    if (i !== i0) t02 = (i0 = i) && attrInterpolateNS(fullname, i);
+    return t02;
   }
-  tween._value = value;
+  tween._value = value2;
   return tween;
 }
-function attrTween(name2, value) {
-  var t0, i0;
+function attrTween(name2, value2) {
+  var t02, i0;
   function tween() {
-    var i = value.apply(this, arguments);
-    if (i !== i0) t0 = (i0 = i) && attrInterpolate(name2, i);
-    return t0;
+    var i = value2.apply(this, arguments);
+    if (i !== i0) t02 = (i0 = i) && attrInterpolate(name2, i);
+    return t02;
   }
-  tween._value = value;
+  tween._value = value2;
   return tween;
 }
-function attrTween_default(name2, value) {
+function transition_attrTween(name2, value2) {
   var key = "attr." + name2;
   if (arguments.length < 2) return (key = this.tween(key)) && key._value;
-  if (value == null) return this.tween(key, null);
-  if (typeof value !== "function") throw new Error();
-  var fullname = namespace_default(name2);
-  return this.tween(key, (fullname.local ? attrTweenNS : attrTween)(fullname, value));
+  if (value2 == null) return this.tween(key, null);
+  if (typeof value2 !== "function") throw new Error();
+  var fullname = namespace(name2);
+  return this.tween(key, (fullname.local ? attrTweenNS : attrTween)(fullname, value2));
 }
-
-// node_modules/d3-transition/src/transition/delay.js
-function delayFunction(id2, value) {
+function delayFunction(id2, value2) {
   return function() {
-    init(this, id2).delay = +value.apply(this, arguments);
+    init(this, id2).delay = +value2.apply(this, arguments);
   };
 }
-function delayConstant(id2, value) {
-  return value = +value, function() {
-    init(this, id2).delay = value;
+function delayConstant(id2, value2) {
+  return value2 = +value2, function() {
+    init(this, id2).delay = value2;
   };
 }
-function delay_default(value) {
+function transition_delay(value2) {
   var id2 = this._id;
-  return arguments.length ? this.each((typeof value === "function" ? delayFunction : delayConstant)(id2, value)) : get2(this.node(), id2).delay;
+  return arguments.length ? this.each((typeof value2 === "function" ? delayFunction : delayConstant)(id2, value2)) : get2(this.node(), id2).delay;
 }
-
-// node_modules/d3-transition/src/transition/duration.js
-function durationFunction(id2, value) {
+function durationFunction(id2, value2) {
   return function() {
-    set2(this, id2).duration = +value.apply(this, arguments);
+    set2(this, id2).duration = +value2.apply(this, arguments);
   };
 }
-function durationConstant(id2, value) {
-  return value = +value, function() {
-    set2(this, id2).duration = value;
+function durationConstant(id2, value2) {
+  return value2 = +value2, function() {
+    set2(this, id2).duration = value2;
   };
 }
-function duration_default(value) {
+function transition_duration(value2) {
   var id2 = this._id;
-  return arguments.length ? this.each((typeof value === "function" ? durationFunction : durationConstant)(id2, value)) : get2(this.node(), id2).duration;
+  return arguments.length ? this.each((typeof value2 === "function" ? durationFunction : durationConstant)(id2, value2)) : get2(this.node(), id2).duration;
 }
-
-// node_modules/d3-transition/src/transition/ease.js
-function easeConstant(id2, value) {
-  if (typeof value !== "function") throw new Error();
+function easeConstant(id2, value2) {
+  if (typeof value2 !== "function") throw new Error();
   return function() {
-    set2(this, id2).ease = value;
+    set2(this, id2).ease = value2;
   };
 }
-function ease_default(value) {
+function transition_ease(value2) {
   var id2 = this._id;
-  return arguments.length ? this.each(easeConstant(id2, value)) : get2(this.node(), id2).ease;
+  return arguments.length ? this.each(easeConstant(id2, value2)) : get2(this.node(), id2).ease;
 }
-
-// node_modules/d3-transition/src/transition/easeVarying.js
-function easeVarying(id2, value) {
+function easeVarying(id2, value2) {
   return function() {
-    var v = value.apply(this, arguments);
+    var v = value2.apply(this, arguments);
     if (typeof v !== "function") throw new Error();
     set2(this, id2).ease = v;
   };
 }
-function easeVarying_default(value) {
-  if (typeof value !== "function") throw new Error();
-  return this.each(easeVarying(this._id, value));
+function transition_easeVarying(value2) {
+  if (typeof value2 !== "function") throw new Error();
+  return this.each(easeVarying(this._id, value2));
 }
-
-// node_modules/d3-transition/src/transition/filter.js
-function filter_default2(match) {
-  if (typeof match !== "function") match = matcher_default(match);
+function transition_filter(match) {
+  if (typeof match !== "function") match = matcher(match);
   for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, subgroup = subgroups[j] = [], node, i = 0; i < n; ++i) {
       if ((node = group[i]) && match.call(node, node.__data__, i, group)) {
@@ -3985,9 +4547,7 @@ function filter_default2(match) {
   }
   return new Transition(subgroups, this._parents, this._name, this._id);
 }
-
-// node_modules/d3-transition/src/transition/merge.js
-function merge_default2(transition2) {
+function transition_merge(transition2) {
   if (transition2._id !== this._id) throw new Error();
   for (var groups0 = this._groups, groups1 = transition2._groups, m0 = groups0.length, m1 = groups1.length, m = Math.min(m0, m1), merges = new Array(m0), j = 0; j < m; ++j) {
     for (var group0 = groups0[j], group1 = groups1[j], n = group0.length, merge = merges[j] = new Array(n), node, i = 0; i < n; ++i) {
@@ -4001,29 +4561,25 @@ function merge_default2(transition2) {
   }
   return new Transition(merges, this._parents, this._name, this._id);
 }
-
-// node_modules/d3-transition/src/transition/on.js
 function start(name2) {
-  return (name2 + "").trim().split(/^|\s+/).every(function(t2) {
-    var i = t2.indexOf(".");
-    if (i >= 0) t2 = t2.slice(0, i);
-    return !t2 || t2 === "start";
+  return (name2 + "").trim().split(/^|\s+/).every(function(t4) {
+    var i = t4.indexOf(".");
+    if (i >= 0) t4 = t4.slice(0, i);
+    return !t4 || t4 === "start";
   });
 }
 function onFunction(id2, name2, listener) {
   var on0, on1, sit = start(name2) ? init : set2;
   return function() {
-    var schedule = sit(this, id2), on = schedule.on;
+    var schedule2 = sit(this, id2), on = schedule2.on;
     if (on !== on0) (on1 = (on0 = on).copy()).on(name2, listener);
-    schedule.on = on1;
+    schedule2.on = on1;
   };
 }
-function on_default2(name2, listener) {
+function transition_on(name2, listener) {
   var id2 = this._id;
   return arguments.length < 2 ? get2(this.node(), id2).on.on(name2) : this.each(onFunction(id2, name2, listener));
 }
-
-// node_modules/d3-transition/src/transition/remove.js
 function removeFunction(id2) {
   return function() {
     var parent = this.parentNode;
@@ -4031,36 +4587,32 @@ function removeFunction(id2) {
     if (parent) parent.removeChild(this);
   };
 }
-function remove_default2() {
+function transition_remove() {
   return this.on("end.remove", removeFunction(this._id));
 }
-
-// node_modules/d3-transition/src/transition/select.js
-function select_default3(select) {
+function transition_select(select2) {
   var name2 = this._name, id2 = this._id;
-  if (typeof select !== "function") select = selector_default(select);
+  if (typeof select2 !== "function") select2 = selector(select2);
   for (var groups = this._groups, m = groups.length, subgroups = new Array(m), j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, subgroup = subgroups[j] = new Array(n), node, subnode, i = 0; i < n; ++i) {
-      if ((node = group[i]) && (subnode = select.call(node, node.__data__, i, group))) {
+      if ((node = group[i]) && (subnode = select2.call(node, node.__data__, i, group))) {
         if ("__data__" in node) subnode.__data__ = node.__data__;
         subgroup[i] = subnode;
-        schedule_default(subgroup[i], name2, id2, i, subgroup, get2(node, id2));
+        schedule(subgroup[i], name2, id2, i, subgroup, get2(node, id2));
       }
     }
   }
   return new Transition(subgroups, this._parents, name2, id2);
 }
-
-// node_modules/d3-transition/src/transition/selectAll.js
-function selectAll_default2(select) {
+function transition_selectAll(select2) {
   var name2 = this._name, id2 = this._id;
-  if (typeof select !== "function") select = selectorAll_default(select);
+  if (typeof select2 !== "function") select2 = selectorAll(select2);
   for (var groups = this._groups, m = groups.length, subgroups = [], parents = [], j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
       if (node = group[i]) {
-        for (var children2 = select.call(node, node.__data__, i, group), child, inherit2 = get2(node, id2), k = 0, l = children2.length; k < l; ++k) {
+        for (var children2 = select2.call(node, node.__data__, i, group), child, inherit2 = get2(node, id2), k = 0, l = children2.length; k < l; ++k) {
           if (child = children2[k]) {
-            schedule_default(child, name2, id2, k, children2, inherit2);
+            schedule(child, name2, id2, k, children2, inherit2);
           }
         }
         subgroups.push(children2);
@@ -4070,19 +4622,15 @@ function selectAll_default2(select) {
   }
   return new Transition(subgroups, parents, name2, id2);
 }
-
-// node_modules/d3-transition/src/transition/selection.js
-var Selection2 = selection_default.prototype.constructor;
-function selection_default2() {
+var Selection2 = selection.prototype.constructor;
+function transition_selection() {
   return new Selection2(this._groups, this._parents);
 }
-
-// node_modules/d3-transition/src/transition/style.js
-function styleNull(name2, interpolate) {
+function styleNull(name2, interpolate2) {
   var string00, string10, interpolate0;
   return function() {
     var string0 = styleValue(this, name2), string1 = (this.style.removeProperty(name2), styleValue(this, name2));
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : interpolate0 = interpolate(string00 = string0, string10 = string1);
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, string10 = string1);
   };
 }
 function styleRemove2(name2) {
@@ -4090,106 +4638,98 @@ function styleRemove2(name2) {
     this.style.removeProperty(name2);
   };
 }
-function styleConstant2(name2, interpolate, value1) {
+function styleConstant2(name2, interpolate2, value1) {
   var string00, string1 = value1 + "", interpolate0;
   return function() {
     var string0 = styleValue(this, name2);
-    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate(string00 = string0, value1);
+    return string0 === string1 ? null : string0 === string00 ? interpolate0 : interpolate0 = interpolate2(string00 = string0, value1);
   };
 }
-function styleFunction2(name2, interpolate, value) {
+function styleFunction2(name2, interpolate2, value2) {
   var string00, string10, interpolate0;
   return function() {
-    var string0 = styleValue(this, name2), value1 = value(this), string1 = value1 + "";
+    var string0 = styleValue(this, name2), value1 = value2(this), string1 = value1 + "";
     if (value1 == null) string1 = value1 = (this.style.removeProperty(name2), styleValue(this, name2));
-    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate(string00 = string0, value1));
+    return string0 === string1 ? null : string0 === string00 && string1 === string10 ? interpolate0 : (string10 = string1, interpolate0 = interpolate2(string00 = string0, value1));
   };
 }
 function styleMaybeRemove(id2, name2) {
   var on0, on1, listener0, key = "style." + name2, event = "end." + key, remove2;
   return function() {
-    var schedule = set2(this, id2), on = schedule.on, listener = schedule.value[key] == null ? remove2 || (remove2 = styleRemove2(name2)) : void 0;
+    var schedule2 = set2(this, id2), on = schedule2.on, listener = schedule2.value[key] == null ? remove2 || (remove2 = styleRemove2(name2)) : void 0;
     if (on !== on0 || listener0 !== listener) (on1 = (on0 = on).copy()).on(event, listener0 = listener);
-    schedule.on = on1;
+    schedule2.on = on1;
   };
 }
-function style_default2(name2, value, priority) {
-  var i = (name2 += "") === "transform" ? interpolateTransformCss : interpolate_default;
-  return value == null ? this.styleTween(name2, styleNull(name2, i)).on("end.style." + name2, styleRemove2(name2)) : typeof value === "function" ? this.styleTween(name2, styleFunction2(name2, i, tweenValue(this, "style." + name2, value))).each(styleMaybeRemove(this._id, name2)) : this.styleTween(name2, styleConstant2(name2, i, value), priority).on("end.style." + name2, null);
+function transition_style(name2, value2, priority) {
+  var i = (name2 += "") === "transform" ? interpolateTransformCss : interpolate;
+  return value2 == null ? this.styleTween(name2, styleNull(name2, i)).on("end.style." + name2, styleRemove2(name2)) : typeof value2 === "function" ? this.styleTween(name2, styleFunction2(name2, i, tweenValue(this, "style." + name2, value2))).each(styleMaybeRemove(this._id, name2)) : this.styleTween(name2, styleConstant2(name2, i, value2), priority).on("end.style." + name2, null);
 }
-
-// node_modules/d3-transition/src/transition/styleTween.js
 function styleInterpolate(name2, i, priority) {
-  return function(t2) {
-    this.style.setProperty(name2, i.call(this, t2), priority);
+  return function(t4) {
+    this.style.setProperty(name2, i.call(this, t4), priority);
   };
 }
-function styleTween(name2, value, priority) {
-  var t2, i0;
+function styleTween(name2, value2, priority) {
+  var t4, i0;
   function tween() {
-    var i = value.apply(this, arguments);
-    if (i !== i0) t2 = (i0 = i) && styleInterpolate(name2, i, priority);
-    return t2;
+    var i = value2.apply(this, arguments);
+    if (i !== i0) t4 = (i0 = i) && styleInterpolate(name2, i, priority);
+    return t4;
   }
-  tween._value = value;
+  tween._value = value2;
   return tween;
 }
-function styleTween_default(name2, value, priority) {
+function transition_styleTween(name2, value2, priority) {
   var key = "style." + (name2 += "");
   if (arguments.length < 2) return (key = this.tween(key)) && key._value;
-  if (value == null) return this.tween(key, null);
-  if (typeof value !== "function") throw new Error();
-  return this.tween(key, styleTween(name2, value, priority == null ? "" : priority));
+  if (value2 == null) return this.tween(key, null);
+  if (typeof value2 !== "function") throw new Error();
+  return this.tween(key, styleTween(name2, value2, priority == null ? "" : priority));
 }
-
-// node_modules/d3-transition/src/transition/text.js
-function textConstant2(value) {
+function textConstant2(value2) {
   return function() {
-    this.textContent = value;
+    this.textContent = value2;
   };
 }
-function textFunction2(value) {
+function textFunction2(value2) {
   return function() {
-    var value1 = value(this);
+    var value1 = value2(this);
     this.textContent = value1 == null ? "" : value1;
   };
 }
-function text_default2(value) {
-  return this.tween("text", typeof value === "function" ? textFunction2(tweenValue(this, "text", value)) : textConstant2(value == null ? "" : value + ""));
+function transition_text(value2) {
+  return this.tween("text", typeof value2 === "function" ? textFunction2(tweenValue(this, "text", value2)) : textConstant2(value2 == null ? "" : value2 + ""));
 }
-
-// node_modules/d3-transition/src/transition/textTween.js
 function textInterpolate(i) {
-  return function(t2) {
-    this.textContent = i.call(this, t2);
+  return function(t4) {
+    this.textContent = i.call(this, t4);
   };
 }
-function textTween(value) {
-  var t0, i0;
+function textTween(value2) {
+  var t02, i0;
   function tween() {
-    var i = value.apply(this, arguments);
-    if (i !== i0) t0 = (i0 = i) && textInterpolate(i);
-    return t0;
+    var i = value2.apply(this, arguments);
+    if (i !== i0) t02 = (i0 = i) && textInterpolate(i);
+    return t02;
   }
-  tween._value = value;
+  tween._value = value2;
   return tween;
 }
-function textTween_default(value) {
+function transition_textTween(value2) {
   var key = "text";
   if (arguments.length < 1) return (key = this.tween(key)) && key._value;
-  if (value == null) return this.tween(key, null);
-  if (typeof value !== "function") throw new Error();
-  return this.tween(key, textTween(value));
+  if (value2 == null) return this.tween(key, null);
+  if (typeof value2 !== "function") throw new Error();
+  return this.tween(key, textTween(value2));
 }
-
-// node_modules/d3-transition/src/transition/transition.js
-function transition_default() {
+function transition_transition() {
   var name2 = this._name, id0 = this._id, id1 = newId();
   for (var groups = this._groups, m = groups.length, j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
       if (node = group[i]) {
         var inherit2 = get2(node, id0);
-        schedule_default(node, name2, id1, i, group, {
+        schedule(node, name2, id1, i, group, {
           time: inherit2.time + inherit2.delay + inherit2.duration,
           delay: 0,
           duration: inherit2.duration,
@@ -4200,29 +4740,25 @@ function transition_default() {
   }
   return new Transition(groups, this._parents, name2, id1);
 }
-
-// node_modules/d3-transition/src/transition/end.js
-function end_default() {
+function transition_end() {
   var on0, on1, that = this, id2 = that._id, size = that.size();
   return new Promise(function(resolve, reject) {
     var cancel = { value: reject }, end = { value: function() {
       if (--size === 0) resolve();
     } };
     that.each(function() {
-      var schedule = set2(this, id2), on = schedule.on;
+      var schedule2 = set2(this, id2), on = schedule2.on;
       if (on !== on0) {
         on1 = (on0 = on).copy();
         on1._.cancel.push(cancel);
         on1._.interrupt.push(cancel);
         on1._.end.push(end);
       }
-      schedule.on = on1;
+      schedule2.on = on1;
     });
     if (size === 0) resolve();
   });
 }
-
-// node_modules/d3-transition/src/transition/index.js
 var id = 0;
 function Transition(groups, parents, name2, id2) {
   this._groups = groups;
@@ -4231,51 +4767,44 @@ function Transition(groups, parents, name2, id2) {
   this._id = id2;
 }
 function transition(name2) {
-  return selection_default().transition(name2);
+  return selection().transition(name2);
 }
 function newId() {
   return ++id;
 }
-var selection_prototype = selection_default.prototype;
+var selection_prototype = selection.prototype;
 Transition.prototype = transition.prototype = {
   constructor: Transition,
-  select: select_default3,
-  selectAll: selectAll_default2,
+  select: transition_select,
+  selectAll: transition_selectAll,
   selectChild: selection_prototype.selectChild,
   selectChildren: selection_prototype.selectChildren,
-  filter: filter_default2,
-  merge: merge_default2,
-  selection: selection_default2,
-  transition: transition_default,
+  filter: transition_filter,
+  merge: transition_merge,
+  selection: transition_selection,
+  transition: transition_transition,
   call: selection_prototype.call,
   nodes: selection_prototype.nodes,
   node: selection_prototype.node,
   size: selection_prototype.size,
   empty: selection_prototype.empty,
   each: selection_prototype.each,
-  on: on_default2,
-  attr: attr_default2,
-  attrTween: attrTween_default,
-  style: style_default2,
-  styleTween: styleTween_default,
-  text: text_default2,
-  textTween: textTween_default,
-  remove: remove_default2,
-  tween: tween_default,
-  delay: delay_default,
-  duration: duration_default,
-  ease: ease_default,
-  easeVarying: easeVarying_default,
-  end: end_default,
+  on: transition_on,
+  attr: transition_attr,
+  attrTween: transition_attrTween,
+  style: transition_style,
+  styleTween: transition_styleTween,
+  text: transition_text,
+  textTween: transition_textTween,
+  remove: transition_remove,
+  tween: transition_tween,
+  delay: transition_delay,
+  duration: transition_duration,
+  ease: transition_ease,
+  easeVarying: transition_easeVarying,
+  end: transition_end,
   [Symbol.iterator]: selection_prototype[Symbol.iterator]
 };
-
-// node_modules/d3-ease/src/cubic.js
-function cubicInOut(t2) {
-  return ((t2 *= 2) <= 1 ? t2 * t2 * t2 : (t2 -= 2) * t2 * t2 + 2) / 2;
-}
-
-// node_modules/d3-transition/src/selection/transition.js
 var defaultTiming = {
   time: null,
   // Set on use.
@@ -4292,7 +4821,7 @@ function inherit(node, id2) {
   }
   return timing;
 }
-function transition_default2(name2) {
+function selection_transition(name2) {
   var id2, timing;
   if (name2 instanceof Transition) {
     id2 = name2._id, name2 = name2._name;
@@ -4302,37 +4831,31 @@ function transition_default2(name2) {
   for (var groups = this._groups, m = groups.length, j = 0; j < m; ++j) {
     for (var group = groups[j], n = group.length, node, i = 0; i < n; ++i) {
       if (node = group[i]) {
-        schedule_default(node, name2, id2, i, group, timing || inherit(node, id2));
+        schedule(node, name2, id2, i, group, timing || inherit(node, id2));
       }
     }
   }
   return new Transition(groups, this._parents, name2, id2);
 }
+selection.prototype.interrupt = selection_interrupt;
+selection.prototype.transition = selection_transition;
 
-// node_modules/d3-transition/src/selection/index.js
-selection_default.prototype.interrupt = interrupt_default2;
-selection_default.prototype.transition = transition_default2;
-
-// node_modules/d3-zoom/src/constant.js
-var constant_default4 = (x) => () => x;
-
-// node_modules/d3-zoom/src/event.js
+// node_modules/d3-zoom/dist/d3-zoom.mjs
+var constant4 = (x) => () => x;
 function ZoomEvent(type, {
-  sourceEvent,
+  sourceEvent: sourceEvent2,
   target,
   transform: transform2,
   dispatch: dispatch2
 }) {
   Object.defineProperties(this, {
     type: { value: type, enumerable: true, configurable: true },
-    sourceEvent: { value: sourceEvent, enumerable: true, configurable: true },
+    sourceEvent: { value: sourceEvent2, enumerable: true, configurable: true },
     target: { value: target, enumerable: true, configurable: true },
     transform: { value: transform2, enumerable: true, configurable: true },
     _: { value: dispatch2 }
   });
 }
-
-// node_modules/d3-zoom/src/transform.js
 function Transform(k, x, y) {
   this.k = k;
   this.x = x;
@@ -4380,17 +4903,13 @@ function transform(node) {
   while (!node.__zoom) if (!(node = node.parentNode)) return identity2;
   return node.__zoom;
 }
-
-// node_modules/d3-zoom/src/noevent.js
 function nopropagation2(event) {
   event.stopImmediatePropagation();
 }
-function noevent_default2(event) {
+function noevent2(event) {
   event.preventDefault();
   event.stopImmediatePropagation();
 }
-
-// node_modules/d3-zoom/src/zoom.js
 function defaultFilter2(event) {
   return (!event.ctrlKey || event.type === "wheel") && !event.button;
 }
@@ -4422,46 +4941,46 @@ function defaultConstrain(transform2, extent, translateExtent) {
     dy1 > dy0 ? (dy0 + dy1) / 2 : Math.min(0, dy0) || Math.max(0, dy1)
   );
 }
-function zoom_default2() {
-  var filter2 = defaultFilter2, extent = defaultExtent, constrain = defaultConstrain, wheelDelta2 = defaultWheelDelta, touchable = defaultTouchable2, scaleExtent = [0, Infinity], translateExtent = [[-Infinity, -Infinity], [Infinity, Infinity]], duration = 250, interpolate = zoom_default, listeners6 = dispatch_default("start", "zoom", "end"), touchstarting, touchfirst, touchending, touchDelay = 500, wheelDelay = 150, clickDistance2 = 0, tapDistance = 10;
-  function zoom(selection2) {
+function zoom2() {
+  var filter2 = defaultFilter2, extent = defaultExtent, constrain = defaultConstrain, wheelDelta2 = defaultWheelDelta, touchable = defaultTouchable2, scaleExtent = [0, Infinity], translateExtent = [[-Infinity, -Infinity], [Infinity, Infinity]], duration = 250, interpolate2 = zoom, listeners7 = dispatch("start", "zoom", "end"), touchstarting, touchfirst, touchending, touchDelay = 500, wheelDelay = 150, clickDistance2 = 0, tapDistance = 10;
+  function zoom3(selection2) {
     selection2.property("__zoom", defaultTransform).on("wheel.zoom", wheeled, { passive: false }).on("mousedown.zoom", mousedowned).on("dblclick.zoom", dblclicked).filter(touchable).on("touchstart.zoom", touchstarted).on("touchmove.zoom", touchmoved).on("touchend.zoom touchcancel.zoom", touchended).style("-webkit-tap-highlight-color", "rgba(0,0,0,0)");
   }
-  zoom.transform = function(collection, transform2, point, event) {
+  zoom3.transform = function(collection, transform2, point, event) {
     var selection2 = collection.selection ? collection.selection() : collection;
     selection2.property("__zoom", defaultTransform);
     if (collection !== selection2) {
-      schedule(collection, transform2, point, event);
+      schedule2(collection, transform2, point, event);
     } else {
       selection2.interrupt().each(function() {
         gesture(this, arguments).event(event).start().zoom(null, typeof transform2 === "function" ? transform2.apply(this, arguments) : transform2).end();
       });
     }
   };
-  zoom.scaleBy = function(selection2, k, p, event) {
-    zoom.scaleTo(selection2, function() {
+  zoom3.scaleBy = function(selection2, k, p, event) {
+    zoom3.scaleTo(selection2, function() {
       var k0 = this.__zoom.k, k1 = typeof k === "function" ? k.apply(this, arguments) : k;
       return k0 * k1;
     }, p, event);
   };
-  zoom.scaleTo = function(selection2, k, p, event) {
-    zoom.transform(selection2, function() {
-      var e = extent.apply(this, arguments), t0 = this.__zoom, p0 = p == null ? centroid(e) : typeof p === "function" ? p.apply(this, arguments) : p, p1 = t0.invert(p0), k1 = typeof k === "function" ? k.apply(this, arguments) : k;
-      return constrain(translate(scale(t0, k1), p0, p1), e, translateExtent);
+  zoom3.scaleTo = function(selection2, k, p, event) {
+    zoom3.transform(selection2, function() {
+      var e = extent.apply(this, arguments), t02 = this.__zoom, p0 = p == null ? centroid(e) : typeof p === "function" ? p.apply(this, arguments) : p, p1 = t02.invert(p0), k1 = typeof k === "function" ? k.apply(this, arguments) : k;
+      return constrain(translate(scale(t02, k1), p0, p1), e, translateExtent);
     }, p, event);
   };
-  zoom.translateBy = function(selection2, x, y, event) {
-    zoom.transform(selection2, function() {
+  zoom3.translateBy = function(selection2, x, y, event) {
+    zoom3.transform(selection2, function() {
       return constrain(this.__zoom.translate(
         typeof x === "function" ? x.apply(this, arguments) : x,
         typeof y === "function" ? y.apply(this, arguments) : y
       ), extent.apply(this, arguments), translateExtent);
     }, null, event);
   };
-  zoom.translateTo = function(selection2, x, y, p, event) {
-    zoom.transform(selection2, function() {
-      var e = extent.apply(this, arguments), t2 = this.__zoom, p0 = p == null ? centroid(e) : typeof p === "function" ? p.apply(this, arguments) : p;
-      return constrain(identity2.translate(p0[0], p0[1]).scale(t2.k).translate(
+  zoom3.translateTo = function(selection2, x, y, p, event) {
+    zoom3.transform(selection2, function() {
+      var e = extent.apply(this, arguments), t4 = this.__zoom, p0 = p == null ? centroid(e) : typeof p === "function" ? p.apply(this, arguments) : p;
+      return constrain(identity2.translate(p0[0], p0[1]).scale(t4.k).translate(
         typeof x === "function" ? -x.apply(this, arguments) : -x,
         typeof y === "function" ? -y.apply(this, arguments) : -y
       ), e, translateExtent);
@@ -4478,20 +4997,20 @@ function zoom_default2() {
   function centroid(extent2) {
     return [(+extent2[0][0] + +extent2[1][0]) / 2, (+extent2[0][1] + +extent2[1][1]) / 2];
   }
-  function schedule(transition2, transform2, point, event) {
+  function schedule2(transition2, transform2, point, event) {
     transition2.on("start.zoom", function() {
       gesture(this, arguments).event(event).start();
     }).on("interrupt.zoom end.zoom", function() {
       gesture(this, arguments).event(event).end();
     }).tween("zoom", function() {
-      var that = this, args = arguments, g = gesture(that, args).event(event), e = extent.apply(that, args), p = point == null ? centroid(e) : typeof point === "function" ? point.apply(that, args) : point, w = Math.max(e[1][0] - e[0][0], e[1][1] - e[0][1]), a = that.__zoom, b = typeof transform2 === "function" ? transform2.apply(that, args) : transform2, i = interpolate(a.invert(p).concat(w / a.k), b.invert(p).concat(w / b.k));
-      return function(t2) {
-        if (t2 === 1) t2 = b;
+      var that = this, args = arguments, g = gesture(that, args).event(event), e = extent.apply(that, args), p = point == null ? centroid(e) : typeof point === "function" ? point.apply(that, args) : point, w = Math.max(e[1][0] - e[0][0], e[1][1] - e[0][1]), a = that.__zoom, b = typeof transform2 === "function" ? transform2.apply(that, args) : transform2, i = interpolate2(a.invert(p).concat(w / a.k), b.invert(p).concat(w / b.k));
+      return function(t4) {
+        if (t4 === 1) t4 = b;
         else {
-          var l = i(t2), k = w / l[2];
-          t2 = new Transform(k, p[0] - l[0] * k, p[1] - l[1] * k);
+          var l = i(t4), k = w / l[2];
+          t4 = new Transform(k, p[0] - l[0] * k, p[1] - l[1] * k);
         }
-        g.zoom(null, t2);
+        g.zoom(null, t4);
       };
     });
   }
@@ -4534,16 +5053,15 @@ function zoom_default2() {
       return this;
     },
     emit: function(type) {
-      var d = select_default2(this.that).datum();
-      listeners6.call(
+      var d = select(this.that).datum();
+      listeners7.call(
         type,
         this.that,
         new ZoomEvent(type, {
           sourceEvent: this.sourceEvent,
-          target: zoom,
-          type,
+          target: zoom3,
           transform: this.that.__zoom,
-          dispatch: listeners6
+          dispatch: listeners7
         }),
         d
       );
@@ -4551,21 +5069,21 @@ function zoom_default2() {
   };
   function wheeled(event, ...args) {
     if (!filter2.apply(this, arguments)) return;
-    var g = gesture(this, args).event(event), t2 = this.__zoom, k = Math.max(scaleExtent[0], Math.min(scaleExtent[1], t2.k * Math.pow(2, wheelDelta2.apply(this, arguments)))), p = pointer_default(event);
+    var g = gesture(this, args).event(event), t4 = this.__zoom, k = Math.max(scaleExtent[0], Math.min(scaleExtent[1], t4.k * Math.pow(2, wheelDelta2.apply(this, arguments)))), p = pointer(event);
     if (g.wheel) {
       if (g.mouse[0][0] !== p[0] || g.mouse[0][1] !== p[1]) {
-        g.mouse[1] = t2.invert(g.mouse[0] = p);
+        g.mouse[1] = t4.invert(g.mouse[0] = p);
       }
       clearTimeout(g.wheel);
-    } else if (t2.k === k) return;
+    } else if (t4.k === k) return;
     else {
-      g.mouse = [p, t2.invert(p)];
-      interrupt_default(this);
+      g.mouse = [p, t4.invert(p)];
+      interrupt(this);
       g.start();
     }
-    noevent_default2(event);
+    noevent2(event);
     g.wheel = setTimeout(wheelidled, wheelDelay);
-    g.zoom("mouse", constrain(translate(scale(t2, k), g.mouse[0], g.mouse[1]), g.extent, translateExtent));
+    g.zoom("mouse", constrain(translate(scale(t4, k), g.mouse[0], g.mouse[1]), g.extent, translateExtent));
     function wheelidled() {
       g.wheel = null;
       g.end();
@@ -4573,41 +5091,41 @@ function zoom_default2() {
   }
   function mousedowned(event, ...args) {
     if (touchending || !filter2.apply(this, arguments)) return;
-    var currentTarget = event.currentTarget, g = gesture(this, args, true).event(event), v = select_default2(event.view).on("mousemove.zoom", mousemoved, true).on("mouseup.zoom", mouseupped, true), p = pointer_default(event, currentTarget), x0 = event.clientX, y0 = event.clientY;
-    nodrag_default(event.view);
+    var currentTarget = event.currentTarget, g = gesture(this, args, true).event(event), v = select(event.view).on("mousemove.zoom", mousemoved, true).on("mouseup.zoom", mouseupped, true), p = pointer(event, currentTarget), x0 = event.clientX, y0 = event.clientY;
+    nodrag(event.view);
     nopropagation2(event);
     g.mouse = [p, this.__zoom.invert(p)];
-    interrupt_default(this);
+    interrupt(this);
     g.start();
     function mousemoved(event2) {
-      noevent_default2(event2);
+      noevent2(event2);
       if (!g.moved) {
         var dx = event2.clientX - x0, dy = event2.clientY - y0;
         g.moved = dx * dx + dy * dy > clickDistance2;
       }
-      g.event(event2).zoom("mouse", constrain(translate(g.that.__zoom, g.mouse[0] = pointer_default(event2, currentTarget), g.mouse[1]), g.extent, translateExtent));
+      g.event(event2).zoom("mouse", constrain(translate(g.that.__zoom, g.mouse[0] = pointer(event2, currentTarget), g.mouse[1]), g.extent, translateExtent));
     }
     function mouseupped(event2) {
       v.on("mousemove.zoom mouseup.zoom", null);
       yesdrag(event2.view, g.moved);
-      noevent_default2(event2);
+      noevent2(event2);
       g.event(event2).end();
     }
   }
   function dblclicked(event, ...args) {
     if (!filter2.apply(this, arguments)) return;
-    var t0 = this.__zoom, p0 = pointer_default(event.changedTouches ? event.changedTouches[0] : event, this), p1 = t0.invert(p0), k1 = t0.k * (event.shiftKey ? 0.5 : 2), t1 = constrain(translate(scale(t0, k1), p0, p1), extent.apply(this, args), translateExtent);
-    noevent_default2(event);
-    if (duration > 0) select_default2(this).transition().duration(duration).call(schedule, t1, p0, event);
-    else select_default2(this).call(zoom.transform, t1, p0, event);
+    var t02 = this.__zoom, p0 = pointer(event.changedTouches ? event.changedTouches[0] : event, this), p1 = t02.invert(p0), k1 = t02.k * (event.shiftKey ? 0.5 : 2), t12 = constrain(translate(scale(t02, k1), p0, p1), extent.apply(this, args), translateExtent);
+    noevent2(event);
+    if (duration > 0) select(this).transition().duration(duration).call(schedule2, t12, p0, event);
+    else select(this).call(zoom3.transform, t12, p0, event);
   }
   function touchstarted(event, ...args) {
     if (!filter2.apply(this, arguments)) return;
-    var touches = event.touches, n = touches.length, g = gesture(this, args, event.changedTouches.length === n).event(event), started, i, t2, p;
+    var touches = event.touches, n = touches.length, g = gesture(this, args, event.changedTouches.length === n).event(event), started, i, t4, p;
     nopropagation2(event);
     for (i = 0; i < n; ++i) {
-      t2 = touches[i], p = pointer_default(t2, this);
-      p = [p, this.__zoom.invert(p), t2.identifier];
+      t4 = touches[i], p = pointer(t4, this);
+      p = [p, this.__zoom.invert(p), t4.identifier];
       if (!g.touch0) g.touch0 = p, started = true, g.taps = 1 + !!touchstarting;
       else if (!g.touch1 && g.touch0[2] !== p[2]) g.touch1 = p, g.taps = 0;
     }
@@ -4616,93 +5134,93 @@ function zoom_default2() {
       if (g.taps < 2) touchfirst = p[0], touchstarting = setTimeout(function() {
         touchstarting = null;
       }, touchDelay);
-      interrupt_default(this);
+      interrupt(this);
       g.start();
     }
   }
   function touchmoved(event, ...args) {
     if (!this.__zooming) return;
-    var g = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t2, p, l;
-    noevent_default2(event);
+    var g = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t4, p, l;
+    noevent2(event);
     for (i = 0; i < n; ++i) {
-      t2 = touches[i], p = pointer_default(t2, this);
-      if (g.touch0 && g.touch0[2] === t2.identifier) g.touch0[0] = p;
-      else if (g.touch1 && g.touch1[2] === t2.identifier) g.touch1[0] = p;
+      t4 = touches[i], p = pointer(t4, this);
+      if (g.touch0 && g.touch0[2] === t4.identifier) g.touch0[0] = p;
+      else if (g.touch1 && g.touch1[2] === t4.identifier) g.touch1[0] = p;
     }
-    t2 = g.that.__zoom;
+    t4 = g.that.__zoom;
     if (g.touch1) {
       var p0 = g.touch0[0], l0 = g.touch0[1], p1 = g.touch1[0], l1 = g.touch1[1], dp = (dp = p1[0] - p0[0]) * dp + (dp = p1[1] - p0[1]) * dp, dl = (dl = l1[0] - l0[0]) * dl + (dl = l1[1] - l0[1]) * dl;
-      t2 = scale(t2, Math.sqrt(dp / dl));
+      t4 = scale(t4, Math.sqrt(dp / dl));
       p = [(p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2];
       l = [(l0[0] + l1[0]) / 2, (l0[1] + l1[1]) / 2];
     } else if (g.touch0) p = g.touch0[0], l = g.touch0[1];
     else return;
-    g.zoom("touch", constrain(translate(t2, p, l), g.extent, translateExtent));
+    g.zoom("touch", constrain(translate(t4, p, l), g.extent, translateExtent));
   }
   function touchended(event, ...args) {
     if (!this.__zooming) return;
-    var g = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t2;
+    var g = gesture(this, args).event(event), touches = event.changedTouches, n = touches.length, i, t4;
     nopropagation2(event);
     if (touchending) clearTimeout(touchending);
     touchending = setTimeout(function() {
       touchending = null;
     }, touchDelay);
     for (i = 0; i < n; ++i) {
-      t2 = touches[i];
-      if (g.touch0 && g.touch0[2] === t2.identifier) delete g.touch0;
-      else if (g.touch1 && g.touch1[2] === t2.identifier) delete g.touch1;
+      t4 = touches[i];
+      if (g.touch0 && g.touch0[2] === t4.identifier) delete g.touch0;
+      else if (g.touch1 && g.touch1[2] === t4.identifier) delete g.touch1;
     }
     if (g.touch1 && !g.touch0) g.touch0 = g.touch1, delete g.touch1;
     if (g.touch0) g.touch0[1] = this.__zoom.invert(g.touch0[0]);
     else {
       g.end();
       if (g.taps === 2) {
-        t2 = pointer_default(t2, this);
-        if (Math.hypot(touchfirst[0] - t2[0], touchfirst[1] - t2[1]) < tapDistance) {
-          var p = select_default2(this).on("dblclick.zoom");
+        t4 = pointer(t4, this);
+        if (Math.hypot(touchfirst[0] - t4[0], touchfirst[1] - t4[1]) < tapDistance) {
+          var p = select(this).on("dblclick.zoom");
           if (p) p.apply(this, arguments);
         }
       }
     }
   }
-  zoom.wheelDelta = function(_) {
-    return arguments.length ? (wheelDelta2 = typeof _ === "function" ? _ : constant_default4(+_), zoom) : wheelDelta2;
+  zoom3.wheelDelta = function(_) {
+    return arguments.length ? (wheelDelta2 = typeof _ === "function" ? _ : constant4(+_), zoom3) : wheelDelta2;
   };
-  zoom.filter = function(_) {
-    return arguments.length ? (filter2 = typeof _ === "function" ? _ : constant_default4(!!_), zoom) : filter2;
+  zoom3.filter = function(_) {
+    return arguments.length ? (filter2 = typeof _ === "function" ? _ : constant4(!!_), zoom3) : filter2;
   };
-  zoom.touchable = function(_) {
-    return arguments.length ? (touchable = typeof _ === "function" ? _ : constant_default4(!!_), zoom) : touchable;
+  zoom3.touchable = function(_) {
+    return arguments.length ? (touchable = typeof _ === "function" ? _ : constant4(!!_), zoom3) : touchable;
   };
-  zoom.extent = function(_) {
-    return arguments.length ? (extent = typeof _ === "function" ? _ : constant_default4([[+_[0][0], +_[0][1]], [+_[1][0], +_[1][1]]]), zoom) : extent;
+  zoom3.extent = function(_) {
+    return arguments.length ? (extent = typeof _ === "function" ? _ : constant4([[+_[0][0], +_[0][1]], [+_[1][0], +_[1][1]]]), zoom3) : extent;
   };
-  zoom.scaleExtent = function(_) {
-    return arguments.length ? (scaleExtent[0] = +_[0], scaleExtent[1] = +_[1], zoom) : [scaleExtent[0], scaleExtent[1]];
+  zoom3.scaleExtent = function(_) {
+    return arguments.length ? (scaleExtent[0] = +_[0], scaleExtent[1] = +_[1], zoom3) : [scaleExtent[0], scaleExtent[1]];
   };
-  zoom.translateExtent = function(_) {
-    return arguments.length ? (translateExtent[0][0] = +_[0][0], translateExtent[1][0] = +_[1][0], translateExtent[0][1] = +_[0][1], translateExtent[1][1] = +_[1][1], zoom) : [[translateExtent[0][0], translateExtent[0][1]], [translateExtent[1][0], translateExtent[1][1]]];
+  zoom3.translateExtent = function(_) {
+    return arguments.length ? (translateExtent[0][0] = +_[0][0], translateExtent[1][0] = +_[1][0], translateExtent[0][1] = +_[0][1], translateExtent[1][1] = +_[1][1], zoom3) : [[translateExtent[0][0], translateExtent[0][1]], [translateExtent[1][0], translateExtent[1][1]]];
   };
-  zoom.constrain = function(_) {
-    return arguments.length ? (constrain = _, zoom) : constrain;
+  zoom3.constrain = function(_) {
+    return arguments.length ? (constrain = _, zoom3) : constrain;
   };
-  zoom.duration = function(_) {
-    return arguments.length ? (duration = +_, zoom) : duration;
+  zoom3.duration = function(_) {
+    return arguments.length ? (duration = +_, zoom3) : duration;
   };
-  zoom.interpolate = function(_) {
-    return arguments.length ? (interpolate = _, zoom) : interpolate;
+  zoom3.interpolate = function(_) {
+    return arguments.length ? (interpolate2 = _, zoom3) : interpolate2;
   };
-  zoom.on = function() {
-    var value = listeners6.on.apply(listeners6, arguments);
-    return value === listeners6 ? zoom : value;
+  zoom3.on = function() {
+    var value2 = listeners7.on.apply(listeners7, arguments);
+    return value2 === listeners7 ? zoom3 : value2;
   };
-  zoom.clickDistance = function(_) {
-    return arguments.length ? (clickDistance2 = (_ = +_) * _, zoom) : Math.sqrt(clickDistance2);
+  zoom3.clickDistance = function(_) {
+    return arguments.length ? (clickDistance2 = (_ = +_) * _, zoom3) : Math.sqrt(clickDistance2);
   };
-  zoom.tapDistance = function(_) {
-    return arguments.length ? (tapDistance = +_, zoom) : tapDistance;
+  zoom3.tapDistance = function(_) {
+    return arguments.length ? (tapDistance = +_, zoom3) : tapDistance;
   };
-  return zoom;
+  return zoom3;
 }
 
 // node_modules/@xyflow/system/dist/esm/index.js
@@ -4996,11 +5514,11 @@ function clampPositionToParent(childPosition, childDimensions, parent) {
     [parentX + parentWidth, parentY + parentHeight]
   ], childDimensions);
 }
-var calcAutoPanVelocity = (value, min, max) => {
-  if (value < min) {
-    return clamp(Math.abs(value - min), 1, min) / min;
-  } else if (value > max) {
-    return -clamp(Math.abs(value - max), 1, min) / min;
+var calcAutoPanVelocity = (value2, min, max) => {
+  if (value2 < min) {
+    return clamp(Math.abs(value2 - min), 1, min) / min;
+  } else if (value2 > max) {
+    return -clamp(Math.abs(value2 - max), 1, min) / min;
   }
   return 0;
 };
@@ -5119,9 +5637,9 @@ function parsePaddings(padding, width, height) {
   }
   return { top: 0, right: 0, bottom: 0, left: 0, x: 0, y: 0 };
 }
-function calculateAppliedPaddings(bounds, x, y, zoom, width, height) {
-  const { x: left, y: top } = rendererPointToPoint(bounds, [x, y, zoom]);
-  const { x: boundRight, y: boundBottom } = rendererPointToPoint({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, [x, y, zoom]);
+function calculateAppliedPaddings(bounds, x, y, zoom3, width, height) {
+  const { x: left, y: top } = rendererPointToPoint(bounds, [x, y, zoom3]);
+  const { x: boundRight, y: boundBottom } = rendererPointToPoint({ x: bounds.x + bounds.width, y: bounds.y + bounds.height }, [x, y, zoom3]);
   const right = width - boundRight;
   const bottom = height - boundBottom;
   return {
@@ -5135,8 +5653,8 @@ var getViewportForBounds = (bounds, width, height, minZoom, maxZoom, padding) =>
   const p = parsePaddings(padding, width, height);
   const xZoom = (width - p.x) / bounds.width;
   const yZoom = (height - p.y) / bounds.height;
-  const zoom = Math.min(xZoom, yZoom);
-  const clampedZoom = clamp(zoom, minZoom, maxZoom);
+  const zoom3 = Math.min(xZoom, yZoom);
+  const clampedZoom = clamp(zoom3, minZoom, maxZoom);
   const boundsCenterX = bounds.x + bounds.width / 2;
   const boundsCenterY = bounds.y + bounds.height / 2;
   const x = width / 2 - boundsCenterX * clampedZoom;
@@ -5283,7 +5801,7 @@ var getEventPosition = (event, bounds) => {
     y: evtY - (bounds?.top ?? 0)
   };
 };
-var getHandleBounds = (type, nodeElement, nodeBounds, zoom, nodeId) => {
+var getHandleBounds = (type, nodeElement, nodeBounds, zoom3, nodeId) => {
   const handles = nodeElement.querySelectorAll(`.${type}`);
   if (!handles || !handles.length) {
     return null;
@@ -5295,8 +5813,8 @@ var getHandleBounds = (type, nodeElement, nodeBounds, zoom, nodeId) => {
       type,
       nodeId,
       position: handle.getAttribute("data-handlepos"),
-      x: (handleBounds.left - nodeBounds.left) / zoom,
-      y: (handleBounds.top - nodeBounds.top) / zoom,
+      x: (handleBounds.left - nodeBounds.left) / zoom3,
+      y: (handleBounds.top - nodeBounds.top) / zoom3,
       ...getDimensions(handle)
     };
   });
@@ -5444,6 +5962,7 @@ var getDirection = ({ source, sourcePosition = Position.Bottom, target }) => {
   return source.y < target.y ? { x: 0, y: 1 } : { x: 0, y: -1 };
 };
 var distance = (a, b) => Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));
+var isBetween = (a, b, c) => a.x === b.x && b.x === c.x && (b.y - a.y) * (c.y - b.y) >= 0 || a.y === b.y && b.y === c.y && (b.x - a.x) * (c.x - b.x) >= 0;
 function getPoints({ source, sourcePosition = Position.Bottom, target, targetPosition = Position.Top, center, offset, stepPosition }) {
   const sourceDir = handleDirections[sourcePosition];
   const targetDir = handleDirections[targetPosition];
@@ -5530,14 +6049,14 @@ function getPoints({ source, sourcePosition = Position.Bottom, target, targetPos
   }
   const gappedSource = { x: sourceGapped.x + sourceGapOffset.x, y: sourceGapped.y + sourceGapOffset.y };
   const gappedTarget = { x: targetGapped.x + targetGapOffset.x, y: targetGapped.y + targetGapOffset.y };
-  const pathPoints = [
-    source,
-    // we only want to add the gapped source/target if they are different from the first/last point to avoid duplicates which can cause issues with the bends
-    ...gappedSource.x !== points[0].x || gappedSource.y !== points[0].y ? [gappedSource] : [],
-    ...points,
-    ...gappedTarget.x !== points[points.length - 1].x || gappedTarget.y !== points[points.length - 1].y ? [gappedTarget] : [],
-    target
-  ];
+  const pathPoints = [];
+  for (const point of [source, gappedSource, ...points, gappedTarget, target]) {
+    const [a, b] = pathPoints.slice(-2);
+    if (b && isBetween(a, b, point)) {
+      pathPoints.pop();
+    }
+    pathPoints.push(point);
+  }
   return [pathPoints, centerX, centerY, defaultOffsetX, defaultOffsetY];
 }
 function getBend(a, b, c, size) {
@@ -5923,7 +6442,7 @@ function updateNodeInternals(updates, nodeLookup, parentLookup, domNode, nodeOri
   }
   const changes = [];
   const style2 = window.getComputedStyle(viewportNode);
-  const { m22: zoom } = new window.DOMMatrixReadOnly(style2.transform);
+  const { m22: zoom3 } = new window.DOMMatrixReadOnly(style2.transform);
   const parentExpandChildren = [];
   for (const update of updates.values()) {
     const node = nodeLookup.get(update.id);
@@ -5963,8 +6482,8 @@ function updateNodeInternals(updates, nodeLookup, parentLookup, domNode, nodeOri
           ...node.internals,
           positionAbsolute,
           handleBounds: {
-            source: getHandleBounds("source", update.nodeElement, nodeBounds, zoom, node.id),
-            target: getHandleBounds("target", update.nodeElement, nodeBounds, zoom, node.id)
+            source: getHandleBounds("source", update.nodeElement, nodeBounds, zoom3, node.id),
+            target: getHandleBounds("target", update.nodeElement, nodeBounds, zoom3, node.id)
           }
         }
       };
@@ -6049,10 +6568,10 @@ function isParentSelected(node, nodeLookup) {
   }
   return isParentSelected(parentNode, nodeLookup);
 }
-function hasSelector(target, selector, domNode) {
+function hasSelector(target, selector2, domNode) {
   let current = target;
   do {
-    if (current?.matches?.(selector))
+    if (current?.matches?.(selector2))
       return true;
     if (current === domNode)
       return false;
@@ -6060,10 +6579,11 @@ function hasSelector(target, selector, domNode) {
   } while (current);
   return false;
 }
-function getDragItems(nodeLookup, nodesDraggable, mousePos, nodeId) {
+function getDragItems(nodeLookup, nodesDraggable, mousePos, nodeId, onlyDragNode) {
   const dragItems = /* @__PURE__ */ new Map();
   for (const [id2, node] of nodeLookup) {
-    if ((node.selected || node.id === nodeId) && (!node.parentId || !isParentSelected(node, nodeLookup)) && (node.draggable || nodesDraggable && typeof node.draggable === "undefined")) {
+    const isDragged = onlyDragNode ? node.id === nodeId : node.selected || node.id === nodeId;
+    if (isDragged && (onlyDragNode || !node.parentId || !isParentSelected(node, nodeLookup)) && (node.draggable || nodesDraggable && typeof node.draggable === "undefined")) {
       const internalNode = nodeLookup.get(id2);
       if (internalNode) {
         dragItems.set(id2, {
@@ -6143,7 +6663,7 @@ function XYDrag({ onNodeMouseDown, getStoreItems, onDragStart, onDrag, onDragSto
   let nodePositionsChanged = false;
   let dragEvent = null;
   function update({ noDragClassName, handleSelector, domNode, isSelectable, nodeId, nodeClickDistance = 0 }) {
-    d3Selection = select_default2(domNode);
+    d3Selection = select(domNode);
     function updateNodes({ x, y }) {
       const { nodeLookup, nodeExtent, snapGrid, snapToGrid, nodeOrigin, onNodeDrag, onSelectionDrag, onError, updateNodePositions } = getStoreItems();
       lastPos = { x, y };
@@ -6232,6 +6752,7 @@ function XYDrag({ onNodeMouseDown, getStoreItems, onDragStart, onDrag, onDragSto
     function startDrag(event) {
       const { nodeLookup, multiSelectionActive, nodesDraggable, transform: transform2, snapGrid, snapToGrid, selectNodesOnDrag, onNodeDragStart, onSelectionDragStart, unselectNodesAndEdges } = getStoreItems();
       dragStarted = true;
+      const isUnselectedNodeDrag = !!nodeId && !multiSelectionActive && !nodeLookup.get(nodeId)?.selected;
       if ((!selectNodesOnDrag || !isSelectable) && !multiSelectionActive && nodeId) {
         if (!nodeLookup.get(nodeId)?.selected) {
           unselectNodesAndEdges();
@@ -6242,7 +6763,7 @@ function XYDrag({ onNodeMouseDown, getStoreItems, onDragStart, onDrag, onDragSto
       }
       const pointerPos = getPointerPosition(event.sourceEvent, { transform: transform2, snapGrid, snapToGrid, containerBounds });
       lastPos = pointerPos;
-      dragItems = getDragItems(nodeLookup, nodesDraggable, pointerPos, nodeId);
+      dragItems = getDragItems(nodeLookup, nodesDraggable, pointerPos, nodeId, isUnselectedNodeDrag);
       if (dragItems.size > 0 && (onDragStart || onNodeDragStart || !nodeId && onSelectionDragStart)) {
         const [currentNode, currentNodes] = getEventHandlerParams({
           nodeId,
@@ -6256,7 +6777,7 @@ function XYDrag({ onNodeMouseDown, getStoreItems, onDragStart, onDrag, onDragSto
         }
       }
     }
-    const d3DragInstance = drag_default().clickDistance(nodeClickDistance).on("start", (event) => {
+    const d3DragInstance = drag().clickDistance(nodeClickDistance).on("start", (event) => {
       const { domNode: domNode2, nodeDragThreshold, transform: transform2, snapGrid, snapToGrid } = getStoreItems();
       containerBounds = domNode2?.getBoundingClientRect() || null;
       abortDrag = false;
@@ -6601,7 +7122,7 @@ var XYHandle = {
   isValid: isValidHandle
 };
 function XYMinimap({ domNode, panZoom, getTransform, getViewScale }) {
-  const selection2 = select_default2(domNode);
+  const selection2 = select(domNode);
   function update({ translateExtent, width, height, zoomStep = 1, pannable = true, zoomable = true, inversePan = false }) {
     const zoomHandler = (event) => {
       if (event.sourceEvent.type !== "wheel" || !panZoom) {
@@ -6648,7 +7169,7 @@ function XYMinimap({ domNode, panZoom, getTransform, getViewScale }) {
         zoom: transform2[2]
       }, extent, translateExtent);
     };
-    const zoomAndPanHandler = zoom_default2().on("start", panStartHandler).on("zoom", pannable ? panHandler : null).on("zoom.wheel", zoomable ? zoomHandler : null);
+    const zoomAndPanHandler = zoom2().on("start", panStartHandler).on("zoom", pannable ? panHandler : null).on("zoom.wheel", zoomable ? zoomHandler : null);
     selection2.call(zoomAndPanHandler, {});
   }
   function destroy() {
@@ -6657,7 +7178,7 @@ function XYMinimap({ domNode, panZoom, getTransform, getViewScale }) {
   return {
     update,
     destroy,
-    pointer: pointer_default
+    pointer
   };
 }
 var transformToViewport = (transform2) => ({
@@ -6665,10 +7186,10 @@ var transformToViewport = (transform2) => ({
   y: transform2.y,
   zoom: transform2.k
 });
-var viewportToTransform = ({ x, y, zoom }) => identity2.translate(x, y).scale(zoom);
+var viewportToTransform = ({ x, y, zoom: zoom3 }) => identity2.translate(x, y).scale(zoom3);
 var isWrappedWithClass = (event, className) => event.target.closest(`.${className}`);
 var isRightClickPan = (panOnDrag, usedButton) => usedButton === 2 && Array.isArray(panOnDrag) && panOnDrag.includes(2);
-var defaultEase = (t2) => ((t2 *= 2) <= 1 ? t2 * t2 * t2 : (t2 -= 2) * t2 * t2 + 2) / 2;
+var defaultEase = (t4) => ((t4 *= 2) <= 1 ? t4 * t4 * t4 : (t4 -= 2) * t4 * t4 + 2) / 2;
 var getD3Transition = (selection2, duration = 0, ease = defaultEase, onEnd = () => {
 }) => {
   const hasDuration = typeof duration === "number" && duration > 0;
@@ -6693,10 +7214,10 @@ function createPanOnScrollHandler({ zoomPanValues, noWheelClassName, d3Selection
     event.stopImmediatePropagation();
     const currentZoom = d3Selection.property("__zoom").k || 1;
     if (event.ctrlKey && zoomOnPinch) {
-      const point = pointer_default(event);
+      const point = pointer(event);
       const pinchDelta = wheelDelta(event);
-      const zoom = currentZoom * Math.pow(2, pinchDelta);
-      d3Zoom.scaleTo(d3Selection, zoom, point, event);
+      const zoom3 = currentZoom * Math.pow(2, pinchDelta);
+      d3Zoom.scaleTo(d3Selection, zoom3, point, event);
       return;
     }
     const deltaNormalize = event.deltaMode === 1 ? 20 : 1;
@@ -6855,7 +7376,7 @@ function XYPanZoom({ domNode, minZoom, maxZoom, translateExtent, viewport, onPan
   ];
   const extentResizeObserver = typeof ResizeObserver !== "undefined" ? new ResizeObserver((entries) => {
     const entry = entries[0];
-    if (entry) {
+    if (entry?.contentRect) {
       cachedExtent = [
         [0, 0],
         [entry.contentRect.width, entry.contentRect.height]
@@ -6863,8 +7384,8 @@ function XYPanZoom({ domNode, minZoom, maxZoom, translateExtent, viewport, onPan
     }
   }) : null;
   extentResizeObserver?.observe(domNode);
-  const d3ZoomInstance = zoom_default2().extent(() => cachedExtent).scaleExtent([minZoom, maxZoom]).translateExtent(translateExtent);
-  const d3Selection = select_default2(domNode).call(d3ZoomInstance);
+  const d3ZoomInstance = zoom2().extent(() => cachedExtent).scaleExtent([minZoom, maxZoom]).translateExtent(translateExtent);
+  const d3Selection = select(domNode).call(d3ZoomInstance);
   setViewportConstrained({
     x: viewport.x,
     y: viewport.y,
@@ -6879,14 +7400,14 @@ function XYPanZoom({ domNode, minZoom, maxZoom, translateExtent, viewport, onPan
   async function setTransform(transform2, options) {
     if (d3Selection) {
       return new Promise((resolve) => {
-        d3ZoomInstance?.interpolate(options?.interpolate === "linear" ? value_default : zoom_default).transform(getD3Transition(d3Selection, options?.duration, options?.ease, () => resolve(true)), transform2);
+        d3ZoomInstance?.interpolate(options?.interpolate === "linear" ? value : zoom).transform(getD3Transition(d3Selection, options?.duration, options?.ease, () => resolve(true)), transform2);
       });
     }
     return false;
   }
   function update({ noWheelClassName, noPanClassName, onPaneContextMenu, userSelectionActive, panOnScroll, panOnDrag, panOnScrollMode, panOnScrollSpeed, preventScrolling, zoomOnPinch, zoomOnScroll, zoomOnDoubleClick, panActivationKeyPressed = false, zoomActivationKeyPressed, lib, onTransformChange, connectionInProgress, paneClickDistance, selectionOnDrag }) {
     if (userSelectionActive && !zoomPanValues.isZoomingOrPanning) {
-      destroy();
+      d3ZoomInstance.on("zoom", null);
     }
     const isPanOnScroll = panOnScroll && !zoomActivationKeyPressed && !userSelectionActive;
     d3ZoomInstance.clickDistance(selectionOnDrag ? Infinity : !isNumeric(paneClickDistance) || paneClickDistance < 0 ? 0 : paneClickDistance);
@@ -6953,6 +7474,7 @@ function XYPanZoom({ domNode, minZoom, maxZoom, translateExtent, viewport, onPan
   }
   function destroy() {
     d3ZoomInstance.on("zoom", null);
+    extentResizeObserver?.disconnect();
   }
   async function setViewportConstrained(viewport2, extent, translateExtent2) {
     const nextTransform = viewportToTransform(viewport2);
@@ -6980,10 +7502,10 @@ function XYPanZoom({ domNode, minZoom, maxZoom, translateExtent, viewport, onPan
     const transform2 = d3Selection ? transform(d3Selection.node()) : { x: 0, y: 0, k: 1 };
     return { x: transform2.x, y: transform2.y, zoom: transform2.k };
   }
-  async function scaleTo(zoom, options) {
+  async function scaleTo(zoom3, options) {
     if (d3Selection) {
       return new Promise((resolve) => {
-        d3ZoomInstance?.interpolate(options?.interpolate === "linear" ? value_default : zoom_default).scaleTo(getD3Transition(d3Selection, options?.duration, options?.ease, () => resolve(true)), zoom);
+        d3ZoomInstance?.interpolate(options?.interpolate === "linear" ? value : zoom).scaleTo(getD3Transition(d3Selection, options?.duration, options?.ease, () => resolve(true)), zoom3);
       });
     }
     return false;
@@ -6991,7 +7513,7 @@ function XYPanZoom({ domNode, minZoom, maxZoom, translateExtent, viewport, onPan
   async function scaleBy(factor, options) {
     if (d3Selection) {
       return new Promise((resolve) => {
-        d3ZoomInstance?.interpolate(options?.interpolate === "linear" ? value_default : zoom_default).scaleBy(getD3Transition(d3Selection, options?.duration, options?.ease, () => resolve(true)), factor);
+        d3ZoomInstance?.interpolate(options?.interpolate === "linear" ? value : zoom).scaleBy(getD3Transition(d3Selection, options?.duration, options?.ease, () => resolve(true)), factor);
       });
     }
     return false;
@@ -7202,7 +7724,7 @@ function nodeToChildExtent(child, parent, nodeOrigin) {
   ];
 }
 function XYResizer({ domNode, nodeId, getStoreItems, onChange, onEnd }) {
-  const selection2 = select_default2(domNode);
+  const selection2 = select(domNode);
   let params = {
     controlDirection: getControlDirection("bottom-right"),
     boundaries: {
@@ -7229,7 +7751,7 @@ function XYResizer({ domNode, nodeId, getStoreItems, onChange, onEnd }) {
     let parentNode = void 0;
     let nodeExtent = void 0;
     let childExtent = void 0;
-    const dragHandler = drag_default().on("start", (event) => {
+    const dragHandler = drag().on("start", (event) => {
       const { nodeLookup, transform: transform2, snapGrid, snapToGrid, nodeOrigin, paneDomNode } = getStoreItems();
       node = nodeLookup.get(nodeId);
       if (!node) {
@@ -7392,27 +7914,27 @@ function XYResizer({ domNode, nodeId, getStoreItems, onChange, onEnd }) {
 }
 
 // node_modules/zustand/esm/traditional.mjs
-var import_react2 = __toESM(require("react"), 1);
+var import_react4 = __toESM(require("react"), 1);
 var import_with_selector = __toESM(require_with_selector(), 1);
 
 // node_modules/zustand/esm/vanilla.mjs
 var import_meta = {};
 var createStoreImpl = (createState) => {
   let state3;
-  const listeners6 = /* @__PURE__ */ new Set();
+  const listeners7 = /* @__PURE__ */ new Set();
   const setState2 = (partial, replace) => {
     const nextState = typeof partial === "function" ? partial(state3) : partial;
     if (!Object.is(nextState, state3)) {
       const previousState = state3;
       state3 = (replace != null ? replace : typeof nextState !== "object" || nextState === null) ? nextState : Object.assign({}, state3, nextState);
-      listeners6.forEach((listener) => listener(state3, previousState));
+      listeners7.forEach((listener) => listener(state3, previousState));
     }
   };
   const getState = () => state3;
   const getInitialState2 = () => initialState;
-  const subscribe2 = (listener) => {
-    listeners6.add(listener);
-    return () => listeners6.delete(listener);
+  const subscribe3 = (listener) => {
+    listeners7.add(listener);
+    return () => listeners7.delete(listener);
   };
   const destroy = () => {
     if ((import_meta.env ? import_meta.env.MODE : void 0) !== "production") {
@@ -7420,24 +7942,24 @@ var createStoreImpl = (createState) => {
         "[DEPRECATED] The `destroy` method will be unsupported in a future version. Instead use unsubscribe function returned by subscribe. Everything will be garbage-collected if store is garbage-collected."
       );
     }
-    listeners6.clear();
+    listeners7.clear();
   };
-  const api = { setState: setState2, getState, getInitialState: getInitialState2, subscribe: subscribe2, destroy };
+  const api = { setState: setState2, getState, getInitialState: getInitialState2, subscribe: subscribe3, destroy };
   const initialState = state3 = createState(setState2, getState, api);
   return api;
 };
 var createStore = (createState) => createState ? createStoreImpl(createState) : createStoreImpl;
 
 // node_modules/zustand/esm/traditional.mjs
-var { useDebugValue } = import_react2.default;
+var { useDebugValue } = import_react4.default;
 var { useSyncExternalStoreWithSelector } = import_with_selector.default;
 var identity3 = (arg) => arg;
-function useStoreWithEqualityFn(api, selector = identity3, equalityFn) {
+function useStoreWithEqualityFn(api, selector2 = identity3, equalityFn) {
   const slice = useSyncExternalStoreWithSelector(
     api.subscribe,
     api.getState,
     api.getServerState || api.getInitialState,
-    selector,
+    selector2,
     equalityFn
   );
   useDebugValue(slice);
@@ -7445,7 +7967,7 @@ function useStoreWithEqualityFn(api, selector = identity3, equalityFn) {
 }
 var createWithEqualityFnImpl = (createState, defaultEqualityFn) => {
   const api = createStore(createState);
-  const useBoundStoreWithEqualityFn = (selector, equalityFn = defaultEqualityFn) => useStoreWithEqualityFn(api, selector, equalityFn);
+  const useBoundStoreWithEqualityFn = (selector2, equalityFn = defaultEqualityFn) => useStoreWithEqualityFn(api, selector2, equalityFn);
   Object.assign(useBoundStoreWithEqualityFn, api);
   return useBoundStoreWithEqualityFn;
 };
@@ -7461,8 +7983,8 @@ function shallow$1(objA, objB) {
   }
   if (objA instanceof Map && objB instanceof Map) {
     if (objA.size !== objB.size) return false;
-    for (const [key, value] of objA) {
-      if (!Object.is(value, objB.get(key))) {
+    for (const [key, value2] of objA) {
+      if (!Object.is(value2, objB.get(key))) {
         return false;
       }
     }
@@ -7470,8 +7992,8 @@ function shallow$1(objA, objB) {
   }
   if (objA instanceof Set && objB instanceof Set) {
     if (objA.size !== objB.size) return false;
-    for (const value of objA) {
-      if (!objB.has(value)) {
+    for (const value2 of objA) {
+      if (!objB.has(value2)) {
         return false;
       }
     }
@@ -7491,22 +8013,22 @@ function shallow$1(objA, objB) {
 
 // node_modules/@xyflow/react/dist/esm/index.js
 var import_react_dom = require("react-dom");
-var StoreContext = (0, import_react3.createContext)(null);
+var StoreContext = (0, import_react5.createContext)(null);
 var Provider$1 = StoreContext.Provider;
 var zustandErrorMessage = errorMessages["error001"]("react");
-function useStore(selector, equalityFn) {
-  const store = (0, import_react3.useContext)(StoreContext);
+function useStore(selector2, equalityFn) {
+  const store = (0, import_react5.useContext)(StoreContext);
   if (store === null) {
     throw new Error(zustandErrorMessage);
   }
-  return useStoreWithEqualityFn(store, selector, equalityFn);
+  return useStoreWithEqualityFn(store, selector2, equalityFn);
 }
 function useStoreApi() {
-  const store = (0, import_react3.useContext)(StoreContext);
+  const store = (0, import_react5.useContext)(StoreContext);
   if (store === null) {
     throw new Error(zustandErrorMessage);
   }
-  return (0, import_react3.useMemo)(() => ({
+  return (0, import_react5.useMemo)(() => ({
     getState: store.getState,
     setState: store.setState,
     subscribe: store.subscribe
@@ -7531,20 +8053,20 @@ var ariaLiveSelector = (s) => s.ariaLiveMessage;
 var ariaLabelConfigSelector = (s) => s.ariaLabelConfig;
 function AriaLiveMessage({ rfId }) {
   const ariaLiveMessage = useStore(ariaLiveSelector);
-  return (0, import_jsx_runtime4.jsx)("div", { id: `${ARIA_LIVE_MESSAGE}-${rfId}`, "aria-live": "assertive", "aria-atomic": "true", style: ariaLiveStyle, children: ariaLiveMessage });
+  return (0, import_jsx_runtime6.jsx)("div", { id: `${ARIA_LIVE_MESSAGE}-${rfId}`, "aria-live": "assertive", "aria-atomic": "true", style: ariaLiveStyle, children: ariaLiveMessage });
 }
 function A11yDescriptions({ rfId, disableKeyboardA11y }) {
   const ariaLabelConfig = useStore(ariaLabelConfigSelector);
-  return (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [(0, import_jsx_runtime4.jsx)("div", { id: `${ARIA_NODE_DESC_KEY}-${rfId}`, style, children: disableKeyboardA11y ? ariaLabelConfig["node.a11yDescription.default"] : ariaLabelConfig["node.a11yDescription.keyboardDisabled"] }), (0, import_jsx_runtime4.jsx)("div", { id: `${ARIA_EDGE_DESC_KEY}-${rfId}`, style, children: ariaLabelConfig["edge.a11yDescription.default"] }), !disableKeyboardA11y && (0, import_jsx_runtime4.jsx)(AriaLiveMessage, { rfId })] });
+  return (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [(0, import_jsx_runtime6.jsx)("div", { id: `${ARIA_NODE_DESC_KEY}-${rfId}`, style, children: disableKeyboardA11y ? ariaLabelConfig["node.a11yDescription.default"] : ariaLabelConfig["node.a11yDescription.keyboardDisabled"] }), (0, import_jsx_runtime6.jsx)("div", { id: `${ARIA_EDGE_DESC_KEY}-${rfId}`, style, children: ariaLabelConfig["edge.a11yDescription.default"] }), !disableKeyboardA11y && (0, import_jsx_runtime6.jsx)(AriaLiveMessage, { rfId })] });
 }
-var Panel = (0, import_react3.forwardRef)(({ position = "top-left", children: children2, className, style: style2, ...rest }, ref) => {
+var Panel = (0, import_react5.forwardRef)(({ position = "top-left", children: children2, className, style: style2, ...rest }, ref) => {
   const positionClasses = `${position}`.split("-");
-  return (0, import_jsx_runtime4.jsx)("div", { className: cc(["react-flow__panel", className, ...positionClasses]), style: style2, ref, ...rest, children: children2 });
+  return (0, import_jsx_runtime6.jsx)("div", { className: cc(["react-flow__panel", className, ...positionClasses]), style: style2, ref, ...rest, children: children2 });
 });
 Panel.displayName = "Panel";
 var link = `https://reactflow.dev${true ? "?utm_source=attribution" : "/attribution"}`;
 function Attribution({ proOptions, position = "bottom-right" }) {
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (true) {
       return;
     }
@@ -7553,7 +8075,7 @@ function Attribution({ proOptions, position = "bottom-right" }) {
   if (proOptions?.hideAttribution) {
     return null;
   }
-  return (0, import_jsx_runtime4.jsx)(Panel, { position, className: "react-flow__attribution", "data-message": `Please only hide this attribution when you are subscribed to React Flow Pro: ${link}`, children: (0, import_jsx_runtime4.jsx)("a", { href: link, target: "_blank", rel: "noopener noreferrer", "aria-label": "React Flow attribution", children: "React Flow" }) });
+  return (0, import_jsx_runtime6.jsx)(Panel, { position, className: "react-flow__attribution", "data-message": `Please only hide this attribution when you are subscribed to React Flow Pro: ${link}`, children: (0, import_jsx_runtime6.jsx)("a", { href: link, target: "_blank", rel: "noopener noreferrer", "aria-label": "React Flow attribution", children: "React Flow" }) });
 }
 var selector$l = (s) => {
   const selectedNodes = [];
@@ -7577,7 +8099,7 @@ function areEqual$1(a, b) {
 function SelectionListenerInner({ onSelectionChange }) {
   const store = useStoreApi();
   const { selectedNodes, selectedEdges } = useStore(selector$l, areEqual$1);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     const params = { nodes: selectedNodes, edges: selectedEdges };
     onSelectionChange?.(params);
     store.getState().onSelectionChangeHandlers.forEach((fn) => fn(params));
@@ -7588,7 +8110,7 @@ var changeSelector = (s) => !!s.onSelectionChangeHandlers;
 function SelectionListener({ onSelectionChange }) {
   const storeHasSelectionChangeHandlers = useStore(changeSelector);
   if (onSelectionChange || storeHasSelectionChangeHandlers) {
-    return (0, import_jsx_runtime4.jsx)(SelectionListenerInner, { onSelectionChange });
+    return (0, import_jsx_runtime6.jsx)(SelectionListenerInner, { onSelectionChange });
   }
   return null;
 }
@@ -7682,15 +8204,15 @@ var initPrevValues2 = {
 function StoreUpdater(props) {
   const { setNodes, setEdges, setMinZoom, setMaxZoom, setTranslateExtent, setNodeExtent, reset, setDefaultNodesAndEdges } = useStore(selector$k, shallow$1);
   const store = useStoreApi();
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     setDefaultNodesAndEdges(props.defaultNodes, props.defaultEdges);
     return () => {
       previousFields.current = initPrevValues2;
       reset();
     };
   }, []);
-  const previousFields = (0, import_react3.useRef)(initPrevValues2);
-  (0, import_react3.useEffect)(
+  const previousFields = (0, import_react5.useRef)(initPrevValues2);
+  (0, import_react5.useEffect)(
     () => {
       for (const fieldName of fieldsToTrack) {
         const fieldValue = props[fieldName];
@@ -7734,8 +8256,8 @@ function getMediaQuery() {
   return window.matchMedia("(prefers-color-scheme: dark)");
 }
 function useColorModeClass(colorMode) {
-  const [colorModeClass, setColorModeClass] = (0, import_react3.useState)(colorMode === "system" ? null : colorMode);
-  (0, import_react3.useEffect)(() => {
+  const [colorModeClass, setColorModeClass] = (0, import_react5.useState)(colorMode === "system" ? null : colorMode);
+  (0, import_react5.useEffect)(() => {
     if (colorMode !== "system") {
       setColorModeClass(colorMode);
       return;
@@ -7752,10 +8274,10 @@ function useColorModeClass(colorMode) {
 }
 var defaultDoc = typeof document !== "undefined" ? document : null;
 function useKeyPress(keyCode = null, options = { target: defaultDoc, actInsideInputWithModifier: true }) {
-  const [keyPressed, setKeyPressed] = (0, import_react3.useState)(false);
-  const modifierPressed = (0, import_react3.useRef)(false);
-  const pressedKeys = (0, import_react3.useRef)(/* @__PURE__ */ new Set([]));
-  const [keyCodes, keysToWatch] = (0, import_react3.useMemo)(() => {
+  const [keyPressed, setKeyPressed] = (0, import_react5.useState)(false);
+  const modifierPressed = (0, import_react5.useRef)(false);
+  const pressedKeys = (0, import_react5.useRef)(/* @__PURE__ */ new Set([]));
+  const [keyCodes, keysToWatch] = (0, import_react5.useMemo)(() => {
     if (keyCode !== null) {
       const keyCodeArr = Array.isArray(keyCode) ? keyCode : [keyCode];
       const keys = keyCodeArr.filter((kc) => typeof kc === "string").map((kc) => kc.replace(/\+/g, "\n").replace("\n\n", "\n+").split("\n"));
@@ -7764,7 +8286,7 @@ function useKeyPress(keyCode = null, options = { target: defaultDoc, actInsideIn
     }
     return [[], []];
   }, [keyCode]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     const target = options?.target ?? defaultDoc;
     const actInsideInputWithModifier = options?.actInsideInputWithModifier ?? true;
     if (keyCode !== null) {
@@ -7824,7 +8346,7 @@ function useKeyOrCode(eventCode, keysToWatch) {
 }
 var useViewportHelper = () => {
   const store = useStoreApi();
-  return (0, import_react3.useMemo)(() => {
+  return (0, import_react5.useMemo)(() => {
     return {
       zoomIn: async (options) => {
         const { panZoom } = store.getState();
@@ -7852,8 +8374,8 @@ var useViewportHelper = () => {
         return true;
       },
       getViewport: () => {
-        const [x, y, zoom] = store.getState().transform;
-        return { x, y, zoom };
+        const [x, y, zoom3] = store.getState().transform;
+        return { x, y, zoom: zoom3 };
       },
       setCenter: async (x, y, options) => {
         return store.getState().setCenter(x, y, options);
@@ -7998,14 +8520,11 @@ function createSelectionChange(id2, selected2) {
     selected: selected2
   };
 }
-function getSelectionChanges(items, selectedIds = /* @__PURE__ */ new Set(), mutateItem = false) {
+function getSelectionChanges(items, selectedIds = /* @__PURE__ */ new Set()) {
   const changes = [];
   for (const [id2, item] of items) {
     const willBeSelected = selectedIds.has(id2);
     if (!(item.selected === void 0 && !willBeSelected) && item.selected !== willBeSelected) {
-      if (mutateItem) {
-        item.selected = willBeSelected;
-      }
       changes.push(createSelectionChange(item.id, willBeSelected));
     }
   }
@@ -8048,12 +8567,12 @@ function addEdge2(edgeParams, edges, options = {}) {
 var isNode = (element) => isNodeBase(element);
 var isEdge = (element) => isEdgeBase(element);
 function fixedForwardRef(render) {
-  return (0, import_react3.forwardRef)(render);
+  return (0, import_react5.forwardRef)(render);
 }
-var useIsomorphicLayoutEffect = typeof window !== "undefined" ? import_react3.useLayoutEffect : import_react3.useEffect;
+var useIsomorphicLayoutEffect = typeof window !== "undefined" ? import_react5.useLayoutEffect : import_react5.useEffect;
 function useQueue(runQueue) {
-  const [serial, setSerial] = (0, import_react3.useState)(BigInt(0));
-  const [queue] = (0, import_react3.useState)(() => createQueue(() => setSerial((n) => n + BigInt(1))));
+  const [serial, setSerial] = (0, import_react5.useState)(BigInt(0));
+  const [queue] = (0, import_react5.useState)(() => createQueue(() => setSerial((n) => n + BigInt(1))));
   useIsomorphicLayoutEffect(() => {
     const queueItems = queue.get();
     if (queueItems.length) {
@@ -8076,10 +8595,10 @@ function createQueue(cb) {
     }
   };
 }
-var BatchContext = (0, import_react3.createContext)(null);
+var BatchContext = (0, import_react5.createContext)(null);
 function BatchProvider({ children: children2 }) {
   const store = useStoreApi();
-  const nodeQueueHandler = (0, import_react3.useCallback)((queueItems) => {
+  const nodeQueueHandler = (0, import_react5.useCallback)((queueItems) => {
     const { nodes = [], setNodes, hasDefaultNodes, onNodesChange, nodeLookup, fitViewQueued, onNodesChangeMiddlewareMap } = store.getState();
     let next = nodes;
     for (const payload of queueItems) {
@@ -8107,7 +8626,7 @@ function BatchProvider({ children: children2 }) {
     }
   }, []);
   const nodeQueue = useQueue(nodeQueueHandler);
-  const edgeQueueHandler = (0, import_react3.useCallback)((queueItems) => {
+  const edgeQueueHandler = (0, import_react5.useCallback)((queueItems) => {
     const { edges = [], setEdges, hasDefaultEdges, onEdgesChange, edgeLookup } = store.getState();
     let next = edges;
     for (const payload of queueItems) {
@@ -8123,11 +8642,11 @@ function BatchProvider({ children: children2 }) {
     }
   }, []);
   const edgeQueue = useQueue(edgeQueueHandler);
-  const value = (0, import_react3.useMemo)(() => ({ nodeQueue, edgeQueue }), []);
-  return (0, import_jsx_runtime4.jsx)(BatchContext.Provider, { value, children: children2 });
+  const value2 = (0, import_react5.useMemo)(() => ({ nodeQueue, edgeQueue }), []);
+  return (0, import_jsx_runtime6.jsx)(BatchContext.Provider, { value: value2, children: children2 });
 }
 function useBatchContext() {
-  const batchContext = (0, import_react3.useContext)(BatchContext);
+  const batchContext = (0, import_react5.useContext)(BatchContext);
   if (!batchContext) {
     throw new Error("useBatchContext must be used within a BatchProvider");
   }
@@ -8139,7 +8658,7 @@ function useReactFlow() {
   const store = useStoreApi();
   const batchContext = useBatchContext();
   const viewportInitialized = useStore(selector$j);
-  const generalHelper = (0, import_react3.useMemo)(() => {
+  const generalHelper = (0, import_react5.useMemo)(() => {
     const getInternalNode = (id2) => store.getState().nodeLookup.get(id2);
     const setNodes = (payload) => {
       batchContext.nodeQueue.push(payload);
@@ -8157,7 +8676,7 @@ function useReactFlow() {
         width: nodeToUse.measured?.width ?? nodeToUse.width,
         height: nodeToUse.measured?.height ?? nodeToUse.height
       };
-      return nodeToRect(nodeWithPosition);
+      return nodeToRect(nodeWithPosition, nodeToUse.parentId ? void 0 : nodeOrigin);
     };
     const updateNode = (id2, nodeUpdate, options = { replace: false }) => {
       setNodes((prevNodes) => prevNodes.map((node) => {
@@ -8198,14 +8717,14 @@ function useReactFlow() {
       },
       toObject: () => {
         const { nodes = [], edges = [], transform: transform2 } = store.getState();
-        const [x, y, zoom] = transform2;
+        const [x, y, zoom3] = transform2;
         return {
           nodes: nodes.map((n) => ({ ...n })),
           edges: edges.map((e) => ({ ...e })),
           viewport: {
             x,
             y,
-            zoom
+            zoom: zoom3
           }
         };
       },
@@ -8247,12 +8766,13 @@ function useReactFlow() {
         if (!nodeRect) {
           return [];
         }
+        const { nodeOrigin } = store.getState();
         return (nodes || store.getState().nodes).filter((n) => {
           const internalNode = store.getState().nodeLookup.get(n.id);
           if (internalNode && !isRect && (n.id === nodeOrRect.id || !internalNode.internals.positionAbsolute)) {
             return false;
           }
-          const currNodeRect = nodeToRect(hasNodesOption ? n : internalNode);
+          const currNodeRect = nodeToRect(hasNodesOption ? n : internalNode, nodeOrigin);
           const overlappingArea = getOverlappingArea(currNodeRect, nodeRect);
           const partiallyVisible = partially && overlappingArea > 0;
           return partiallyVisible || overlappingArea >= currNodeRect.width * currNodeRect.height || overlappingArea >= nodeRect.width * nodeRect.height;
@@ -8296,7 +8816,7 @@ function useReactFlow() {
       }
     };
   }, []);
-  return (0, import_react3.useMemo)(() => {
+  return (0, import_react5.useMemo)(() => {
     return {
       ...generalHelper,
       ...viewportHelper,
@@ -8311,20 +8831,20 @@ function useGlobalKeyHandler({ deleteKeyCode, multiSelectionKeyCode }) {
   const { deleteElements } = useReactFlow();
   const deleteKeyPressed = useKeyPress(deleteKeyCode, { actInsideInputWithModifier: false });
   const multiSelectionKeyPressed = useKeyPress(multiSelectionKeyCode, { target: win$1 });
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (deleteKeyPressed) {
       const { edges, nodes } = store.getState();
       deleteElements({ nodes: nodes.filter(selected), edges: edges.filter(selected) });
       store.setState({ nodesSelectionActive: false });
     }
   }, [deleteKeyPressed]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     store.setState({ multiSelectionActive: multiSelectionKeyPressed });
   }, [multiSelectionKeyPressed]);
 }
 function useResizeHandler(domNode) {
   const store = useStoreApi();
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     const updateDimensions = () => {
       if (!domNode.current || !(domNode.current.checkVisibility?.() ?? true)) {
         return false;
@@ -8342,9 +8862,7 @@ function useResizeHandler(domNode) {
       resizeObserver.observe(domNode.current);
       return () => {
         window.removeEventListener("resize", updateDimensions);
-        if (resizeObserver && domNode.current) {
-          resizeObserver.unobserve(domNode.current);
-        }
+        resizeObserver.disconnect();
       };
     }
   }, []);
@@ -8363,18 +8881,18 @@ var selector$i = (s) => ({
 });
 function ZoomPane({ onPaneContextMenu, zoomOnScroll = true, zoomOnPinch = true, panOnScroll = false, panActivationKeyPressed, panOnScrollSpeed = 0.5, panOnScrollMode = PanOnScrollMode.Free, zoomOnDoubleClick = true, panOnDrag = true, defaultViewport: defaultViewport2, translateExtent, minZoom, maxZoom, zoomActivationKeyCode, preventScrolling = true, children: children2, noWheelClassName, noPanClassName, onViewportChange, isControlledViewport, paneClickDistance, selectionOnDrag }) {
   const store = useStoreApi();
-  const zoomPane = (0, import_react3.useRef)(null);
+  const zoomPane = (0, import_react5.useRef)(null);
   const { userSelectionActive, lib, connectionInProgress } = useStore(selector$i, shallow$1);
   const zoomActivationKeyPressed = useKeyPress(zoomActivationKeyCode);
-  const panZoom = (0, import_react3.useRef)();
+  const panZoom = (0, import_react5.useRef)();
   useResizeHandler(zoomPane);
-  const onTransformChange = (0, import_react3.useCallback)((transform2) => {
+  const onTransformChange = (0, import_react5.useCallback)((transform2) => {
     onViewportChange?.({ x: transform2[0], y: transform2[1], zoom: transform2[2] });
     if (!isControlledViewport) {
       store.setState({ transform: transform2 });
     }
   }, [onViewportChange, isControlledViewport]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (zoomPane.current) {
       panZoom.current = XYPanZoom({
         domNode: zoomPane.current,
@@ -8399,10 +8917,10 @@ function ZoomPane({ onPaneContextMenu, zoomOnScroll = true, zoomOnPinch = true, 
           onViewportChangeEnd?.(vp);
         }
       });
-      const { x, y, zoom } = panZoom.current.getViewport();
+      const { x, y, zoom: zoom3 } = panZoom.current.getViewport();
       store.setState({
         panZoom: panZoom.current,
-        transform: [x, y, zoom],
+        transform: [x, y, zoom3],
         domNode: zoomPane.current.closest(".react-flow")
       });
       return () => {
@@ -8410,7 +8928,7 @@ function ZoomPane({ onPaneContextMenu, zoomOnScroll = true, zoomOnPinch = true, 
       };
     }
   }, []);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     panZoom.current?.update({
       onPaneContextMenu,
       zoomOnScroll,
@@ -8453,7 +8971,7 @@ function ZoomPane({ onPaneContextMenu, zoomOnScroll = true, zoomOnPinch = true, 
     selectionOnDrag,
     paneClickDistance
   ]);
-  return (0, import_jsx_runtime4.jsx)("div", { className: "react-flow__renderer", ref: zoomPane, style: containerStyle, children: children2 });
+  return (0, import_jsx_runtime6.jsx)("div", { className: "react-flow__renderer", ref: zoomPane, style: containerStyle, children: children2 });
 }
 var selector$h = (s) => ({
   userSelectionActive: s.userSelectionActive,
@@ -8465,7 +8983,7 @@ function UserSelection() {
   if (!isActive) {
     return null;
   }
-  return (0, import_jsx_runtime4.jsx)("div", { className: "react-flow__selection react-flow__container", style: {
+  return (0, import_jsx_runtime6.jsx)("div", { className: "react-flow__selection react-flow__container", style: {
     width: userSelectionRect.width,
     height: userSelectionRect.height,
     transform: `translate(${userSelectionRect.x}px, ${userSelectionRect.y}px)`
@@ -8487,26 +9005,34 @@ var selector$g = (s) => ({
   autoPanSpeed: s.autoPanSpeed
 });
 function Pane({ isSelecting, selectionKeyPressed, selectionMode = SelectionMode.Full, panOnDrag, autoPanOnSelection, paneClickDistance, selectionOnDrag, onSelectionStart, onSelectionEnd, onPaneClick, onPaneContextMenu, onPaneScroll, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, children: children2 }) {
-  const autoPanId = (0, import_react3.useRef)(0);
+  const autoPanId = (0, import_react5.useRef)(0);
   const store = useStoreApi();
   const { userSelectionActive, elementsSelectable, dragging, panBy: panBy2, autoPanSpeed } = useStore(selector$g, shallow$1);
   const isSelectionEnabled = elementsSelectable && (isSelecting || userSelectionActive);
-  const container = (0, import_react3.useRef)(null);
-  const containerBounds = (0, import_react3.useRef)();
-  const selectedNodeIds = (0, import_react3.useRef)(/* @__PURE__ */ new Set());
-  const selectedEdgeIds = (0, import_react3.useRef)(/* @__PURE__ */ new Set());
-  const connectionEndedOnPane = (0, import_react3.useRef)(false);
-  const selectionInProgress = (0, import_react3.useRef)(false);
-  const position = (0, import_react3.useRef)({ x: 0, y: 0 });
-  const autoPanStarted = (0, import_react3.useRef)(false);
+  const container = (0, import_react5.useRef)(null);
+  const containerBounds = (0, import_react5.useRef)();
+  const selectedNodeIds = (0, import_react5.useRef)(/* @__PURE__ */ new Set());
+  const selectedEdgeIds = (0, import_react5.useRef)(/* @__PURE__ */ new Set());
+  const connectionEndedOnPane = (0, import_react5.useRef)(false);
+  const selectionInProgress = (0, import_react5.useRef)(false);
+  const position = (0, import_react5.useRef)({ x: 0, y: 0 });
+  const autoPanStarted = (0, import_react5.useRef)(false);
   const onClick = (event) => {
     if (selectionInProgress.current || connectionEndedOnPane.current || store.getState().connection.inProgress) {
       selectionInProgress.current = false;
       connectionEndedOnPane.current = false;
       return;
     }
+    const { connectionClickStartHandle, connection, onClickConnectEnd, resetSelectedElements } = store.getState();
+    if (connectionClickStartHandle) {
+      const connectionClone = structuredClone(connection);
+      delete connectionClone.inProgress;
+      connectionClone.toPosition = connectionClone.toHandle ? connectionClone.toHandle.position : null;
+      onClickConnectEnd?.(event.nativeEvent, connectionClone);
+      store.setState({ connectionClickStartHandle: null });
+    }
     onPaneClick?.(event);
-    store.getState().resetSelectedElements();
+    resetSelectedElements();
     store.setState({ nodesSelectionActive: false });
   };
   const onContextMenu = (event) => {
@@ -8589,7 +9115,7 @@ function Pane({ isSelecting, selectionKeyPressed, selectionMode = SelectionMode.
       }
     }
     if (!areSetsEqual(prevSelectedNodeIds, selectedNodeIds.current)) {
-      const changes = getSelectionChanges(nodeLookup, selectedNodeIds.current, true);
+      const changes = getSelectionChanges(nodeLookup, selectedNodeIds.current);
       triggerNodeChanges(changes);
     }
     if (!areSetsEqual(prevSelectedEdgeIds, selectedEdgeIds.current)) {
@@ -8622,7 +9148,7 @@ function Pane({ isSelecting, selectionKeyPressed, selectionMode = SelectionMode.
     autoPanId.current = 0;
     autoPanStarted.current = false;
   };
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     return () => cleanupAutoPan();
   }, []);
   const onPointerMove = (event) => {
@@ -8680,7 +9206,7 @@ function Pane({ isSelecting, selectionKeyPressed, selectionMode = SelectionMode.
     cleanupAutoPan();
   };
   const draggable = panOnDrag === true || Array.isArray(panOnDrag) && panOnDrag.includes(0);
-  return (0, import_jsx_runtime4.jsxs)("div", { className: cc(["react-flow__pane", { draggable, dragging, selection: isSelecting }]), onClick: isSelectionEnabled ? void 0 : wrapHandler(onClick, container), onContextMenu: wrapHandler(onContextMenu, container), onWheel: wrapHandler(onWheel, container), onPointerEnter: isSelectionEnabled ? void 0 : onPaneMouseEnter, onPointerMove: isSelectionEnabled ? onPointerMove : onPaneMouseMove, onPointerUp, onPointerCancel: isSelectionEnabled ? onPointerCancel : void 0, onPointerDownCapture: isSelectionEnabled ? onPointerDownCapture : void 0, onClickCapture: isSelectionEnabled ? onClickCapture : void 0, onPointerLeave: onPaneMouseLeave, ref: container, style: containerStyle, children: [children2, (0, import_jsx_runtime4.jsx)(UserSelection, {})] });
+  return (0, import_jsx_runtime6.jsxs)("div", { className: cc(["react-flow__pane", { draggable, dragging, selection: isSelecting }]), onClick: isSelectionEnabled ? void 0 : wrapHandler(onClick, container), onContextMenu: wrapHandler(onContextMenu, container), onWheel: wrapHandler(onWheel, container), onPointerEnter: isSelectionEnabled ? void 0 : onPaneMouseEnter, onPointerMove: isSelectionEnabled ? onPointerMove : onPaneMouseMove, onPointerUp, onPointerCancel: isSelectionEnabled ? onPointerCancel : void 0, onPointerDownCapture: isSelectionEnabled ? onPointerDownCapture : void 0, onClickCapture: isSelectionEnabled ? onClickCapture : void 0, onPointerLeave: onPaneMouseLeave, ref: container, style: containerStyle, children: [children2, (0, import_jsx_runtime6.jsx)(UserSelection, {})] });
 }
 function handleNodeClick({ id: id2, store, unselect = false, nodeRef }) {
   const { addSelectedNodes, unselectNodesAndEdges, multiSelectionActive, nodeLookup, onError } = store.getState();
@@ -8699,9 +9225,9 @@ function handleNodeClick({ id: id2, store, unselect = false, nodeRef }) {
 }
 function useDrag({ nodeRef, disabled = false, noDragClassName, handleSelector, nodeId, isSelectable, nodeClickDistance }) {
   const store = useStoreApi();
-  const [dragging, setDragging] = (0, import_react3.useState)(false);
-  const xyDrag = (0, import_react3.useRef)();
-  (0, import_react3.useEffect)(() => {
+  const [dragging, setDragging] = (0, import_react5.useState)(false);
+  const xyDrag = (0, import_react5.useRef)();
+  (0, import_react5.useEffect)(() => {
     if (disabled) {
       return;
     }
@@ -8726,7 +9252,7 @@ function useDrag({ nodeRef, disabled = false, noDragClassName, handleSelector, n
       xyDrag.current = void 0;
     };
   }, [disabled, store, nodeRef]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (disabled || !nodeRef.current || !xyDrag.current) {
       return;
     }
@@ -8744,7 +9270,7 @@ function useDrag({ nodeRef, disabled = false, noDragClassName, handleSelector, n
 var selectedAndDraggable = (nodesDraggable) => (n) => n.selected && (n.draggable || nodesDraggable && typeof n.draggable === "undefined");
 function useMoveSelectedNodes() {
   const store = useStoreApi();
-  const moveSelectedNodes = (0, import_react3.useCallback)((params) => {
+  const moveSelectedNodes = (0, import_react5.useCallback)((params) => {
     const { nodeExtent, snapToGrid, snapGrid, nodesDraggable, onError, updateNodePositions, nodeLookup, nodeOrigin } = store.getState();
     const nodeUpdates = /* @__PURE__ */ new Map();
     const isSelected = selectedAndDraggable(nodesDraggable);
@@ -8779,11 +9305,11 @@ function useMoveSelectedNodes() {
   }, []);
   return moveSelectedNodes;
 }
-var NodeIdContext = (0, import_react3.createContext)(null);
+var NodeIdContext = (0, import_react5.createContext)(null);
 var Provider = NodeIdContext.Provider;
 NodeIdContext.Consumer;
 var useNodeId = () => {
-  const nodeId = (0, import_react3.useContext)(NodeIdContext);
+  const nodeId = (0, import_react5.useContext)(NodeIdContext);
   return nodeId;
 };
 var selector$f = (s) => ({
@@ -8791,13 +9317,13 @@ var selector$f = (s) => ({
   noPanClassName: s.noPanClassName,
   rfId: s.rfId
 });
-var HandleConfigContext = (0, import_react3.createContext)(null);
+var HandleConfigContext = (0, import_react5.createContext)(null);
 function HandleConfigProvider({ children: children2 }) {
   const config = useStore(selector$f, shallow$1);
-  return (0, import_jsx_runtime4.jsx)(HandleConfigContext.Provider, { value: config, children: children2 });
+  return (0, import_jsx_runtime6.jsx)(HandleConfigContext.Provider, { value: config, children: children2 });
 }
 function useHandleConfig() {
-  const config = (0, import_react3.useContext)(HandleConfigContext);
+  const config = (0, import_react5.useContext)(HandleConfigContext);
   if (!config) {
     throw new Error("useHandleConfig must be used within a HandleConfigProvider");
   }
@@ -8927,7 +9453,7 @@ function HandleComponent({ type = "source", position = Position.Top, isValidConn
     onClickConnectEnd?.(event, connectionClone);
     store.setState({ connectionClickStartHandle: null });
   };
-  return (0, import_jsx_runtime4.jsx)("div", { "data-handleid": handleId, "data-nodeid": nodeId, "data-handlepos": position, "data-id": `${rfId}-${nodeId}-${handleId}-${type}`, className: cc([
+  return (0, import_jsx_runtime6.jsx)("div", { "data-handleid": handleId, "data-nodeid": nodeId, "data-handlepos": position, "data-id": `${rfId}-${nodeId}-${handleId}-${type}`, className: cc([
     "react-flow__handle",
     `react-flow__handle-${position}`,
     "nodrag",
@@ -8951,18 +9477,18 @@ function HandleComponent({ type = "source", position = Position.Top, isValidConn
     }
   ]), onMouseDown: onPointerDown2, onTouchStart: onPointerDown2, onClick: connectOnClick ? onClick : void 0, ref, ...rest, children: children2 });
 }
-var Handle = (0, import_react3.memo)(fixedForwardRef(HandleComponent));
+var Handle = (0, import_react5.memo)(fixedForwardRef(HandleComponent));
 function InputNode({ data, isConnectable, sourcePosition = Position.Bottom }) {
-  return (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [data?.label, (0, import_jsx_runtime4.jsx)(Handle, { type: "source", position: sourcePosition, isConnectable })] });
+  return (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [data?.label, (0, import_jsx_runtime6.jsx)(Handle, { type: "source", position: sourcePosition, isConnectable })] });
 }
 function DefaultNode({ data, isConnectable, targetPosition = Position.Top, sourcePosition = Position.Bottom }) {
-  return (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [(0, import_jsx_runtime4.jsx)(Handle, { type: "target", position: targetPosition, isConnectable }), data?.label, (0, import_jsx_runtime4.jsx)(Handle, { type: "source", position: sourcePosition, isConnectable })] });
+  return (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [(0, import_jsx_runtime6.jsx)(Handle, { type: "target", position: targetPosition, isConnectable }), data?.label, (0, import_jsx_runtime6.jsx)(Handle, { type: "source", position: sourcePosition, isConnectable })] });
 }
 function GroupNode() {
   return null;
 }
 function OutputNode({ data, isConnectable, targetPosition = Position.Top }) {
-  return (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [(0, import_jsx_runtime4.jsx)(Handle, { type: "target", position: targetPosition, isConnectable }), data?.label] });
+  return (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [(0, import_jsx_runtime6.jsx)(Handle, { type: "target", position: targetPosition, isConnectable }), data?.label] });
 }
 var arrowKeyDiffs = {
   ArrowUp: { x: 0, y: -1 },
@@ -9003,8 +9529,8 @@ function NodesSelection({ onSelectionContextMenu, noPanClassName, disableKeyboar
   const store = useStoreApi();
   const { width, height, transformString, userSelectionActive } = useStore(selector$e, shallow$1);
   const moveSelectedNodes = useMoveSelectedNodes();
-  const nodeRef = (0, import_react3.useRef)(null);
-  (0, import_react3.useEffect)(() => {
+  const nodeRef = (0, import_react5.useRef)(null);
+  (0, import_react5.useEffect)(() => {
     if (!disableKeyboardA11y) {
       nodeRef.current?.focus({
         preventScroll: true
@@ -9032,9 +9558,9 @@ function NodesSelection({ onSelectionContextMenu, noPanClassName, disableKeyboar
       });
     }
   };
-  return (0, import_jsx_runtime4.jsx)("div", { className: cc(["react-flow__nodesselection", "react-flow__container", noPanClassName]), style: {
+  return (0, import_jsx_runtime6.jsx)("div", { className: cc(["react-flow__nodesselection", "react-flow__container", noPanClassName]), style: {
     transform: transformString
-  }, children: (0, import_jsx_runtime4.jsx)("div", { ref: nodeRef, className: "react-flow__nodesselection-rect", onContextMenu, tabIndex: disableKeyboardA11y ? void 0 : -1, onKeyDown: disableKeyboardA11y ? void 0 : onKeyDown, style: {
+  }, children: (0, import_jsx_runtime6.jsx)("div", { ref: nodeRef, className: "react-flow__nodesselection-rect", onContextMenu, tabIndex: disableKeyboardA11y ? void 0 : -1, onKeyDown: disableKeyboardA11y ? void 0 : onKeyDown, style: {
     width,
     height
   } }) });
@@ -9052,21 +9578,21 @@ function FlowRendererComponent({ children: children2, onPaneClick, onPaneMouseEn
   const _selectionOnDrag = selectionOnDrag && panOnDrag !== true;
   const isSelecting = selectionKeyPressed || userSelectionActive || _selectionOnDrag;
   useGlobalKeyHandler({ deleteKeyCode, multiSelectionKeyCode });
-  return (0, import_jsx_runtime4.jsx)(ZoomPane, { onPaneContextMenu, elementsSelectable, zoomOnScroll, zoomOnPinch, panOnScroll, panActivationKeyPressed, panOnScrollSpeed, panOnScrollMode, zoomOnDoubleClick, panOnDrag: !selectionKeyPressed && panOnDrag, defaultViewport: defaultViewport2, translateExtent, minZoom, maxZoom, zoomActivationKeyCode, preventScrolling, noWheelClassName, noPanClassName, onViewportChange, isControlledViewport, paneClickDistance, selectionOnDrag: _selectionOnDrag, children: (0, import_jsx_runtime4.jsxs)(Pane, { onSelectionStart, onSelectionEnd, onPaneClick, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, onPaneContextMenu, onPaneScroll, panOnDrag, autoPanOnSelection, isSelecting: !!isSelecting, selectionMode, selectionKeyPressed, paneClickDistance, selectionOnDrag: _selectionOnDrag, children: [children2, nodesSelectionActive && (0, import_jsx_runtime4.jsx)(NodesSelection, { onSelectionContextMenu, noPanClassName, disableKeyboardA11y })] }) });
+  return (0, import_jsx_runtime6.jsx)(ZoomPane, { onPaneContextMenu, elementsSelectable, zoomOnScroll, zoomOnPinch, panOnScroll, panActivationKeyPressed, panOnScrollSpeed, panOnScrollMode, zoomOnDoubleClick, panOnDrag: !selectionKeyPressed && panOnDrag, defaultViewport: defaultViewport2, translateExtent, minZoom, maxZoom, zoomActivationKeyCode, preventScrolling, noWheelClassName, noPanClassName, onViewportChange, isControlledViewport, paneClickDistance, selectionOnDrag: _selectionOnDrag, children: (0, import_jsx_runtime6.jsxs)(Pane, { onSelectionStart, onSelectionEnd, onPaneClick, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, onPaneContextMenu, onPaneScroll, panOnDrag, autoPanOnSelection, isSelecting: !!isSelecting, selectionMode, selectionKeyPressed, paneClickDistance, selectionOnDrag: _selectionOnDrag, children: [children2, nodesSelectionActive && (0, import_jsx_runtime6.jsx)(NodesSelection, { onSelectionContextMenu, noPanClassName, disableKeyboardA11y })] }) });
 }
 FlowRendererComponent.displayName = "FlowRenderer";
-var FlowRenderer = (0, import_react3.memo)(FlowRendererComponent);
+var FlowRenderer = (0, import_react5.memo)(FlowRendererComponent);
 var selector$c = (onlyRenderVisible) => (s) => {
   return onlyRenderVisible ? getNodesInside(s.nodeLookup, { x: 0, y: 0, width: s.width, height: s.height }, s.transform, true).map((node) => node.id) : Array.from(s.nodeLookup.keys());
 };
 function useVisibleNodeIds(onlyRenderVisible) {
-  const nodeIds = useStore((0, import_react3.useCallback)(selector$c(onlyRenderVisible), [onlyRenderVisible]), shallow$1);
+  const nodeIds = useStore((0, import_react5.useCallback)(selector$c(onlyRenderVisible), [onlyRenderVisible]), shallow$1);
   return nodeIds;
 }
 var selector$b = (s) => s.updateNodeInternals;
 function useResizeObserver() {
   const updateNodeInternals2 = useStore(selector$b);
-  const [resizeObserver] = (0, import_react3.useState)(() => {
+  const [resizeObserver] = (0, import_react5.useState)(() => {
     if (typeof ResizeObserver === "undefined") {
       return null;
     }
@@ -9083,7 +9609,7 @@ function useResizeObserver() {
       updateNodeInternals2(updates);
     });
   });
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     return () => {
       resizeObserver?.disconnect();
     };
@@ -9092,13 +9618,13 @@ function useResizeObserver() {
 }
 function useNodeObserver({ node, nodeType, hasDimensions, resizeObserver }) {
   const store = useStoreApi();
-  const nodeRef = (0, import_react3.useRef)(null);
-  const observedNode = (0, import_react3.useRef)(null);
-  const prevSourcePosition = (0, import_react3.useRef)(node.sourcePosition);
-  const prevTargetPosition = (0, import_react3.useRef)(node.targetPosition);
-  const prevType = (0, import_react3.useRef)(nodeType);
+  const nodeRef = (0, import_react5.useRef)(null);
+  const observedNode = (0, import_react5.useRef)(null);
+  const prevSourcePosition = (0, import_react5.useRef)(node.sourcePosition);
+  const prevTargetPosition = (0, import_react5.useRef)(node.targetPosition);
+  const prevType = (0, import_react5.useRef)(nodeType);
   const isInitialized = hasDimensions && !!node.internals.handleBounds;
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (nodeRef.current && !node.hidden && (!isInitialized || observedNode.current !== nodeRef.current)) {
       if (observedNode.current) {
         resizeObserver?.unobserve(observedNode.current);
@@ -9107,7 +9633,7 @@ function useNodeObserver({ node, nodeType, hasDimensions, resizeObserver }) {
       observedNode.current = nodeRef.current;
     }
   }, [isInitialized, node.hidden]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     return () => {
       if (observedNode.current) {
         resizeObserver?.unobserve(observedNode.current);
@@ -9115,7 +9641,7 @@ function useNodeObserver({ node, nodeType, hasDimensions, resizeObserver }) {
       }
     };
   }, []);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (nodeRef.current) {
       const typeChanged = prevType.current !== nodeType;
       const sourcePosChanged = prevSourcePosition.current !== node.sourcePosition;
@@ -9231,7 +9757,7 @@ function NodeWrapper({ id: id2, onClick, onMouseEnter, onMouseMove, onMouseLeave
       });
     }
   };
-  return (0, import_jsx_runtime4.jsx)("div", { className: cc([
+  return (0, import_jsx_runtime6.jsx)("div", { className: cc([
     "react-flow__node",
     `react-flow__node-${nodeType}`,
     {
@@ -9253,9 +9779,9 @@ function NodeWrapper({ id: id2, onClick, onMouseEnter, onMouseMove, onMouseLeave
     visibility: hasDimensions ? "visible" : "hidden",
     ...node.style,
     ...inlineDimensions
-  }, "data-id": id2, "data-testid": `rf__node-${id2}`, onMouseEnter: onMouseEnterHandler, onMouseMove: onMouseMoveHandler, onMouseLeave: onMouseLeaveHandler, onContextMenu: onContextMenuHandler, onClick: onSelectNodeHandler, onDoubleClick: onDoubleClickHandler, onKeyDown: isFocusable ? onKeyDown : void 0, tabIndex: isFocusable ? 0 : void 0, onFocus: isFocusable ? onFocus : void 0, role: node.ariaRole ?? (isFocusable ? "group" : void 0), "aria-roledescription": "node", "aria-describedby": disableKeyboardA11y ? void 0 : `${ARIA_NODE_DESC_KEY}-${rfId}`, "aria-label": node.ariaLabel, ...node.domAttributes, children: (0, import_jsx_runtime4.jsx)(Provider, { value: id2, children: (0, import_jsx_runtime4.jsx)(NodeComponent, { id: id2, data: node.data, type: nodeType, positionAbsoluteX: internals.positionAbsolute.x, positionAbsoluteY: internals.positionAbsolute.y, selected: node.selected ?? false, selectable: isSelectable, draggable: isDraggable, deletable: node.deletable ?? true, isConnectable, sourcePosition: node.sourcePosition, targetPosition: node.targetPosition, dragging, dragHandle: node.dragHandle, zIndex: internals.z, parentId: node.parentId, ...nodeDimensions }) }) });
+  }, "data-id": id2, "data-testid": `rf__node-${id2}`, onMouseEnter: onMouseEnterHandler, onMouseMove: onMouseMoveHandler, onMouseLeave: onMouseLeaveHandler, onContextMenu: onContextMenuHandler, onClick: onSelectNodeHandler, onDoubleClick: onDoubleClickHandler, onKeyDown: isFocusable ? onKeyDown : void 0, tabIndex: isFocusable ? 0 : void 0, onFocus: isFocusable ? onFocus : void 0, role: node.ariaRole ?? (isFocusable ? "group" : void 0), "aria-roledescription": "node", "aria-describedby": disableKeyboardA11y ? void 0 : `${ARIA_NODE_DESC_KEY}-${rfId}`, "aria-label": node.ariaLabel, ...node.domAttributes, children: (0, import_jsx_runtime6.jsx)(Provider, { value: id2, children: (0, import_jsx_runtime6.jsx)(NodeComponent, { id: id2, data: node.data, type: nodeType, positionAbsoluteX: internals.positionAbsolute.x, positionAbsoluteY: internals.positionAbsolute.y, selected: node.selected ?? false, selectable: isSelectable, draggable: isDraggable, deletable: node.deletable ?? true, isConnectable, sourcePosition: node.sourcePosition, targetPosition: node.targetPosition, dragging, dragHandle: node.dragHandle, zIndex: internals.z, parentId: node.parentId, ...nodeDimensions }) }) });
 }
-var NodeWrapper$1 = (0, import_react3.memo)(NodeWrapper);
+var NodeWrapper$1 = (0, import_react5.memo)(NodeWrapper);
 var selector$a = (s) => ({
   nodesConnectable: s.nodesConnectable,
   nodesFocusable: s.nodesFocusable,
@@ -9266,7 +9792,7 @@ function NodeRendererComponent(props) {
   const { nodesConnectable, nodesFocusable, elementsSelectable, onError } = useStore(selector$a, shallow$1);
   const nodeIds = useVisibleNodeIds(props.onlyRenderVisibleElements);
   const resizeObserver = useResizeObserver();
-  return (0, import_jsx_runtime4.jsx)("div", { className: "react-flow__nodes", style: containerStyle, children: nodeIds.map((nodeId) => {
+  return (0, import_jsx_runtime6.jsx)("div", { className: "react-flow__nodes", style: containerStyle, children: nodeIds.map((nodeId) => {
     return (
       /*
        * The split of responsibilities between NodeRenderer and
@@ -9293,14 +9819,14 @@ function NodeRendererComponent(props) {
        *   memorized – so if `NodeRenderer` *has* to rerender, it only
        *   needs to regenerate the list of nodes, nothing else.
        */
-      (0, import_jsx_runtime4.jsx)(NodeWrapper$1, { id: nodeId, nodeTypes: props.nodeTypes, nodeExtent: props.nodeExtent, onClick: props.onNodeClick, onMouseEnter: props.onNodeMouseEnter, onMouseMove: props.onNodeMouseMove, onMouseLeave: props.onNodeMouseLeave, onContextMenu: props.onNodeContextMenu, onDoubleClick: props.onNodeDoubleClick, noDragClassName: props.noDragClassName, noPanClassName: props.noPanClassName, rfId: props.rfId, disableKeyboardA11y: props.disableKeyboardA11y, resizeObserver, nodesDraggable: props.nodesDraggable ?? true, nodesConnectable, nodesFocusable, elementsSelectable, nodeClickDistance: props.nodeClickDistance, onError }, nodeId)
+      (0, import_jsx_runtime6.jsx)(NodeWrapper$1, { id: nodeId, nodeTypes: props.nodeTypes, nodeExtent: props.nodeExtent, onClick: props.onNodeClick, onMouseEnter: props.onNodeMouseEnter, onMouseMove: props.onNodeMouseMove, onMouseLeave: props.onNodeMouseLeave, onContextMenu: props.onNodeContextMenu, onDoubleClick: props.onNodeDoubleClick, noDragClassName: props.noDragClassName, noPanClassName: props.noPanClassName, rfId: props.rfId, disableKeyboardA11y: props.disableKeyboardA11y, resizeObserver, nodesDraggable: props.nodesDraggable ?? true, nodesConnectable, nodesFocusable, elementsSelectable, nodeClickDistance: props.nodeClickDistance, onError }, nodeId)
     );
   }) });
 }
 NodeRendererComponent.displayName = "NodeRenderer";
-var NodeRenderer = (0, import_react3.memo)(NodeRendererComponent);
+var NodeRenderer = (0, import_react5.memo)(NodeRendererComponent);
 function useVisibleEdgeIds(onlyRenderVisible) {
-  const edgeIds = useStore((0, import_react3.useCallback)((s) => {
+  const edgeIds = useStore((0, import_react5.useCallback)((s) => {
     if (!onlyRenderVisible) {
       return s.edges.map((edge) => edge.id);
     }
@@ -9329,14 +9855,14 @@ var ArrowSymbol = ({ color: color2 = "none", strokeWidth = 1 }) => {
     strokeWidth,
     ...color2 && { stroke: color2 }
   };
-  return (0, import_jsx_runtime4.jsx)("polyline", { className: "arrow", style: style2, strokeLinecap: "round", fill: "none", strokeLinejoin: "round", points: "-5,-4 0,0 -5,4" });
+  return (0, import_jsx_runtime6.jsx)("polyline", { className: "arrow", style: style2, strokeLinecap: "round", fill: "none", strokeLinejoin: "round", points: "-5,-4 0,0 -5,4" });
 };
 var ArrowClosedSymbol = ({ color: color2 = "none", strokeWidth = 1 }) => {
   const style2 = {
     strokeWidth,
     ...color2 && { stroke: color2, fill: color2 }
   };
-  return (0, import_jsx_runtime4.jsx)("polyline", { className: "arrowclosed", style: style2, strokeLinecap: "round", strokeLinejoin: "round", points: "-5,-4 0,0 -5,4 -5,-4" });
+  return (0, import_jsx_runtime6.jsx)("polyline", { className: "arrowclosed", style: style2, strokeLinecap: "round", strokeLinejoin: "round", points: "-5,-4 0,0 -5,4 -5,-4" });
 };
 var MarkerSymbols = {
   [MarkerType.Arrow]: ArrowSymbol,
@@ -9344,7 +9870,7 @@ var MarkerSymbols = {
 };
 function useMarkerSymbol(type) {
   const store = useStoreApi();
-  const symbol = (0, import_react3.useMemo)(() => {
+  const symbol = (0, import_react5.useMemo)(() => {
     const symbolExists = Object.prototype.hasOwnProperty.call(MarkerSymbols, type);
     if (!symbolExists) {
       store.getState().onError?.("009", errorMessages["error009"](type));
@@ -9359,12 +9885,12 @@ var Marker = ({ id: id2, type, color: color2, width = 12.5, height = 12.5, marke
   if (!Symbol2) {
     return null;
   }
-  return (0, import_jsx_runtime4.jsx)("marker", { className: "react-flow__arrowhead", id: id2, markerWidth: `${width}`, markerHeight: `${height}`, viewBox: "-10 -10 20 20", markerUnits, orient, refX: "0", refY: "0", children: (0, import_jsx_runtime4.jsx)(Symbol2, { color: color2, strokeWidth }) });
+  return (0, import_jsx_runtime6.jsx)("marker", { className: "react-flow__arrowhead", id: id2, markerWidth: `${width}`, markerHeight: `${height}`, viewBox: "-10 -10 20 20", markerUnits, orient, refX: "0", refY: "0", children: (0, import_jsx_runtime6.jsx)(Symbol2, { color: color2, strokeWidth }) });
 };
 var MarkerDefinitions = ({ defaultColor, rfId }) => {
   const edges = useStore((s) => s.edges);
   const defaultEdgeOptions = useStore((s) => s.defaultEdgeOptions);
-  const markers = (0, import_react3.useMemo)(() => {
+  const markers = (0, import_react5.useMemo)(() => {
     const markers2 = createMarkerIds(edges, {
       id: rfId,
       defaultColor,
@@ -9376,15 +9902,15 @@ var MarkerDefinitions = ({ defaultColor, rfId }) => {
   if (!markers.length) {
     return null;
   }
-  return (0, import_jsx_runtime4.jsx)("svg", { className: "react-flow__marker", "aria-hidden": "true", children: (0, import_jsx_runtime4.jsx)("defs", { children: markers.map((marker) => (0, import_jsx_runtime4.jsx)(Marker, { id: marker.id, type: marker.type, color: marker.color, width: marker.width, height: marker.height, markerUnits: marker.markerUnits, strokeWidth: marker.strokeWidth, orient: marker.orient }, marker.id)) }) });
+  return (0, import_jsx_runtime6.jsx)("svg", { className: "react-flow__marker", "aria-hidden": "true", children: (0, import_jsx_runtime6.jsx)("defs", { children: markers.map((marker) => (0, import_jsx_runtime6.jsx)(Marker, { id: marker.id, type: marker.type, color: marker.color, width: marker.width, height: marker.height, markerUnits: marker.markerUnits, strokeWidth: marker.strokeWidth, orient: marker.orient }, marker.id)) }) });
 };
 MarkerDefinitions.displayName = "MarkerDefinitions";
-var MarkerDefinitions$1 = (0, import_react3.memo)(MarkerDefinitions);
+var MarkerDefinitions$1 = (0, import_react5.memo)(MarkerDefinitions);
 function EdgeTextComponent({ x, y, label, labelStyle, labelShowBg = true, labelBgStyle, labelBgPadding = [2, 4], labelBgBorderRadius = 2, children: children2, className, ...rest }) {
-  const [edgeTextBbox, setEdgeTextBbox] = (0, import_react3.useState)({ x: 1, y: 0, width: 0, height: 0 });
+  const [edgeTextBbox, setEdgeTextBbox] = (0, import_react5.useState)({ x: 1, y: 0, width: 0, height: 0 });
   const edgeTextClasses = cc(["react-flow__edge-textwrapper", className]);
-  const edgeTextRef = (0, import_react3.useRef)(null);
-  (0, import_react3.useEffect)(() => {
+  const edgeTextRef = (0, import_react5.useRef)(null);
+  (0, import_react5.useEffect)(() => {
     if (edgeTextRef.current) {
       const textBbox = edgeTextRef.current.getBBox();
       setEdgeTextBbox({
@@ -9398,12 +9924,12 @@ function EdgeTextComponent({ x, y, label, labelStyle, labelShowBg = true, labelB
   if (!label) {
     return null;
   }
-  return (0, import_jsx_runtime4.jsxs)("g", { transform: `translate(${x - edgeTextBbox.width / 2} ${y - edgeTextBbox.height / 2})`, className: edgeTextClasses, visibility: edgeTextBbox.width ? "visible" : "hidden", ...rest, children: [labelShowBg && (0, import_jsx_runtime4.jsx)("rect", { width: edgeTextBbox.width + 2 * labelBgPadding[0], x: -labelBgPadding[0], y: -labelBgPadding[1], height: edgeTextBbox.height + 2 * labelBgPadding[1], className: "react-flow__edge-textbg", style: labelBgStyle, rx: labelBgBorderRadius, ry: labelBgBorderRadius }), (0, import_jsx_runtime4.jsx)("text", { className: "react-flow__edge-text", y: edgeTextBbox.height / 2, dy: "0.3em", ref: edgeTextRef, style: labelStyle, children: label }), children2] });
+  return (0, import_jsx_runtime6.jsxs)("g", { transform: `translate(${x - edgeTextBbox.width / 2} ${y - edgeTextBbox.height / 2})`, className: edgeTextClasses, visibility: edgeTextBbox.width ? "visible" : "hidden", ...rest, children: [labelShowBg && (0, import_jsx_runtime6.jsx)("rect", { width: edgeTextBbox.width + 2 * labelBgPadding[0], x: -labelBgPadding[0], y: -labelBgPadding[1], height: edgeTextBbox.height + 2 * labelBgPadding[1], className: "react-flow__edge-textbg", style: labelBgStyle, rx: labelBgBorderRadius, ry: labelBgBorderRadius }), (0, import_jsx_runtime6.jsx)("text", { className: "react-flow__edge-text", y: edgeTextBbox.height / 2, dy: "0.3em", ref: edgeTextRef, style: labelStyle, children: label }), children2] });
 }
 EdgeTextComponent.displayName = "EdgeText";
-var EdgeText = (0, import_react3.memo)(EdgeTextComponent);
+var EdgeText = (0, import_react5.memo)(EdgeTextComponent);
 function BaseEdge({ path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, interactionWidth = 20, ...props }) {
-  return (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [(0, import_jsx_runtime4.jsx)("path", { ...props, d: path, fill: "none", className: cc(["react-flow__edge-path", props.className]) }), interactionWidth ? (0, import_jsx_runtime4.jsx)("path", { d: path, fill: "none", strokeOpacity: 0, strokeWidth: interactionWidth, className: "react-flow__edge-interaction" }) : null, label && isNumeric(labelX) && isNumeric(labelY) ? (0, import_jsx_runtime4.jsx)(EdgeText, { x: labelX, y: labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius }) : null] });
+  return (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [(0, import_jsx_runtime6.jsx)("path", { ...props, d: path, fill: "none", className: cc(["react-flow__edge-path", props.className]) }), interactionWidth ? (0, import_jsx_runtime6.jsx)("path", { d: path, fill: "none", strokeOpacity: 0, strokeWidth: interactionWidth, className: "react-flow__edge-interaction" }) : null, label && isNumeric(labelX) && isNumeric(labelY) ? (0, import_jsx_runtime6.jsx)(EdgeText, { x: labelX, y: labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius }) : null] });
 }
 function getControl({ pos, x1, y1, x2, y2 }) {
   if (pos === Position.Left || pos === Position.Right) {
@@ -9445,7 +9971,7 @@ function getSimpleBezierPath({ sourceX, sourceY, sourcePosition = Position.Botto
   ];
 }
 function createSimpleBezierEdge(params) {
-  return (0, import_react3.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth }) => {
+  return (0, import_react5.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth }) => {
     const [path, labelX, labelY] = getSimpleBezierPath({
       sourceX,
       sourceY,
@@ -9455,7 +9981,7 @@ function createSimpleBezierEdge(params) {
       targetPosition
     });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime4.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime6.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var SimpleBezierEdge = createSimpleBezierEdge({ isInternal: false });
@@ -9463,7 +9989,7 @@ var SimpleBezierEdgeInternal = createSimpleBezierEdge({ isInternal: true });
 SimpleBezierEdge.displayName = "SimpleBezierEdge";
 SimpleBezierEdgeInternal.displayName = "SimpleBezierEdgeInternal";
 function createSmoothStepEdge(params) {
-  return (0, import_react3.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, sourcePosition = Position.Bottom, targetPosition = Position.Top, markerEnd, markerStart, pathOptions, interactionWidth }) => {
+  return (0, import_react5.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, sourcePosition = Position.Bottom, targetPosition = Position.Top, markerEnd, markerStart, pathOptions, interactionWidth }) => {
     const [path, labelX, labelY] = getSmoothStepPath({
       sourceX,
       sourceY,
@@ -9476,7 +10002,7 @@ function createSmoothStepEdge(params) {
       stepPosition: pathOptions?.stepPosition
     });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime4.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime6.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var SmoothStepEdge = createSmoothStepEdge({ isInternal: false });
@@ -9484,9 +10010,9 @@ var SmoothStepEdgeInternal = createSmoothStepEdge({ isInternal: true });
 SmoothStepEdge.displayName = "SmoothStepEdge";
 SmoothStepEdgeInternal.displayName = "SmoothStepEdgeInternal";
 function createStepEdge(params) {
-  return (0, import_react3.memo)(({ id: id2, ...props }) => {
+  return (0, import_react5.memo)(({ id: id2, ...props }) => {
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime4.jsx)(SmoothStepEdge, { ...props, id: _id, pathOptions: (0, import_react3.useMemo)(() => ({ borderRadius: 0, offset: props.pathOptions?.offset }), [props.pathOptions?.offset]) });
+    return (0, import_jsx_runtime6.jsx)(SmoothStepEdge, { ...props, id: _id, pathOptions: (0, import_react5.useMemo)(() => ({ borderRadius: 0, offset: props.pathOptions?.offset }), [props.pathOptions?.offset]) });
   });
 }
 var StepEdge = createStepEdge({ isInternal: false });
@@ -9494,10 +10020,10 @@ var StepEdgeInternal = createStepEdge({ isInternal: true });
 StepEdge.displayName = "StepEdge";
 StepEdgeInternal.displayName = "StepEdgeInternal";
 function createStraightEdge(params) {
-  return (0, import_react3.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth }) => {
+  return (0, import_react5.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth }) => {
     const [path, labelX, labelY] = getStraightPath({ sourceX, sourceY, targetX, targetY });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime4.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime6.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var StraightEdge = createStraightEdge({ isInternal: false });
@@ -9505,7 +10031,7 @@ var StraightEdgeInternal = createStraightEdge({ isInternal: true });
 StraightEdge.displayName = "StraightEdge";
 StraightEdgeInternal.displayName = "StraightEdgeInternal";
 function createBezierEdge(params) {
-  return (0, import_react3.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, sourcePosition = Position.Bottom, targetPosition = Position.Top, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, pathOptions, interactionWidth }) => {
+  return (0, import_react5.memo)(({ id: id2, sourceX, sourceY, targetX, targetY, sourcePosition = Position.Bottom, targetPosition = Position.Top, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, pathOptions, interactionWidth }) => {
     const [path, labelX, labelY] = getBezierPath({
       sourceX,
       sourceY,
@@ -9516,7 +10042,7 @@ function createBezierEdge(params) {
       curvature: pathOptions?.curvature
     });
     const _id = params.isInternal ? void 0 : id2;
-    return (0, import_jsx_runtime4.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
+    return (0, import_jsx_runtime6.jsx)(BaseEdge, { id: _id, path, labelX, labelY, label, labelStyle, labelShowBg, labelBgStyle, labelBgPadding, labelBgBorderRadius, style: style2, markerEnd, markerStart, interactionWidth });
   });
 }
 var BezierEdge = createBezierEdge({ isInternal: false });
@@ -9555,7 +10081,7 @@ var shiftY = (y, shift, position) => {
 };
 var EdgeUpdaterClassName = "react-flow__edgeupdater";
 function EdgeAnchor({ position, centerX, centerY, radius = 10, onMouseDown, onMouseEnter, onMouseOut, type }) {
-  return (0, import_jsx_runtime4.jsx)("circle", { onMouseDown, onMouseEnter, onMouseOut, className: cc([EdgeUpdaterClassName, `${EdgeUpdaterClassName}-${type}`]), cx: shiftX(centerX, radius, position), cy: shiftY(centerY, radius, position), r: radius, stroke: "transparent", fill: "transparent" });
+  return (0, import_jsx_runtime6.jsx)("circle", { onMouseDown, onMouseEnter, onMouseOut, className: cc([EdgeUpdaterClassName, `${EdgeUpdaterClassName}-${type}`]), cx: shiftX(centerX, radius, position), cy: shiftY(centerY, radius, position), r: radius, stroke: "transparent", fill: "transparent" });
 }
 function EdgeUpdateAnchors({ isReconnectable, reconnectRadius, edge, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, onReconnect, onReconnectStart, onReconnectEnd, setReconnecting, setUpdateHover }) {
   const store = useStoreApi();
@@ -9605,7 +10131,7 @@ function EdgeUpdateAnchors({ isReconnectable, reconnectRadius, edge, sourceX, so
   const onReconnectTargetMouseDown = (event) => handleEdgeUpdater(event, { nodeId: edge.source, id: edge.sourceHandle ?? null, type: "source" });
   const onReconnectMouseEnter = () => setUpdateHover(true);
   const onReconnectMouseOut = () => setUpdateHover(false);
-  return (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [(isReconnectable === true || isReconnectable === "source") && (0, import_jsx_runtime4.jsx)(EdgeAnchor, { position: sourcePosition, centerX: sourceX, centerY: sourceY, radius: reconnectRadius, onMouseDown: onReconnectSourceMouseDown, onMouseEnter: onReconnectMouseEnter, onMouseOut: onReconnectMouseOut, type: "source" }), (isReconnectable === true || isReconnectable === "target") && (0, import_jsx_runtime4.jsx)(EdgeAnchor, { position: targetPosition, centerX: targetX, centerY: targetY, radius: reconnectRadius, onMouseDown: onReconnectTargetMouseDown, onMouseEnter: onReconnectMouseEnter, onMouseOut: onReconnectMouseOut, type: "target" })] });
+  return (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [(isReconnectable === true || isReconnectable === "source") && (0, import_jsx_runtime6.jsx)(EdgeAnchor, { position: sourcePosition, centerX: sourceX, centerY: sourceY, radius: reconnectRadius, onMouseDown: onReconnectSourceMouseDown, onMouseEnter: onReconnectMouseEnter, onMouseOut: onReconnectMouseOut, type: "source" }), (isReconnectable === true || isReconnectable === "target") && (0, import_jsx_runtime6.jsx)(EdgeAnchor, { position: targetPosition, centerX: targetX, centerY: targetY, radius: reconnectRadius, onMouseDown: onReconnectTargetMouseDown, onMouseEnter: onReconnectMouseEnter, onMouseOut: onReconnectMouseOut, type: "target" })] });
 }
 function EdgeWrapper({ id: id2, edgesFocusable, edgesReconnectable, elementsSelectable, onClick, onDoubleClick, onContextMenu, onMouseEnter, onMouseMove, onMouseLeave, reconnectRadius, onReconnect, onReconnectStart, onReconnectEnd, rfId, edgeTypes: edgeTypes2, noPanClassName, onError, disableKeyboardA11y }) {
   let edge = useStore((s) => s.edgeLookup.get(id2));
@@ -9621,11 +10147,11 @@ function EdgeWrapper({ id: id2, edgesFocusable, edgesReconnectable, elementsSele
   const isFocusable = !!(edge.focusable || edgesFocusable && typeof edge.focusable === "undefined");
   const isReconnectable = typeof onReconnect !== "undefined" && (edge.reconnectable || edgesReconnectable && typeof edge.reconnectable === "undefined");
   const isSelectable = !!(edge.selectable || elementsSelectable && typeof edge.selectable === "undefined");
-  const edgeRef = (0, import_react3.useRef)(null);
-  const [updateHover, setUpdateHover] = (0, import_react3.useState)(false);
-  const [reconnecting, setReconnecting] = (0, import_react3.useState)(false);
+  const edgeRef = (0, import_react5.useRef)(null);
+  const [updateHover, setUpdateHover] = (0, import_react5.useState)(false);
+  const [reconnecting, setReconnecting] = (0, import_react5.useState)(false);
   const store = useStoreApi();
-  const { zIndex = edge.zIndex, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition } = useStore((0, import_react3.useCallback)((store2) => {
+  const { zIndex = edge.zIndex, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition } = useStore((0, import_react5.useCallback)((store2) => {
     const sourceNode = store2.nodeLookup.get(edge.source);
     const targetNode = store2.nodeLookup.get(edge.target);
     if (!sourceNode || !targetNode) {
@@ -9653,8 +10179,8 @@ function EdgeWrapper({ id: id2, edgesFocusable, edgesReconnectable, elementsSele
       zIndex: zIndex2
     };
   }, [edge.source, edge.target, edge.sourceHandle, edge.targetHandle, edge.selected, edge.zIndex, onError]), shallow$1);
-  const markerStartUrl = (0, import_react3.useMemo)(() => edge.markerStart ? `url('#${getMarkerId(edge.markerStart, rfId)}')` : void 0, [edge.markerStart, rfId]);
-  const markerEndUrl = (0, import_react3.useMemo)(() => edge.markerEnd ? `url('#${getMarkerId(edge.markerEnd, rfId)}')` : void 0, [edge.markerEnd, rfId]);
+  const markerStartUrl = (0, import_react5.useMemo)(() => edge.markerStart ? `url('#${getMarkerId(edge.markerStart, rfId)}')` : void 0, [edge.markerStart, rfId]);
+  const markerEndUrl = (0, import_react5.useMemo)(() => edge.markerEnd ? `url('#${getMarkerId(edge.markerEnd, rfId)}')` : void 0, [edge.markerEnd, rfId]);
   if (edge.hidden || sourceX === null || sourceY === null || targetX === null || targetY === null) {
     return null;
   }
@@ -9700,7 +10226,7 @@ function EdgeWrapper({ id: id2, edgesFocusable, edgesReconnectable, elementsSele
       }
     }
   };
-  return (0, import_jsx_runtime4.jsx)("svg", { style: { zIndex }, children: (0, import_jsx_runtime4.jsxs)("g", { className: cc([
+  return (0, import_jsx_runtime6.jsx)("svg", { style: { zIndex }, children: (0, import_jsx_runtime6.jsxs)("g", { className: cc([
     "react-flow__edge",
     `react-flow__edge-${edgeType}`,
     edge.className,
@@ -9712,9 +10238,9 @@ function EdgeWrapper({ id: id2, edgesFocusable, edgesReconnectable, elementsSele
       updating: updateHover,
       selectable: isSelectable
     }
-  ]), onClick: onEdgeClick, onDoubleClick: onEdgeDoubleClick, onContextMenu: onEdgeContextMenu, onMouseEnter: onEdgeMouseEnter, onMouseMove: onEdgeMouseMove, onMouseLeave: onEdgeMouseLeave, onKeyDown: isFocusable ? onKeyDown : void 0, tabIndex: isFocusable ? 0 : void 0, role: edge.ariaRole ?? (isFocusable ? "group" : "img"), "aria-roledescription": "edge", "data-id": id2, "data-testid": `rf__edge-${id2}`, "aria-label": edge.ariaLabel === null ? void 0 : edge.ariaLabel || `Edge from ${edge.source} to ${edge.target}`, "aria-describedby": isFocusable ? `${ARIA_EDGE_DESC_KEY}-${rfId}` : void 0, ref: edgeRef, ...edge.domAttributes, children: [!reconnecting && (0, import_jsx_runtime4.jsx)(EdgeComponent, { id: id2, source: edge.source, target: edge.target, type: edge.type, selected: edge.selected, animated: edge.animated, selectable: isSelectable, deletable: edge.deletable ?? true, label: edge.label, labelStyle: edge.labelStyle, labelShowBg: edge.labelShowBg, labelBgStyle: edge.labelBgStyle, labelBgPadding: edge.labelBgPadding, labelBgBorderRadius: edge.labelBgBorderRadius, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data: edge.data, style: edge.style, sourceHandleId: edge.sourceHandle, targetHandleId: edge.targetHandle, markerStart: markerStartUrl, markerEnd: markerEndUrl, pathOptions: "pathOptions" in edge ? edge.pathOptions : void 0, interactionWidth: edge.interactionWidth }), isReconnectable && (0, import_jsx_runtime4.jsx)(EdgeUpdateAnchors, { edge, isReconnectable, reconnectRadius, onReconnect, onReconnectStart, onReconnectEnd, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, setUpdateHover, setReconnecting })] }) });
+  ]), onClick: onEdgeClick, onDoubleClick: onEdgeDoubleClick, onContextMenu: onEdgeContextMenu, onMouseEnter: onEdgeMouseEnter, onMouseMove: onEdgeMouseMove, onMouseLeave: onEdgeMouseLeave, onKeyDown: isFocusable ? onKeyDown : void 0, tabIndex: isFocusable ? 0 : void 0, role: edge.ariaRole ?? (isFocusable ? "group" : "img"), "aria-roledescription": "edge", "data-id": id2, "data-testid": `rf__edge-${id2}`, "aria-label": edge.ariaLabel === null ? void 0 : edge.ariaLabel || `Edge from ${edge.source} to ${edge.target}`, "aria-describedby": isFocusable ? `${ARIA_EDGE_DESC_KEY}-${rfId}` : void 0, ref: edgeRef, ...edge.domAttributes, children: [!reconnecting && (0, import_jsx_runtime6.jsx)(EdgeComponent, { id: id2, source: edge.source, target: edge.target, type: edge.type, selected: edge.selected, animated: edge.animated, selectable: isSelectable, deletable: edge.deletable ?? true, label: edge.label, labelStyle: edge.labelStyle, labelShowBg: edge.labelShowBg, labelBgStyle: edge.labelBgStyle, labelBgPadding: edge.labelBgPadding, labelBgBorderRadius: edge.labelBgBorderRadius, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, data: edge.data, style: edge.style, sourceHandleId: edge.sourceHandle, targetHandleId: edge.targetHandle, markerStart: markerStartUrl, markerEnd: markerEndUrl, pathOptions: "pathOptions" in edge ? edge.pathOptions : void 0, interactionWidth: edge.interactionWidth }), isReconnectable && (0, import_jsx_runtime6.jsx)(EdgeUpdateAnchors, { edge, isReconnectable, reconnectRadius, onReconnect, onReconnectStart, onReconnectEnd, sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition, setUpdateHover, setReconnecting })] }) });
 }
-var EdgeWrapper$1 = (0, import_react3.memo)(EdgeWrapper);
+var EdgeWrapper$1 = (0, import_react5.memo)(EdgeWrapper);
 var selector$9 = (s) => ({
   edgesFocusable: s.edgesFocusable,
   edgesReconnectable: s.edgesReconnectable,
@@ -9725,17 +10251,17 @@ var selector$9 = (s) => ({
 function EdgeRendererComponent({ defaultMarkerColor, onlyRenderVisibleElements, rfId, edgeTypes: edgeTypes2, noPanClassName, onReconnect, onEdgeContextMenu, onEdgeMouseEnter, onEdgeMouseMove, onEdgeMouseLeave, onEdgeClick, reconnectRadius, onEdgeDoubleClick, onReconnectStart, onReconnectEnd, disableKeyboardA11y }) {
   const { edgesFocusable, edgesReconnectable, elementsSelectable, onError } = useStore(selector$9, shallow$1);
   const edgeIds = useVisibleEdgeIds(onlyRenderVisibleElements);
-  return (0, import_jsx_runtime4.jsxs)("div", { className: "react-flow__edges", children: [(0, import_jsx_runtime4.jsx)(MarkerDefinitions$1, { defaultColor: defaultMarkerColor, rfId }), edgeIds.map((id2) => {
-    return (0, import_jsx_runtime4.jsx)(EdgeWrapper$1, { id: id2, edgesFocusable, edgesReconnectable, elementsSelectable, noPanClassName, onReconnect, onContextMenu: onEdgeContextMenu, onMouseEnter: onEdgeMouseEnter, onMouseMove: onEdgeMouseMove, onMouseLeave: onEdgeMouseLeave, onClick: onEdgeClick, reconnectRadius, onDoubleClick: onEdgeDoubleClick, onReconnectStart, onReconnectEnd, rfId, onError, edgeTypes: edgeTypes2, disableKeyboardA11y }, id2);
+  return (0, import_jsx_runtime6.jsxs)("div", { className: "react-flow__edges", children: [(0, import_jsx_runtime6.jsx)(MarkerDefinitions$1, { defaultColor: defaultMarkerColor, rfId }), edgeIds.map((id2) => {
+    return (0, import_jsx_runtime6.jsx)(EdgeWrapper$1, { id: id2, edgesFocusable, edgesReconnectable, elementsSelectable, noPanClassName, onReconnect, onContextMenu: onEdgeContextMenu, onMouseEnter: onEdgeMouseEnter, onMouseMove: onEdgeMouseMove, onMouseLeave: onEdgeMouseLeave, onClick: onEdgeClick, reconnectRadius, onDoubleClick: onEdgeDoubleClick, onReconnectStart, onReconnectEnd, rfId, onError, edgeTypes: edgeTypes2, disableKeyboardA11y }, id2);
   })] });
 }
 EdgeRendererComponent.displayName = "EdgeRenderer";
-var EdgeRenderer = (0, import_react3.memo)(EdgeRendererComponent);
+var EdgeRenderer = (0, import_react5.memo)(EdgeRendererComponent);
 var toTransformString = (transform2) => `translate(${transform2[0]}px,${transform2[1]}px) scale(${transform2[2]})`;
 function Viewport({ children: children2 }) {
   const store = useStoreApi();
-  const viewportRef = (0, import_react3.useRef)(null);
-  const [initialTransform] = (0, import_react3.useState)(() => store.getState().transform);
+  const viewportRef = (0, import_react5.useRef)(null);
+  const [initialTransform] = (0, import_react5.useState)(() => store.getState().transform);
   useIsomorphicLayoutEffect(() => {
     let prevTransform = null;
     const applyTransform = () => {
@@ -9751,12 +10277,12 @@ function Viewport({ children: children2 }) {
     applyTransform();
     return store.subscribe(applyTransform);
   }, [store]);
-  return (0, import_jsx_runtime4.jsx)("div", { ref: viewportRef, className: "react-flow__viewport xyflow__viewport react-flow__container", style: { transform: toTransformString(initialTransform) }, children: children2 });
+  return (0, import_jsx_runtime6.jsx)("div", { ref: viewportRef, className: "react-flow__viewport xyflow__viewport react-flow__container", style: { transform: toTransformString(initialTransform) }, children: children2 });
 }
 function useOnInitHandler(onInit) {
   const rfInstance = useReactFlow();
-  const isInitialized = (0, import_react3.useRef)(false);
-  (0, import_react3.useEffect)(() => {
+  const isInitialized = (0, import_react5.useRef)(false);
+  (0, import_react5.useEffect)(() => {
     if (!isInitialized.current && rfInstance.viewportInitialized && onInit) {
       setTimeout(() => onInit(rfInstance), 1);
       isInitialized.current = true;
@@ -9767,7 +10293,7 @@ var selector$8 = (state3) => state3.panZoom?.syncViewport;
 function useViewportSync(viewport) {
   const syncViewport = useStore(selector$8);
   const store = useStoreApi();
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (viewport) {
       syncViewport?.(viewport);
       store.setState({ transform: [viewport.x, viewport.y, viewport.zoom] });
@@ -9805,15 +10331,15 @@ function ConnectionLineWrapper({ containerStyle: containerStyle2, style: style2,
   if (!renderConnection) {
     return null;
   }
-  return (0, import_jsx_runtime4.jsx)("svg", { style: containerStyle2, width, height, className: "react-flow__connectionline react-flow__container", children: (0, import_jsx_runtime4.jsx)("g", { className: cc(["react-flow__connection", getConnectionStatus(isValid)]), children: (0, import_jsx_runtime4.jsx)(ConnectionLine, { style: style2, type, CustomComponent: component, isValid }) }) });
+  return (0, import_jsx_runtime6.jsx)("svg", { style: containerStyle2, width, height, className: "react-flow__connectionline react-flow__container", children: (0, import_jsx_runtime6.jsx)("g", { className: cc(["react-flow__connection", getConnectionStatus(isValid)]), children: (0, import_jsx_runtime6.jsx)(ConnectionLine, { style: style2, type, CustomComponent: component, isValid }) }) });
 }
 var ConnectionLine = ({ style: style2, type = ConnectionLineType.Bezier, CustomComponent, isValid }) => {
-  const { inProgress, from, fromNode, fromHandle, fromPosition, to, toNode, toHandle, toPosition, pointer } = useConnection();
+  const { inProgress, from, fromNode, fromHandle, fromPosition, to, toNode, toHandle, toPosition, pointer: pointer2 } = useConnection();
   if (!inProgress) {
     return;
   }
   if (CustomComponent) {
-    return (0, import_jsx_runtime4.jsx)(CustomComponent, { connectionLineType: type, connectionLineStyle: style2, fromNode, fromHandle, fromX: from.x, fromY: from.y, toX: to.x, toY: to.y, fromPosition, toPosition, connectionStatus: getConnectionStatus(isValid), toNode, toHandle, pointer });
+    return (0, import_jsx_runtime6.jsx)(CustomComponent, { connectionLineType: type, connectionLineStyle: style2, fromNode, fromHandle, fromX: from.x, fromY: from.y, toX: to.x, toY: to.y, fromPosition, toPosition, connectionStatus: getConnectionStatus(isValid), toNode, toHandle, pointer: pointer2 });
   }
   let path = "";
   const pathParams = {
@@ -9843,14 +10369,14 @@ var ConnectionLine = ({ style: style2, type = ConnectionLineType.Bezier, CustomC
     default:
       [path] = getStraightPath(pathParams);
   }
-  return (0, import_jsx_runtime4.jsx)("path", { d: path, fill: "none", className: "react-flow__connection-path", style: style2 });
+  return (0, import_jsx_runtime6.jsx)("path", { d: path, fill: "none", className: "react-flow__connection-path", style: style2 });
 };
 ConnectionLine.displayName = "ConnectionLine";
 var emptyTypes = {};
 function useNodeOrEdgeTypesWarning(nodeOrEdgeTypes = emptyTypes) {
-  const typesRef = (0, import_react3.useRef)(nodeOrEdgeTypes);
+  const typesRef = (0, import_react5.useRef)(nodeOrEdgeTypes);
   const store = useStoreApi();
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (false) {
       const usedKeys = /* @__PURE__ */ new Set([...Object.keys(typesRef.current), ...Object.keys(nodeOrEdgeTypes)]);
       for (const key of usedKeys) {
@@ -9865,8 +10391,8 @@ function useNodeOrEdgeTypesWarning(nodeOrEdgeTypes = emptyTypes) {
 }
 function useStylesLoadedWarning() {
   const store = useStoreApi();
-  const checked = (0, import_react3.useRef)(false);
-  (0, import_react3.useEffect)(() => {
+  const checked = (0, import_react5.useRef)(false);
+  (0, import_react5.useEffect)(() => {
     if (false) {
       if (!checked.current) {
         const pane = document.querySelector(".react-flow__pane");
@@ -9884,10 +10410,10 @@ function GraphViewComponent({ nodeTypes: nodeTypes2, edgeTypes: edgeTypes2, onIn
   useStylesLoadedWarning();
   useOnInitHandler(onInit);
   useViewportSync(viewport);
-  return (0, import_jsx_runtime4.jsx)(FlowRenderer, { onPaneClick, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, onPaneContextMenu, onPaneScroll, paneClickDistance, deleteKeyCode, selectionKeyCode, selectionOnDrag, selectionMode, onSelectionStart, onSelectionEnd, multiSelectionKeyCode, panActivationKeyCode, zoomActivationKeyCode, elementsSelectable, zoomOnScroll, zoomOnPinch, zoomOnDoubleClick, panOnScroll, panOnScrollSpeed, panOnScrollMode, panOnDrag, autoPanOnSelection, defaultViewport: defaultViewport2, translateExtent, minZoom, maxZoom, onSelectionContextMenu, preventScrolling, noDragClassName, noWheelClassName, noPanClassName, disableKeyboardA11y, onViewportChange, isControlledViewport: !!viewport, children: (0, import_jsx_runtime4.jsxs)(Viewport, { children: [(0, import_jsx_runtime4.jsx)(EdgeRenderer, { edgeTypes: edgeTypes2, onEdgeClick, onEdgeDoubleClick, onReconnect, onReconnectStart, onReconnectEnd, onlyRenderVisibleElements, onEdgeContextMenu, onEdgeMouseEnter, onEdgeMouseMove, onEdgeMouseLeave, reconnectRadius, defaultMarkerColor, noPanClassName, disableKeyboardA11y, rfId }), (0, import_jsx_runtime4.jsx)(ConnectionLineWrapper, { style: connectionLineStyle, type: connectionLineType, component: connectionLineComponent, containerStyle: connectionLineContainerStyle }), (0, import_jsx_runtime4.jsx)("div", { className: "react-flow__edgelabel-renderer" }), (0, import_jsx_runtime4.jsx)(NodeRenderer, { nodeTypes: nodeTypes2, onNodeClick, onNodeDoubleClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, onNodeContextMenu, nodeClickDistance, onlyRenderVisibleElements, noPanClassName, noDragClassName, disableKeyboardA11y, nodeExtent, rfId, nodesDraggable }), (0, import_jsx_runtime4.jsx)("div", { className: "react-flow__viewport-portal" })] }) });
+  return (0, import_jsx_runtime6.jsx)(FlowRenderer, { onPaneClick, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, onPaneContextMenu, onPaneScroll, paneClickDistance, deleteKeyCode, selectionKeyCode, selectionOnDrag, selectionMode, onSelectionStart, onSelectionEnd, multiSelectionKeyCode, panActivationKeyCode, zoomActivationKeyCode, elementsSelectable, zoomOnScroll, zoomOnPinch, zoomOnDoubleClick, panOnScroll, panOnScrollSpeed, panOnScrollMode, panOnDrag, autoPanOnSelection, defaultViewport: defaultViewport2, translateExtent, minZoom, maxZoom, onSelectionContextMenu, preventScrolling, noDragClassName, noWheelClassName, noPanClassName, disableKeyboardA11y, onViewportChange, isControlledViewport: !!viewport, children: (0, import_jsx_runtime6.jsxs)(Viewport, { children: [(0, import_jsx_runtime6.jsx)(EdgeRenderer, { edgeTypes: edgeTypes2, onEdgeClick, onEdgeDoubleClick, onReconnect, onReconnectStart, onReconnectEnd, onlyRenderVisibleElements, onEdgeContextMenu, onEdgeMouseEnter, onEdgeMouseMove, onEdgeMouseLeave, reconnectRadius, defaultMarkerColor, noPanClassName, disableKeyboardA11y, rfId }), (0, import_jsx_runtime6.jsx)(ConnectionLineWrapper, { style: connectionLineStyle, type: connectionLineType, component: connectionLineComponent, containerStyle: connectionLineContainerStyle }), (0, import_jsx_runtime6.jsx)("div", { className: "react-flow__edgelabel-renderer" }), (0, import_jsx_runtime6.jsx)(NodeRenderer, { nodeTypes: nodeTypes2, onNodeClick, onNodeDoubleClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, onNodeContextMenu, nodeClickDistance, onlyRenderVisibleElements, noPanClassName, noDragClassName, disableKeyboardA11y, nodeExtent, rfId, nodesDraggable }), (0, import_jsx_runtime6.jsx)("div", { className: "react-flow__viewport-portal" })] }) });
 }
 GraphViewComponent.displayName = "GraphView";
-var GraphView = (0, import_react3.memo)(GraphViewComponent);
+var GraphView = (0, import_react5.memo)(GraphViewComponent);
 var devWarn = createDevWarn("React Flow", "https://reactflow.dev/");
 var getInitialState = ({ nodes, edges, defaultNodes, defaultEdges, width, height, fitView, fitViewOptions, minZoom = 0.5, maxZoom = 2, nodeOrigin, nodeExtent, zIndexMode = "basic" } = {}) => {
   const nodeLookup = /* @__PURE__ */ new Map();
@@ -9909,8 +10435,8 @@ var getInitialState = ({ nodes, edges, defaultNodes, defaultEdges, width, height
     const bounds = getInternalNodesBounds(nodeLookup, {
       filter: (node) => !!((node.width || node.initialWidth) && (node.height || node.initialHeight))
     });
-    const { x, y, zoom } = getViewportForBounds(bounds, width, height, minZoom, maxZoom, fitViewOptions?.padding ?? 0.1);
-    transform2 = [x, y, zoom];
+    const { x, y, zoom: zoom3 } = getViewportForBounds(bounds, width, height, minZoom, maxZoom, fitViewOptions?.padding ?? 0.1);
+    transform2 = [x, y, zoom3];
   }
   return {
     rfId: "1",
@@ -10174,7 +10700,7 @@ var createStore2 = ({ nodes, edges, defaultNodes, defaultEdges, width, height, f
         triggerNodeChanges(nodeChanges);
         return;
       }
-      triggerNodeChanges(getSelectionChanges(nodeLookup, /* @__PURE__ */ new Set([...selectedNodeIds]), true));
+      triggerNodeChanges(getSelectionChanges(nodeLookup, /* @__PURE__ */ new Set([...selectedNodeIds])));
       triggerEdgeChanges(getSelectionChanges(edgeLookup));
     },
     addSelectedEdges: (selectedEdgeIds) => {
@@ -10185,7 +10711,7 @@ var createStore2 = ({ nodes, edges, defaultNodes, defaultEdges, width, height, f
         return;
       }
       triggerEdgeChanges(getSelectionChanges(edgeLookup, /* @__PURE__ */ new Set([...selectedEdgeIds])));
-      triggerNodeChanges(getSelectionChanges(nodeLookup, /* @__PURE__ */ new Set(), true));
+      triggerNodeChanges(getSelectionChanges(nodeLookup, /* @__PURE__ */ new Set()));
     },
     unselectNodesAndEdges: ({ nodes: nodes2, edges: edges2 } = {}) => {
       const { edges: storeEdges, nodes: storeNodes, nodeLookup, triggerNodeChanges, triggerEdgeChanges } = get3();
@@ -10195,10 +10721,6 @@ var createStore2 = ({ nodes, edges, defaultNodes, defaultEdges, width, height, f
       for (const node of nodesToUnselect) {
         if (!node.selected) {
           continue;
-        }
-        const internalNode = nodeLookup.get(node.id);
-        if (internalNode) {
-          internalNode.selected = false;
         }
         nodeChanges.push(createSelectionChange(node.id, false));
       }
@@ -10279,7 +10801,7 @@ var createStore2 = ({ nodes, edges, defaultNodes, defaultEdges, width, height, f
   };
 }, Object.is);
 function ReactFlowProvider({ initialNodes: nodes, initialEdges: edges, defaultNodes, defaultEdges, initialWidth: width, initialHeight: height, initialMinZoom: minZoom, initialMaxZoom: maxZoom, initialFitViewOptions: fitViewOptions, fitView, nodeOrigin, nodeExtent, zIndexMode, children: children2 }) {
-  const [store] = (0, import_react3.useState)(() => createStore2({
+  const [store] = (0, import_react5.useState)(() => createStore2({
     nodes,
     edges,
     defaultNodes,
@@ -10294,14 +10816,14 @@ function ReactFlowProvider({ initialNodes: nodes, initialEdges: edges, defaultNo
     nodeExtent,
     zIndexMode
   }));
-  return (0, import_jsx_runtime4.jsx)(Provider$1, { value: store, children: (0, import_jsx_runtime4.jsx)(BatchProvider, { children: (0, import_jsx_runtime4.jsx)(HandleConfigProvider, { children: children2 }) }) });
+  return (0, import_jsx_runtime6.jsx)(Provider$1, { value: store, children: (0, import_jsx_runtime6.jsx)(BatchProvider, { children: (0, import_jsx_runtime6.jsx)(HandleConfigProvider, { children: children2 }) }) });
 }
 function Wrapper({ children: children2, nodes, edges, defaultNodes, defaultEdges, width, height, fitView, fitViewOptions, minZoom, maxZoom, nodeOrigin, nodeExtent, zIndexMode }) {
-  const isWrapped = (0, import_react3.useContext)(StoreContext);
+  const isWrapped = (0, import_react5.useContext)(StoreContext);
   if (isWrapped) {
-    return (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: children2 });
+    return (0, import_jsx_runtime6.jsx)(import_jsx_runtime6.Fragment, { children: children2 });
   }
-  return (0, import_jsx_runtime4.jsx)(ReactFlowProvider, { initialNodes: nodes, initialEdges: edges, defaultNodes, defaultEdges, initialWidth: width, initialHeight: height, fitView, initialFitViewOptions: fitViewOptions, initialMinZoom: minZoom, initialMaxZoom: maxZoom, nodeOrigin, nodeExtent, zIndexMode, children: children2 });
+  return (0, import_jsx_runtime6.jsx)(ReactFlowProvider, { initialNodes: nodes, initialEdges: edges, defaultNodes, defaultEdges, initialWidth: width, initialHeight: height, fitView, initialFitViewOptions: fitViewOptions, initialMinZoom: minZoom, initialMaxZoom: maxZoom, nodeOrigin, nodeExtent, zIndexMode, children: children2 });
 }
 var wrapperStyle = {
   width: "100%",
@@ -10313,19 +10835,19 @@ var wrapperStyle = {
 function ReactFlow({ nodes, edges, defaultNodes, defaultEdges, className, nodeTypes: nodeTypes2, edgeTypes: edgeTypes2, onNodeClick, onEdgeClick, onInit, onMove, onMoveStart, onMoveEnd, onConnect, onConnectStart, onConnectEnd, onClickConnectStart, onClickConnectEnd, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, onNodeContextMenu, onNodeDoubleClick, onNodeDragStart, onNodeDrag, onNodeDragStop, onNodesDelete, onEdgesDelete, onDelete, onSelectionChange, onSelectionDragStart, onSelectionDrag, onSelectionDragStop, onSelectionContextMenu, onSelectionStart, onSelectionEnd, onBeforeDelete, connectionMode, connectionLineType = ConnectionLineType.Bezier, connectionLineStyle, connectionLineComponent, connectionLineContainerStyle, deleteKeyCode = "Backspace", selectionKeyCode = "Shift", selectionOnDrag = false, selectionMode = SelectionMode.Full, panActivationKeyCode = "Space", multiSelectionKeyCode = isMacOs() ? "Meta" : "Control", zoomActivationKeyCode = isMacOs() ? "Meta" : "Control", snapToGrid, snapGrid, onlyRenderVisibleElements = false, selectNodesOnDrag, nodesDraggable, autoPanOnNodeFocus, nodesConnectable, nodesFocusable, nodeOrigin = defaultNodeOrigin, edgesFocusable, edgesReconnectable, elementsSelectable = true, defaultViewport: defaultViewport$1 = defaultViewport, minZoom = 0.5, maxZoom = 2, translateExtent = infiniteExtent, preventScrolling = true, nodeExtent, defaultMarkerColor = "#b1b1b7", zoomOnScroll = true, zoomOnPinch = true, panOnScroll = false, panOnScrollSpeed = 0.5, panOnScrollMode = PanOnScrollMode.Free, zoomOnDoubleClick = true, panOnDrag = true, onPaneClick, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, onPaneScroll, onPaneContextMenu, paneClickDistance = 1, nodeClickDistance = 0, children: children2, onReconnect, onReconnectStart, onReconnectEnd, onEdgeContextMenu, onEdgeDoubleClick, onEdgeMouseEnter, onEdgeMouseMove, onEdgeMouseLeave, reconnectRadius = 10, onNodesChange, onEdgesChange, noDragClassName = "nodrag", noWheelClassName = "nowheel", noPanClassName = "nopan", fitView, fitViewOptions, connectOnClick, attributionPosition, proOptions, defaultEdgeOptions, elevateNodesOnSelect = true, elevateEdgesOnSelect = false, disableKeyboardA11y = false, autoPanOnConnect, autoPanOnNodeDrag, autoPanOnSelection = true, autoPanSpeed, connectionRadius, isValidConnection, onError, style: style2, id: id2, nodeDragThreshold, connectionDragThreshold, viewport, onViewportChange, width, height, colorMode = "light", debug, onScroll, ariaLabelConfig, zIndexMode = "basic", ...rest }, ref) {
   const rfId = id2 || "1";
   const colorModeClassName = useColorModeClass(colorMode);
-  const wrapperOnScroll = (0, import_react3.useCallback)((e) => {
+  const wrapperOnScroll = (0, import_react5.useCallback)((e) => {
     e.currentTarget.scrollTo({ top: 0, left: 0, behavior: "instant" });
     onScroll?.(e);
   }, [onScroll]);
-  return (0, import_jsx_runtime4.jsx)("div", { "data-testid": "rf__wrapper", ...rest, onScroll: wrapperOnScroll, style: { ...style2, ...wrapperStyle }, ref, className: cc(["react-flow", className, colorModeClassName]), id: id2, role: "application", children: (0, import_jsx_runtime4.jsxs)(Wrapper, { nodes, edges, width, height, fitView, fitViewOptions, minZoom, maxZoom, nodeOrigin, nodeExtent, zIndexMode, children: [(0, import_jsx_runtime4.jsx)(StoreUpdater, { nodes, edges, defaultNodes, defaultEdges, onConnect, onConnectStart, onConnectEnd, onClickConnectStart, onClickConnectEnd, nodesDraggable, autoPanOnNodeFocus, nodesConnectable, nodesFocusable, edgesFocusable, edgesReconnectable, elementsSelectable, elevateNodesOnSelect, elevateEdgesOnSelect, minZoom, maxZoom, nodeExtent, onNodesChange, onEdgesChange, snapToGrid, snapGrid, connectionMode, translateExtent, connectOnClick, defaultEdgeOptions, fitView, fitViewOptions, onNodesDelete, onEdgesDelete, onDelete, onNodeDragStart, onNodeDrag, onNodeDragStop, onSelectionDrag, onSelectionDragStart, onSelectionDragStop, onMove, onMoveStart, onMoveEnd, noPanClassName, nodeOrigin, rfId, autoPanOnConnect, autoPanOnNodeDrag, autoPanSpeed, onError, connectionRadius, isValidConnection, selectNodesOnDrag, nodeDragThreshold, connectionDragThreshold, onBeforeDelete, debug, ariaLabelConfig, zIndexMode }), (0, import_jsx_runtime4.jsx)(GraphView, { onInit, onNodeClick, onEdgeClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, onNodeContextMenu, onNodeDoubleClick, nodeTypes: nodeTypes2, edgeTypes: edgeTypes2, connectionLineType, connectionLineStyle, connectionLineComponent, connectionLineContainerStyle, selectionKeyCode, selectionOnDrag, selectionMode, deleteKeyCode, multiSelectionKeyCode, panActivationKeyCode, zoomActivationKeyCode, onlyRenderVisibleElements, defaultViewport: defaultViewport$1, translateExtent, minZoom, maxZoom, preventScrolling, zoomOnScroll, zoomOnPinch, zoomOnDoubleClick, panOnScroll, panOnScrollSpeed, panOnScrollMode, panOnDrag, autoPanOnSelection, onPaneClick, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, onPaneScroll, onPaneContextMenu, paneClickDistance, nodeClickDistance, onSelectionContextMenu, onSelectionStart, onSelectionEnd, onReconnect, onReconnectStart, onReconnectEnd, onEdgeContextMenu, onEdgeDoubleClick, onEdgeMouseEnter, onEdgeMouseMove, onEdgeMouseLeave, reconnectRadius, defaultMarkerColor, noDragClassName, noWheelClassName, noPanClassName, rfId, disableKeyboardA11y, nodeExtent, viewport, onViewportChange, nodesDraggable }), (0, import_jsx_runtime4.jsx)(SelectionListener, { onSelectionChange }), children2, (0, import_jsx_runtime4.jsx)(Attribution, { proOptions, position: attributionPosition }), (0, import_jsx_runtime4.jsx)(A11yDescriptions, { rfId, disableKeyboardA11y })] }) });
+  return (0, import_jsx_runtime6.jsx)("div", { "data-testid": "rf__wrapper", ...rest, onScroll: wrapperOnScroll, style: { ...style2, ...wrapperStyle }, ref, className: cc(["react-flow", className, colorModeClassName]), id: id2, role: "application", children: (0, import_jsx_runtime6.jsxs)(Wrapper, { nodes, edges, width, height, fitView, fitViewOptions, minZoom, maxZoom, nodeOrigin, nodeExtent, zIndexMode, children: [(0, import_jsx_runtime6.jsx)(StoreUpdater, { nodes, edges, defaultNodes, defaultEdges, onConnect, onConnectStart, onConnectEnd, onClickConnectStart, onClickConnectEnd, nodesDraggable, autoPanOnNodeFocus, nodesConnectable, nodesFocusable, edgesFocusable, edgesReconnectable, elementsSelectable, elevateNodesOnSelect, elevateEdgesOnSelect, minZoom, maxZoom, nodeExtent, onNodesChange, onEdgesChange, snapToGrid, snapGrid, connectionMode, translateExtent, connectOnClick, defaultEdgeOptions, fitView, fitViewOptions, onNodesDelete, onEdgesDelete, onDelete, onNodeDragStart, onNodeDrag, onNodeDragStop, onSelectionDrag, onSelectionDragStart, onSelectionDragStop, onMove, onMoveStart, onMoveEnd, noPanClassName, nodeOrigin, rfId, autoPanOnConnect, autoPanOnNodeDrag, autoPanSpeed, onError, connectionRadius, isValidConnection, selectNodesOnDrag, nodeDragThreshold, connectionDragThreshold, onBeforeDelete, debug, ariaLabelConfig, zIndexMode }), (0, import_jsx_runtime6.jsx)(GraphView, { onInit, onNodeClick, onEdgeClick, onNodeMouseEnter, onNodeMouseMove, onNodeMouseLeave, onNodeContextMenu, onNodeDoubleClick, nodeTypes: nodeTypes2, edgeTypes: edgeTypes2, connectionLineType, connectionLineStyle, connectionLineComponent, connectionLineContainerStyle, selectionKeyCode, selectionOnDrag, selectionMode, deleteKeyCode, multiSelectionKeyCode, panActivationKeyCode, zoomActivationKeyCode, onlyRenderVisibleElements, defaultViewport: defaultViewport$1, translateExtent, minZoom, maxZoom, preventScrolling, zoomOnScroll, zoomOnPinch, zoomOnDoubleClick, panOnScroll, panOnScrollSpeed, panOnScrollMode, panOnDrag, autoPanOnSelection, onPaneClick, onPaneMouseEnter, onPaneMouseMove, onPaneMouseLeave, onPaneScroll, onPaneContextMenu, paneClickDistance, nodeClickDistance, onSelectionContextMenu, onSelectionStart, onSelectionEnd, onReconnect, onReconnectStart, onReconnectEnd, onEdgeContextMenu, onEdgeDoubleClick, onEdgeMouseEnter, onEdgeMouseMove, onEdgeMouseLeave, reconnectRadius, defaultMarkerColor, noDragClassName, noWheelClassName, noPanClassName, rfId, disableKeyboardA11y, nodeExtent, viewport, onViewportChange, nodesDraggable }), (0, import_jsx_runtime6.jsx)(SelectionListener, { onSelectionChange }), children2, (0, import_jsx_runtime6.jsx)(Attribution, { proOptions, position: attributionPosition }), (0, import_jsx_runtime6.jsx)(A11yDescriptions, { rfId, disableKeyboardA11y })] }) });
 }
 var index = fixedForwardRef(ReactFlow);
 var error014 = errorMessages["error014"]();
 function LinePattern({ dimensions, lineWidth, variant, className }) {
-  return (0, import_jsx_runtime4.jsx)("path", { strokeWidth: lineWidth, d: `M${dimensions[0] / 2} 0 V${dimensions[1]} M0 ${dimensions[1] / 2} H${dimensions[0]}`, className: cc(["react-flow__background-pattern", variant, className]) });
+  return (0, import_jsx_runtime6.jsx)("path", { strokeWidth: lineWidth, d: `M${dimensions[0] / 2} 0 V${dimensions[1]} M0 ${dimensions[1] / 2} H${dimensions[0]}`, className: cc(["react-flow__background-pattern", variant, className]) });
 }
 function DotPattern({ radius, className }) {
-  return (0, import_jsx_runtime4.jsx)("circle", { cx: radius, cy: radius, r: radius, className: cc(["react-flow__background-pattern", "dots", className]) });
+  return (0, import_jsx_runtime6.jsx)("circle", { cx: radius, cy: radius, r: radius, className: cc(["react-flow__background-pattern", "dots", className]) });
 }
 var BackgroundVariant;
 (function(BackgroundVariant2) {
@@ -10354,7 +10876,7 @@ function BackgroundComponent({
   className,
   patternClassName
 }) {
-  const ref = (0, import_react3.useRef)(null);
+  const ref = (0, import_react5.useRef)(null);
   const { transform: transform2, patternId } = useStore(selector$3, shallow$1);
   const patternSize = size || defaultSize[variant];
   const isDots = variant === BackgroundVariant.Dots;
@@ -10369,32 +10891,32 @@ function BackgroundComponent({
     offsetXY[1] * transform2[2] + patternDimensions[1] / 2
   ];
   const _patternId = `${patternId}${id2 ? id2 : ""}`;
-  return (0, import_jsx_runtime4.jsxs)("svg", { className: cc(["react-flow__background", className]), style: {
+  return (0, import_jsx_runtime6.jsxs)("svg", { className: cc(["react-flow__background", className]), style: {
     ...style2,
     ...containerStyle,
     "--xy-background-color-props": bgColor,
     "--xy-background-pattern-color-props": color2
-  }, ref, "data-testid": "rf__background", children: [(0, import_jsx_runtime4.jsx)("pattern", { id: _patternId, x: transform2[0] % scaledGap[0], y: transform2[1] % scaledGap[1], width: scaledGap[0], height: scaledGap[1], patternUnits: "userSpaceOnUse", patternTransform: `translate(-${scaledOffset[0]},-${scaledOffset[1]})`, children: isDots ? (0, import_jsx_runtime4.jsx)(DotPattern, { radius: scaledSize / 2, className: patternClassName }) : (0, import_jsx_runtime4.jsx)(LinePattern, { dimensions: patternDimensions, lineWidth, variant, className: patternClassName }) }), (0, import_jsx_runtime4.jsx)("rect", { x: "0", y: "0", width: "100%", height: "100%", fill: `url(#${_patternId})` })] });
+  }, ref, "data-testid": "rf__background", children: [(0, import_jsx_runtime6.jsx)("pattern", { id: _patternId, x: transform2[0] % scaledGap[0], y: transform2[1] % scaledGap[1], width: scaledGap[0], height: scaledGap[1], patternUnits: "userSpaceOnUse", patternTransform: `translate(-${scaledOffset[0]},-${scaledOffset[1]})`, children: isDots ? (0, import_jsx_runtime6.jsx)(DotPattern, { radius: scaledSize / 2, className: patternClassName }) : (0, import_jsx_runtime6.jsx)(LinePattern, { dimensions: patternDimensions, lineWidth, variant, className: patternClassName }) }), (0, import_jsx_runtime6.jsx)("rect", { x: "0", y: "0", width: "100%", height: "100%", fill: `url(#${_patternId})` })] });
 }
 BackgroundComponent.displayName = "Background";
-var Background = (0, import_react3.memo)(BackgroundComponent);
+var Background = (0, import_react5.memo)(BackgroundComponent);
 function PlusIcon() {
-  return (0, import_jsx_runtime4.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 32 32", children: (0, import_jsx_runtime4.jsx)("path", { d: "M32 18.133H18.133V32h-4.266V18.133H0v-4.266h13.867V0h4.266v13.867H32z" }) });
+  return (0, import_jsx_runtime6.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 32 32", children: (0, import_jsx_runtime6.jsx)("path", { d: "M32 18.133H18.133V32h-4.266V18.133H0v-4.266h13.867V0h4.266v13.867H32z" }) });
 }
 function MinusIcon() {
-  return (0, import_jsx_runtime4.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 32 5", children: (0, import_jsx_runtime4.jsx)("path", { d: "M0 0h32v4.2H0z" }) });
+  return (0, import_jsx_runtime6.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 32 5", children: (0, import_jsx_runtime6.jsx)("path", { d: "M0 0h32v4.2H0z" }) });
 }
 function FitViewIcon() {
-  return (0, import_jsx_runtime4.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 32 30", children: (0, import_jsx_runtime4.jsx)("path", { d: "M3.692 4.63c0-.53.4-.938.939-.938h5.215V0H4.708C2.13 0 0 2.054 0 4.63v5.216h3.692V4.631zM27.354 0h-5.2v3.692h5.17c.53 0 .984.4.984.939v5.215H32V4.631A4.624 4.624 0 0027.354 0zm.954 24.83c0 .532-.4.94-.939.94h-5.215v3.768h5.215c2.577 0 4.631-2.13 4.631-4.707v-5.139h-3.692v5.139zm-23.677.94c-.531 0-.939-.4-.939-.94v-5.138H0v5.139c0 2.577 2.13 4.707 4.708 4.707h5.138V25.77H4.631z" }) });
+  return (0, import_jsx_runtime6.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 32 30", children: (0, import_jsx_runtime6.jsx)("path", { d: "M3.692 4.63c0-.53.4-.938.939-.938h5.215V0H4.708C2.13 0 0 2.054 0 4.63v5.216h3.692V4.631zM27.354 0h-5.2v3.692h5.17c.53 0 .984.4.984.939v5.215H32V4.631A4.624 4.624 0 0027.354 0zm.954 24.83c0 .532-.4.94-.939.94h-5.215v3.768h5.215c2.577 0 4.631-2.13 4.631-4.707v-5.139h-3.692v5.139zm-23.677.94c-.531 0-.939-.4-.939-.94v-5.138H0v5.139c0 2.577 2.13 4.707 4.708 4.707h5.138V25.77H4.631z" }) });
 }
 function LockIcon() {
-  return (0, import_jsx_runtime4.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 25 32", children: (0, import_jsx_runtime4.jsx)("path", { d: "M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0 8 0 4.571 3.429 4.571 7.619v3.048H3.048A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047zm4.724-13.866H7.467V7.619c0-2.59 2.133-4.724 4.723-4.724 2.591 0 4.724 2.133 4.724 4.724v3.048z" }) });
+  return (0, import_jsx_runtime6.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 25 32", children: (0, import_jsx_runtime6.jsx)("path", { d: "M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0 8 0 4.571 3.429 4.571 7.619v3.048H3.048A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047zm4.724-13.866H7.467V7.619c0-2.59 2.133-4.724 4.723-4.724 2.591 0 4.724 2.133 4.724 4.724v3.048z" }) });
 }
 function UnlockIcon() {
-  return (0, import_jsx_runtime4.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 25 32", children: (0, import_jsx_runtime4.jsx)("path", { d: "M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0c-4.114 1.828-1.37 2.133.305 2.438 1.676.305 4.42 2.59 4.42 5.181v3.048H3.047A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047z" }) });
+  return (0, import_jsx_runtime6.jsx)("svg", { xmlns: "http://www.w3.org/2000/svg", viewBox: "0 0 25 32", children: (0, import_jsx_runtime6.jsx)("path", { d: "M21.333 10.667H19.81V7.619C19.81 3.429 16.38 0 12.19 0c-4.114 1.828-1.37 2.133.305 2.438 1.676.305 4.42 2.59 4.42 5.181v3.048H3.047A3.056 3.056 0 000 13.714v15.238A3.056 3.056 0 003.048 32h18.285a3.056 3.056 0 003.048-3.048V13.714a3.056 3.056 0 00-3.048-3.047zM12.19 24.533a3.056 3.056 0 01-3.047-3.047 3.056 3.056 0 013.047-3.048 3.056 3.056 0 013.048 3.048 3.056 3.056 0 01-3.048 3.047z" }) });
 }
 function ControlButton({ children: children2, className, ...rest }) {
-  return (0, import_jsx_runtime4.jsx)("button", { type: "button", className: cc(["react-flow__controls-button", className]), ...rest, children: children2 });
+  return (0, import_jsx_runtime6.jsx)("button", { type: "button", className: cc(["react-flow__controls-button", className]), ...rest, children: children2 });
 }
 var selector$2 = (s) => ({
   isInteractive: s.nodesDraggable || s.nodesConnectable || s.elementsSelectable,
@@ -10427,20 +10949,20 @@ function ControlsComponent({ style: style2, showZoom = true, showFitView = true,
     onInteractiveChange?.(!isInteractive);
   };
   const orientationClass = orientation === "horizontal" ? "horizontal" : "vertical";
-  return (0, import_jsx_runtime4.jsxs)(Panel, { className: cc(["react-flow__controls", orientationClass, className]), position, style: style2, "data-testid": "rf__controls", "aria-label": ariaLabel ?? ariaLabelConfig["controls.ariaLabel"], children: [showZoom && (0, import_jsx_runtime4.jsxs)(import_jsx_runtime4.Fragment, { children: [(0, import_jsx_runtime4.jsx)(ControlButton, { onClick: onZoomInHandler, className: "react-flow__controls-zoomin", title: ariaLabelConfig["controls.zoomIn.ariaLabel"], "aria-label": ariaLabelConfig["controls.zoomIn.ariaLabel"], disabled: maxZoomReached, children: (0, import_jsx_runtime4.jsx)(PlusIcon, {}) }), (0, import_jsx_runtime4.jsx)(ControlButton, { onClick: onZoomOutHandler, className: "react-flow__controls-zoomout", title: ariaLabelConfig["controls.zoomOut.ariaLabel"], "aria-label": ariaLabelConfig["controls.zoomOut.ariaLabel"], disabled: minZoomReached, children: (0, import_jsx_runtime4.jsx)(MinusIcon, {}) })] }), showFitView && (0, import_jsx_runtime4.jsx)(ControlButton, { className: "react-flow__controls-fitview", onClick: onFitViewHandler, title: ariaLabelConfig["controls.fitView.ariaLabel"], "aria-label": ariaLabelConfig["controls.fitView.ariaLabel"], children: (0, import_jsx_runtime4.jsx)(FitViewIcon, {}) }), showInteractive && (0, import_jsx_runtime4.jsx)(ControlButton, { className: "react-flow__controls-interactive", onClick: onToggleInteractivity, title: ariaLabelConfig["controls.interactive.ariaLabel"], "aria-label": ariaLabelConfig["controls.interactive.ariaLabel"], children: isInteractive ? (0, import_jsx_runtime4.jsx)(UnlockIcon, {}) : (0, import_jsx_runtime4.jsx)(LockIcon, {}) }), children2] });
+  return (0, import_jsx_runtime6.jsxs)(Panel, { className: cc(["react-flow__controls", orientationClass, className]), position, style: style2, "data-testid": "rf__controls", "aria-label": ariaLabel ?? ariaLabelConfig["controls.ariaLabel"], children: [showZoom && (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [(0, import_jsx_runtime6.jsx)(ControlButton, { onClick: onZoomInHandler, className: "react-flow__controls-zoomin", title: ariaLabelConfig["controls.zoomIn.ariaLabel"], "aria-label": ariaLabelConfig["controls.zoomIn.ariaLabel"], disabled: maxZoomReached, children: (0, import_jsx_runtime6.jsx)(PlusIcon, {}) }), (0, import_jsx_runtime6.jsx)(ControlButton, { onClick: onZoomOutHandler, className: "react-flow__controls-zoomout", title: ariaLabelConfig["controls.zoomOut.ariaLabel"], "aria-label": ariaLabelConfig["controls.zoomOut.ariaLabel"], disabled: minZoomReached, children: (0, import_jsx_runtime6.jsx)(MinusIcon, {}) })] }), showFitView && (0, import_jsx_runtime6.jsx)(ControlButton, { className: "react-flow__controls-fitview", onClick: onFitViewHandler, title: ariaLabelConfig["controls.fitView.ariaLabel"], "aria-label": ariaLabelConfig["controls.fitView.ariaLabel"], children: (0, import_jsx_runtime6.jsx)(FitViewIcon, {}) }), showInteractive && (0, import_jsx_runtime6.jsx)(ControlButton, { className: "react-flow__controls-interactive", onClick: onToggleInteractivity, title: ariaLabelConfig["controls.interactive.ariaLabel"], "aria-label": ariaLabelConfig["controls.interactive.ariaLabel"], children: isInteractive ? (0, import_jsx_runtime6.jsx)(UnlockIcon, {}) : (0, import_jsx_runtime6.jsx)(LockIcon, {}) }), children2] });
 }
 ControlsComponent.displayName = "Controls";
-var Controls = (0, import_react3.memo)(ControlsComponent);
+var Controls = (0, import_react5.memo)(ControlsComponent);
 function MiniMapNodeComponent({ id: id2, x, y, width, height, style: style2, color: color2, strokeColor, strokeWidth, className, borderRadius, shapeRendering, selected: selected2, onClick }) {
   const { background, backgroundColor } = style2 || {};
   const fill = color2 || background || backgroundColor;
-  return (0, import_jsx_runtime4.jsx)("rect", { className: cc(["react-flow__minimap-node", { selected: selected2 }, className]), x, y, rx: borderRadius, ry: borderRadius, width, height, style: {
+  return (0, import_jsx_runtime6.jsx)("rect", { className: cc(["react-flow__minimap-node", { selected: selected2 }, className]), x, y, rx: borderRadius, ry: borderRadius, width, height, style: {
     fill,
     stroke: strokeColor,
     strokeWidth
   }, shapeRendering, onClick: onClick ? (event) => onClick(event, id2) : void 0 });
 }
-var MiniMapNode = (0, import_react3.memo)(MiniMapNodeComponent);
+var MiniMapNode = (0, import_react5.memo)(MiniMapNodeComponent);
 var selectorNodeIds = (s) => s.nodes.map((node) => node.id);
 var getAttrFunction = (func) => func instanceof Function ? func : () => func;
 function MiniMapNodes({
@@ -10461,7 +10983,7 @@ function MiniMapNodes({
   const nodeStrokeColorFunc = getAttrFunction(nodeStrokeColor);
   const nodeClassNameFunc = getAttrFunction(nodeClassName);
   const shapeRendering = typeof window === "undefined" || !!window.chrome ? "crispEdges" : "geometricPrecision";
-  return (0, import_jsx_runtime4.jsx)(import_jsx_runtime4.Fragment, { children: nodeIds.map((nodeId) => (
+  return (0, import_jsx_runtime6.jsx)(import_jsx_runtime6.Fragment, { children: nodeIds.map((nodeId) => (
     /*
      * The split of responsibilities between MiniMapNodes and
      * NodeComponentWrapper may appear weird. However, it’s designed to
@@ -10469,7 +10991,7 @@ function MiniMapNodes({
      *
      * For more details, see a similar commit in `NodeRenderer/index.tsx`.
      */
-    (0, import_jsx_runtime4.jsx)(NodeComponentWrapper, { id: nodeId, nodeColorFunc, nodeStrokeColorFunc, nodeClassNameFunc, nodeBorderRadius, nodeStrokeWidth, NodeComponent, onClick, shapeRendering }, nodeId)
+    (0, import_jsx_runtime6.jsx)(NodeComponentWrapper, { id: nodeId, nodeColorFunc, nodeStrokeColorFunc, nodeClassNameFunc, nodeBorderRadius, nodeStrokeWidth, NodeComponent, onClick, shapeRendering }, nodeId)
   )) });
 }
 function NodeComponentWrapperInner({ id: id2, nodeColorFunc, nodeStrokeColorFunc, nodeClassNameFunc, nodeBorderRadius, nodeStrokeWidth, shapeRendering, NodeComponent, onClick }) {
@@ -10492,10 +11014,10 @@ function NodeComponentWrapperInner({ id: id2, nodeColorFunc, nodeStrokeColorFunc
   if (!node || node.hidden || !nodeHasDimensions(node)) {
     return null;
   }
-  return (0, import_jsx_runtime4.jsx)(NodeComponent, { x, y, width, height, style: node.style, selected: !!node.selected, className: nodeClassNameFunc(node), color: nodeColorFunc(node), borderRadius: nodeBorderRadius, strokeColor: nodeStrokeColorFunc(node), strokeWidth: nodeStrokeWidth, shapeRendering, onClick, id: node.id });
+  return (0, import_jsx_runtime6.jsx)(NodeComponent, { x, y, width, height, style: node.style, selected: !!node.selected, className: nodeClassNameFunc(node), color: nodeColorFunc(node), borderRadius: nodeBorderRadius, strokeColor: nodeStrokeColorFunc(node), strokeWidth: nodeStrokeWidth, shapeRendering, onClick, id: node.id });
 }
-var NodeComponentWrapper = (0, import_react3.memo)(NodeComponentWrapperInner);
-var MiniMapNodes$1 = (0, import_react3.memo)(MiniMapNodes);
+var NodeComponentWrapper = (0, import_react5.memo)(NodeComponentWrapperInner);
+var MiniMapNodes$1 = (0, import_react5.memo)(MiniMapNodes);
 var defaultWidth = 200;
 var defaultHeight = 150;
 var filterHidden = (node) => !node.hidden;
@@ -10555,7 +11077,7 @@ function MiniMapComponent({
   offsetScale = 5
 }) {
   const store = useStoreApi();
-  const svg = (0, import_react3.useRef)(null);
+  const svg = (0, import_react5.useRef)(null);
   const { boundingRect, panZoom, viewBB, rfId, translateExtent, flowWidth, flowHeight, ariaLabelConfig } = useStore(selector$1, areEqual);
   const elementWidth = style2?.width ?? defaultWidth;
   const elementHeight = style2?.height ?? defaultHeight;
@@ -10570,10 +11092,10 @@ function MiniMapComponent({
   const width = viewWidth + offset * 2;
   const height = viewHeight + offset * 2;
   const labelledBy = `${ARIA_LABEL_KEY}-${rfId}`;
-  const viewScaleRef = (0, import_react3.useRef)(0);
-  const minimapInstance = (0, import_react3.useRef)();
+  const viewScaleRef = (0, import_react5.useRef)(0);
+  const minimapInstance = (0, import_react5.useRef)();
   viewScaleRef.current = viewScale;
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     const currentPanZoom = store.getState().panZoom;
     if (svg.current && currentPanZoom) {
       minimapInstance.current = XYMinimap({
@@ -10587,7 +11109,7 @@ function MiniMapComponent({
       };
     }
   }, [panZoom]);
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     minimapInstance.current?.update({
       translateExtent,
       width: flowWidth,
@@ -10602,13 +11124,13 @@ function MiniMapComponent({
     const [x2, y2] = minimapInstance.current?.pointer(event) || [0, 0];
     onClick(event, { x: x2, y: y2 });
   } : void 0;
-  const nodeClickHandler = (0, import_react3.useCallback)((event, nodeId) => {
+  const nodeClickHandler = (0, import_react5.useCallback)((event, nodeId) => {
     const node = store.getState().nodeLookup.get(nodeId).internals.userNode;
     onNodeClick?.(event, node);
   }, [onNodeClick]);
   const onSvgNodeClick = onNodeClick ? nodeClickHandler : void 0;
   const _ariaLabel = ariaLabel ?? ariaLabelConfig["minimap.ariaLabel"];
-  return (0, import_jsx_runtime4.jsx)(Panel, { position, style: {
+  return (0, import_jsx_runtime6.jsx)(Panel, { position, style: {
     ...style2,
     "--xy-minimap-background-color-props": typeof bgColor === "string" ? bgColor : void 0,
     "--xy-minimap-mask-background-color-props": typeof maskColor === "string" ? maskColor : void 0,
@@ -10617,11 +11139,11 @@ function MiniMapComponent({
     "--xy-minimap-node-background-color-props": typeof nodeColor === "string" ? nodeColor : void 0,
     "--xy-minimap-node-stroke-color-props": typeof nodeStrokeColor === "string" ? nodeStrokeColor : void 0,
     "--xy-minimap-node-stroke-width-props": typeof nodeStrokeWidth === "number" ? nodeStrokeWidth : void 0
-  }, className: cc(["react-flow__minimap", className]), "data-testid": "rf__minimap", children: (0, import_jsx_runtime4.jsxs)("svg", { width: elementWidth, height: elementHeight, viewBox: `${x} ${y} ${width} ${height}`, className: "react-flow__minimap-svg", role: "img", "aria-labelledby": labelledBy, ref: svg, onClick: onSvgClick, children: [_ariaLabel && (0, import_jsx_runtime4.jsx)("title", { id: labelledBy, children: _ariaLabel }), (0, import_jsx_runtime4.jsx)(MiniMapNodes$1, { onClick: onSvgNodeClick, nodeColor, nodeStrokeColor, nodeBorderRadius, nodeClassName, nodeStrokeWidth, nodeComponent }), (0, import_jsx_runtime4.jsx)("path", { className: "react-flow__minimap-mask", d: `M${x - offset},${y - offset}h${width + offset * 2}v${height + offset * 2}h${-width - offset * 2}z
+  }, className: cc(["react-flow__minimap", className]), "data-testid": "rf__minimap", children: (0, import_jsx_runtime6.jsxs)("svg", { width: elementWidth, height: elementHeight, viewBox: `${x} ${y} ${width} ${height}`, className: "react-flow__minimap-svg", role: "img", "aria-labelledby": labelledBy, ref: svg, onClick: onSvgClick, children: [_ariaLabel && (0, import_jsx_runtime6.jsx)("title", { id: labelledBy, children: _ariaLabel }), (0, import_jsx_runtime6.jsx)(MiniMapNodes$1, { onClick: onSvgNodeClick, nodeColor, nodeStrokeColor, nodeBorderRadius, nodeClassName, nodeStrokeWidth, nodeComponent }), (0, import_jsx_runtime6.jsx)("path", { className: "react-flow__minimap-mask", d: `M${x - offset},${y - offset}h${width + offset * 2}v${height + offset * 2}h${-width - offset * 2}z
         M${viewBB.x},${viewBB.y}h${viewBB.width}v${viewBB.height}h${-viewBB.width}z`, fillRule: "evenodd", pointerEvents: "none" })] }) });
 }
 MiniMapComponent.displayName = "MiniMap";
-var MiniMap = (0, import_react3.memo)(MiniMapComponent);
+var MiniMap = (0, import_react5.memo)(MiniMapComponent);
 var scaleSelector = (calculateScale) => (store) => calculateScale ? `${Math.max(1 / store.transform[2], 1)}` : void 0;
 var defaultPositions = {
   [ResizeControlVariant.Line]: "right",
@@ -10631,12 +11153,12 @@ function ResizeControl({ nodeId, position, variant = ResizeControlVariant.Handle
   const contextNodeId = useNodeId();
   const id2 = typeof nodeId === "string" ? nodeId : contextNodeId;
   const store = useStoreApi();
-  const resizeControlRef = (0, import_react3.useRef)(null);
+  const resizeControlRef = (0, import_react5.useRef)(null);
   const isHandleControl = variant === ResizeControlVariant.Handle;
-  const scale = useStore((0, import_react3.useCallback)(scaleSelector(isHandleControl && autoScale), [isHandleControl, autoScale]), shallow$1);
-  const resizer = (0, import_react3.useRef)(null);
+  const scale = useStore((0, import_react5.useCallback)(scaleSelector(isHandleControl && autoScale), [isHandleControl, autoScale]), shallow$1);
+  const resizer = (0, import_react5.useRef)(null);
   const controlPosition = position ?? defaultPositions[variant];
-  (0, import_react3.useEffect)(() => {
+  (0, import_react5.useEffect)(() => {
     if (!resizeControlRef.current || !id2) {
       return;
     }
@@ -10757,13 +11279,13 @@ function ResizeControl({ nodeId, position, variant = ResizeControlVariant.Handle
     shouldResize
   ]);
   const positionClassNames = controlPosition.split("-");
-  return (0, import_jsx_runtime4.jsx)("div", { className: cc(["react-flow__resize-control", "nodrag", ...positionClassNames, variant, className]), ref: resizeControlRef, style: {
+  return (0, import_jsx_runtime6.jsx)("div", { className: cc(["react-flow__resize-control", "nodrag", ...positionClassNames, variant, className]), ref: resizeControlRef, style: {
     ...style2,
     scale,
     ...color2 && { [isHandleControl ? "backgroundColor" : "borderColor"]: color2 }
   }, children: children2 });
 }
-var NodeResizeControl = (0, import_react3.memo)(ResizeControl);
+var NodeResizeControl = (0, import_react5.memo)(ResizeControl);
 
 // dsh-css: dsh-css:node_modules/@xyflow/react/dist/style.css
 var __tagId2 = "dsh-talk-map/style.css";
@@ -10902,16 +11424,16 @@ function stampPush(fromCardId, toCardId) {
   return at;
 }
 function lastPushFor(fromCardId, toCardId) {
-  const value = read2()[pairKey(fromCardId, toCardId)];
-  return typeof value === "number" ? value : void 0;
+  const value2 = read2()[pairKey(fromCardId, toCardId)];
+  return typeof value2 === "number" ? value2 : void 0;
 }
 
 // src/client/DigestDialog.tsx
-var import_react4 = require("react");
-var import_jsx_runtime5 = require("react/jsx-runtime");
+var import_react6 = require("react");
+var import_jsx_runtime7 = require("react/jsx-runtime");
 function DigestDialog(props) {
-  const dialogId = (0, import_react4.useId)();
-  (0, import_react4.useEffect)(() => {
+  const dialogId = (0, import_react6.useId)();
+  (0, import_react6.useEffect)(() => {
     const release = mapUi.claimEscape("digest-dialog");
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
@@ -10927,7 +11449,7 @@ function DigestDialog(props) {
   const empty2 = digestIsEmpty2(props.digest);
   const pushText = empty2 ? "" : buildPushText(props.title, props.digest);
   const injectText = empty2 ? "" : buildInjectionText(props.title, props.digest);
-  return /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
     "div",
     {
       className: talk_map_default["dialogBackdrop"],
@@ -10935,7 +11457,7 @@ function DigestDialog(props) {
       onMouseDown: (event) => {
         if (event.target === event.currentTarget) props.onClose();
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
         "div",
         {
           className: talk_map_default["digestDialog"],
@@ -10946,13 +11468,13 @@ function DigestDialog(props) {
             event.stopPropagation();
           },
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: talk_map_default["digestDialogHead"], children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { id: `${dialogId}-title`, className: talk_map_default["digestDialogTitle"], children: t("digest.title") }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("span", { className: talk_map_default["digestDialogFrom"], title: props.title, children: props.title })
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: talk_map_default["digestDialogHead"], children: [
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { id: `${dialogId}-title`, className: talk_map_default["digestDialogTitle"], children: t("digest.title") }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: talk_map_default["digestDialogFrom"], title: props.title, children: props.title })
             ] }),
-            empty2 ? /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("div", { className: talk_map_default["digestEmpty"], children: t("digest.empty") }) : /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)(import_jsx_runtime5.Fragment, { children: [
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("label", { className: talk_map_default["digestLabel"], htmlFor: `${dialogId}-push`, children: t("digest.pushLabel") }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            empty2 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: talk_map_default["digestEmpty"], children: t("digest.empty") }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("label", { className: talk_map_default["digestLabel"], htmlFor: `${dialogId}-push`, children: t("digest.pushLabel") }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
                 "textarea",
                 {
                   id: `${dialogId}-push`,
@@ -10965,8 +11487,8 @@ function DigestDialog(props) {
                   }
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("label", { className: talk_map_default["digestLabel"], htmlFor: `${dialogId}-inject`, children: t("digest.injectLabel") }),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("label", { className: talk_map_default["digestLabel"], htmlFor: `${dialogId}-inject`, children: t("digest.injectLabel") }),
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
                 "textarea",
                 {
                   id: `${dialogId}-inject`,
@@ -10980,21 +11502,21 @@ function DigestDialog(props) {
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime5.jsxs)("div", { className: talk_map_default["digestActions"], children: [
-              empty2 ? null : /* @__PURE__ */ (0, import_jsx_runtime5.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("div", { className: talk_map_default["digestActions"], children: [
+              empty2 ? null : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
                 "button",
                 {
                   type: "button",
                   className: talk_map_default["spawnBtnPrimary"],
                   onClick: () => {
-                    const value = pushText;
-                    void navigator.clipboard?.writeText(value).catch(() => {
+                    const value2 = pushText;
+                    void navigator.clipboard?.writeText(value2).catch(() => {
                     });
                   },
                   children: t("digest.copy")
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime5.jsx)("button", { type: "button", className: talk_map_default["spawnBtnGhost"], onClick: props.onClose, children: t("digest.close") })
+              /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("button", { type: "button", className: talk_map_default["spawnBtnGhost"], onClick: props.onClose, children: t("digest.close") })
             ] })
           ]
         }
@@ -11004,77 +11526,60 @@ function DigestDialog(props) {
 }
 
 // src/client/session-actions.ts
-var RECYCLE_BIN_ROUTE = "dsh-session-recycle-bin/api";
-async function postRecycleBin(body) {
-  const path = new URL(RECYCLE_BIN_ROUTE, document.baseURI).pathname;
-  const response = await fetch(path, {
-    method: "POST",
-    headers: { "content-type": "application/json" },
-    body: JSON.stringify(body),
-    cache: "no-store"
-  });
-  let payload = {};
-  try {
-    payload = await response.json();
-  } catch {
-    throw new Error(`回收站接口返回 HTTP ${response.status}`);
-  }
-  if (payload.ok !== true) throw new Error(payload.message ?? `回收站拒绝了请求（HTTP ${response.status}）`);
-  return payload;
+function describeTrashResults(results) {
+  const successes = results.filter((r) => r.status === "trashed");
+  const failures = results.filter((r) => r.status === "failed");
+  return [
+    successes.length ? t("toast.deleted", {
+      n: String(new Set(successes.flatMap((r) => r.affectedSessionIds)).size)
+    }) : "",
+    ...failures.map(
+      (r) => (r.sessionId ?? r.requestId) + ": " + (r.error?.message ?? t("toast.deleteFailed"))
+    )
+  ].filter(Boolean).join("\n");
 }
-async function recycleBinReady() {
-  try {
-    const path = new URL(RECYCLE_BIN_ROUTE, document.baseURI).pathname;
-    const response = await fetch(path, {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ action: "list" }),
-      cache: "no-store"
-    });
-    return response.status !== 404 && response.status !== 405;
-  } catch {
-    return false;
-  }
-}
-var STOP_RETRIES = 10;
-var STOP_RETRY_DELAY_MS = 400;
-function isBusyRefusal(error) {
-  const message = String(error?.message ?? error);
-  return message.includes("still has work") || message.includes("session-open") || message.includes("still active");
-}
-async function stopWork(sessionIds) {
-  const ui = uiWorkspaceService();
-  if (ui === void 0 || typeof ui.archiveSession !== "function") return;
-  for (const sessionId of sessionIds) {
-    await ui.archiveSession(sessionId, { stopActivity: true }).catch(() => {
-    });
-  }
-}
-async function trashSessions(sessionIds, onStopping) {
-  const ids = [...sessionIds];
-  if (ids.length === 0) return 0;
-  const attempt = async () => {
-    const reply = ids.length === 1 ? await postRecycleBin({ action: "trash", sessionId: ids[0] }) : await postRecycleBin({ action: "trashMany", sessionIds: ids });
-    return reply.trashedCount ?? ids.length;
-  };
-  try {
-    return await attempt();
-  } catch (error) {
-    if (!isBusyRefusal(error)) throw error;
-    onStopping?.();
-    await stopWork(ids);
-    let last = error;
-    for (let round2 = 0; round2 < STOP_RETRIES; round2 += 1) {
-      await new Promise((resolve) => setTimeout(resolve, STOP_RETRY_DELAY_MS));
+async function trashSessions(sessionIds, title = t("trash.deleteTitle")) {
+  const ids = [...new Set(sessionIds)];
+  if (!ids.length || !await confirmAction(title, t("trash.deleteBody", { n: String(ids.length) })))
+    return [];
+  let { results } = await talkMapApi.trashSessions(ids);
+  const running = results.filter((r) => r.error?.code === "SESSION_RUNNING");
+  if (running.length && await confirmAction(t("trash.stopTitle"), t("trash.stopBody"))) {
+    const ui = uiWorkspaceService();
+    for (const item of running) {
       try {
-        return await attempt();
-      } catch (retryError) {
-        last = retryError;
-        if (!isBusyRefusal(retryError)) throw retryError;
+        if (!ui?.archiveSession) throw new Error(t("toast.needUiWorkspace"));
+        await ui.archiveSession(item.requestId, { stopActivity: true });
+        await new Promise((resolve) => setTimeout(resolve, 1e3));
+        const retry = await talkMapApi.trashSessions([item.requestId]);
+        results = results.map((r) => r.requestId === item.requestId ? retry.results[0] : r);
+      } catch (e) {
+        results = results.map(
+          (r) => r.requestId === item.requestId ? { ...r, error: { code: "STOP_FAILED", message: String(e) } } : r
+        );
       }
     }
-    throw last;
   }
+  const entries = [
+    ...new Set(
+      results.filter((r) => r.status === "trashed").map((r) => r.entryId).filter((id2) => id2 !== void 0)
+    )
+  ];
+  canvas.acceptTrashedSessions(
+    results.filter((r) => r.status === "trashed").flatMap((r) => r.affectedSessionIds)
+  );
+  actionNotice(
+    describeTrashResults(results),
+    entries.length ? () => {
+      void talkMapApi.restoreSessions(entries).then(({ results: results2 }) => {
+        canvas.refresh();
+        actionNotice(
+          results2.some((r) => r.status === "failed") ? results2.filter((r) => r.status === "failed").map((r) => r.error?.message).join("\n") : t("trash.restored", { n: String(results2.length) })
+        );
+      }).catch((e) => actionNotice(String(e)));
+    } : void 0
+  );
+  return results;
 }
 async function archiveSessions(sessionIds) {
   const ui = uiWorkspaceService();
@@ -11096,23 +11601,6 @@ async function setPinned(sessionId, pinned) {
   }
   await call.call(ui, sessionId);
 }
-async function deleteSessionsDirect(sessionIds) {
-  let firstFailure;
-  for (const sessionId of sessionIds) {
-    try {
-      await callRpc("session/delete", { sessionId });
-    } catch (error) {
-      firstFailure ??= error.message;
-    }
-  }
-  if (firstFailure !== void 0) throw new Error(firstFailure);
-}
-async function deleteWorkspaceRegistration(workspaceId) {
-  try {
-    await callRpc("workspace/delete", { workspaceId });
-  } catch {
-  }
-}
 
 // src/client/drawer-state.ts
 var GROUP_KEY = "dsh.talk-map.drawer.v1";
@@ -11124,27 +11612,27 @@ function safeRead(key) {
     return null;
   }
 }
-function safeWrite(key, value) {
+function safeWrite(key, value2) {
   try {
     if (typeof localStorage === "undefined") return;
-    if (value === null) localStorage.removeItem(key);
-    else localStorage.setItem(key, value);
+    if (value2 === null) localStorage.removeItem(key);
+    else localStorage.setItem(key, value2);
   } catch {
   }
 }
 var drawerState = {
   /** Folder the drawer was last open on, or null. */
   readGroup() {
-    const value = safeRead(GROUP_KEY);
-    return value === null || value === "" ? null : value;
+    const value2 = safeRead(GROUP_KEY);
+    return value2 === null || value2 === "" ? null : value2;
   },
   writeGroup(groupId) {
     safeWrite(GROUP_KEY, groupId);
   },
   readScroll() {
     const raw = safeRead(SCROLL_KEY);
-    const value = raw === null ? 0 : Number(raw);
-    return Number.isFinite(value) && value > 0 ? value : 0;
+    const value2 = raw === null ? 0 : Number(raw);
+    return Number.isFinite(value2) && value2 > 0 ? value2 : 0;
   },
   writeScroll(offset) {
     safeWrite(SCROLL_KEY, String(Math.max(0, Math.round(offset))));
@@ -11157,7 +11645,7 @@ var drawerState = {
 };
 
 // src/client/rpc.ts
-async function callRpc2(endpoint, request = {}) {
+async function callRpc(endpoint, request = {}) {
   const rpc = connectionService()?.rpc;
   if (rpc === void 0) throw new Error(t("spawn.apiUnavailable"));
   const controller = new AbortController();
@@ -11271,17 +11759,17 @@ function recordRunningAtShutdown(sessionIds) {
 // src/client/session-alerts.ts
 var alerts = /* @__PURE__ */ new Map();
 var snapshot2 = /* @__PURE__ */ new Map();
-var listeners4 = /* @__PURE__ */ new Set();
+var listeners5 = /* @__PURE__ */ new Set();
 for (const [sessionId, detail] of Object.entries(loadLampState().errors)) {
   alerts.set(sessionId, detail);
 }
 function persist() {
   saveLampState({ errors: Object.fromEntries(alerts) });
 }
-function publish2() {
+function publish3() {
   snapshot2 = new Map(alerts);
   persist();
-  for (const listener of listeners4) listener();
+  for (const listener of listeners5) listener();
 }
 snapshot2 = new Map(alerts);
 var sessionAlerts = {
@@ -11289,9 +11777,9 @@ var sessionAlerts = {
     return snapshot2;
   },
   subscribe(listener) {
-    listeners4.add(listener);
+    listeners5.add(listener);
     return () => {
-      listeners4.delete(listener);
+      listeners5.delete(listener);
     };
   }
 };
@@ -11302,11 +11790,11 @@ function attachAlertSource(remote, list) {
     if (typeof sessionId !== "string") return;
     const detail = typeof args[1] === "string" ? args[1] : "error";
     alerts.set(sessionId, detail);
-    publish2();
+    publish3();
   };
   const onStatus = (...args) => {
     const sessionId = args[0];
-    if (typeof sessionId === "string" && args[1] === true && alerts.delete(sessionId)) publish2();
+    if (typeof sessionId === "string" && args[1] === true && alerts.delete(sessionId)) publish3();
   };
   if (remote !== void 0) {
     try {
@@ -11328,7 +11816,7 @@ function attachAlertSource(remote, list) {
         changed = true;
       }
     }
-    if (changed) publish2();
+    if (changed) publish3();
   };
   try {
     disposers.push(list.subscribe(reconcile));
@@ -11358,7 +11846,7 @@ var lastUnread = /* @__PURE__ */ new Map();
 var snapshot3 = /* @__PURE__ */ new Set();
 var interruptedSnapshot = /* @__PURE__ */ new Set();
 var listenerSet = /* @__PURE__ */ new Set();
-function publish3() {
+function publish4() {
   snapshot3 = new Set(finished);
   interruptedSnapshot = new Set(interrupted);
   for (const listener of listenerSet) listener();
@@ -11381,7 +11869,7 @@ function hydrate() {
     interrupted.add(sessionId);
     hydrated.add(sessionId);
   }
-  publish3();
+  publish4();
 }
 hydrate();
 var sessionActivity = {
@@ -11470,7 +11958,7 @@ var sessionActivity = {
     }
     if (changed) {
       persist2();
-      publish3();
+      publish4();
     }
   },
   /**
@@ -11482,7 +11970,7 @@ var sessionActivity = {
     if (finished.has(sessionId)) return;
     finished.add(sessionId);
     persist2();
-    publish3();
+    publish4();
   },
   /** The user is looking at it now: stop advertising it as unread/interrupted. */
   acknowledge(sessionId) {
@@ -11491,7 +11979,7 @@ var sessionActivity = {
     const removedInterrupted = interrupted.delete(sessionId);
     if (removedFinished || removedInterrupted) {
       persist2();
-      publish3();
+      publish4();
     }
   },
   /** The session is gone (deleted / archived): drop both records. */
@@ -11501,7 +11989,7 @@ var sessionActivity = {
     const removed = finished.delete(sessionId) || interrupted.delete(sessionId);
     if (removed) {
       persist2();
-      publish3();
+      publish4();
     }
   },
   /**
@@ -11515,29 +12003,29 @@ var sessionActivity = {
     if (running.length === 0) return;
     for (const sessionId of running) interrupted.add(sessionId);
     recordRunningAtShutdown(running);
-    publish3();
+    publish4();
   }
 };
 
 // src/client/draft-watch.ts
 var STORE_PREFIX = "dsh.conversation.";
-function draftTextOf(value) {
-  if (typeof value === "string") return value;
-  if (value !== null && typeof value === "object") {
-    const text = value.text;
+function draftTextOf(value2) {
+  if (typeof value2 === "string") return value2;
+  if (value2 !== null && typeof value2 === "object") {
+    const text = value2.text;
     if (typeof text === "string") return text;
   }
   return "";
 }
 var snapshot4 = /* @__PURE__ */ new Set();
-var listeners5 = /* @__PURE__ */ new Set();
-function publish4(next) {
+var listeners6 = /* @__PURE__ */ new Set();
+function publish5(next) {
   snapshot4 = next;
-  for (const listener of listeners5) listener();
+  for (const listener of listeners6) listener();
 }
 function sameSet(a, b) {
   if (a.size !== b.size) return false;
-  for (const value of a) if (!b.has(value)) return false;
+  for (const value2 of a) if (!b.has(value2)) return false;
   return true;
 }
 function readDraftSessions() {
@@ -11564,15 +12052,15 @@ var draftWatch = {
     return snapshot4;
   },
   subscribe(listener) {
-    listeners5.add(listener);
+    listeners6.add(listener);
     return () => {
-      listeners5.delete(listener);
+      listeners6.delete(listener);
     };
   },
   /** Re-read the store; publishes only when the set actually changed. */
   refresh() {
     const next = readDraftSessions();
-    if (!sameSet(next, snapshot4)) publish4(next);
+    if (!sameSet(next, snapshot4)) publish5(next);
   }
 };
 
@@ -11639,58 +12127,58 @@ function putPreview(sessionId, text, stamp) {
 }
 
 // src/client/ContextMenu.tsx
-var import_react5 = require("react");
+var import_react7 = require("react");
 
 // src/client/MenuIcons.tsx
-var import_jsx_runtime6 = require("react/jsx-runtime");
+var import_jsx_runtime8 = require("react/jsx-runtime");
 var PATHS = {
-  digest: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)(import_jsx_runtime6.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "currentColor", d: "M5 2h10l4 4v16H5V2zm9 1.5V7h3.5L14 3.5zM7 11h10v1.6H7V11zm0 3.4h10v1.6H7v-1.6zm0 3.4h6.5V19H7v-1.2z" }) }),
-  pin: /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }),
-  unpin: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "currentColor", opacity: "0.4", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "currentColor", d: "M3.6 2.4 2.4 3.6l18 18 1.2-1.2z" })
+  digest: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(import_jsx_runtime8.Fragment, { children: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "currentColor", d: "M5 2h10l4 4v16H5V2zm9 1.5V7h3.5L14 3.5zM7 11h10v1.6H7V11zm0 3.4h10v1.6H7v-1.6zm0 3.4h6.5V19H7v-1.2z" }) }),
+  pin: /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }),
+  unpin: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "currentColor", opacity: "0.4", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "currentColor", d: "M3.6 2.4 2.4 3.6l18 18 1.2-1.2z" })
   ] }),
-  rename: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M14.9 3.5a2 2 0 0 1 2.9 2.9L7.4 16.8 3.4 18l1.2-4z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M13.2 5.2 16.6 8.6" })
+  rename: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M14.9 3.5a2 2 0 0 1 2.9 2.9L7.4 16.8 3.4 18l1.2-4z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M13.2 5.2 16.6 8.6" })
   ] }),
-  unread: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "12", cy: "12", r: "8.3", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("circle", { cx: "12", cy: "12", r: "3.2", fill: "currentColor" })
+  unread: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "12", cy: "12", r: "8.3", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("circle", { cx: "12", cy: "12", r: "3.2", fill: "currentColor" })
   ] }),
-  archive: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: "3.2", y: "4", width: "17.6", height: "4.6", rx: "1.3", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M5.2 8.6v9.1c0 .8.6 1.4 1.4 1.4h10.8c.8 0 1.4-.6 1.4-1.4V8.6M10 12.6h4" })
+  archive: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "3.2", y: "4", width: "17.6", height: "4.6", rx: "1.3", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M5.2 8.6v9.1c0 .8.6 1.4 1.4 1.4h10.8c.8 0 1.4-.6 1.4-1.4V8.6M10 12.6h4" })
   ] }),
-  delete: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M4 6.3h16M9.5 6.3V4.1h5v2.2" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M6.3 6.3 7.5 20h9l1.2-13.7M10.3 9.9v6.4M13.7 9.9v6.4" })
+  delete: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M4 6.3h16M9.5 6.3V4.1h5v2.2" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M6.3 6.3 7.5 20h9l1.2-13.7M10.3 9.9v6.4M13.7 9.9v6.4" })
   ] }),
-  batch: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: "3.6", y: "3.6", width: "8.2", height: "8.2", rx: "1.6", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: "10.6", y: "10.6", width: "9.8", height: "9.8", rx: "1.8", fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeDasharray: "3 2" })
+  batch: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "3.6", y: "3.6", width: "8.2", height: "8.2", rx: "1.6", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "10.6", y: "10.6", width: "9.8", height: "9.8", rx: "1.8", fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeDasharray: "3 2" })
   ] }),
-  open: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M13.6 4.6h5.8v5.8M19.4 4.6 11.2 12.8" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M18 14.5v4c0 .8-.6 1.4-1.4 1.4H5.4c-.8 0-1.4-.6-1.4-1.4V7.3c0-.8.6-1.4 1.4-1.4h4" })
+  open: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", strokeLinejoin: "round", d: "M13.6 4.6h5.8v5.8M19.4 4.6 11.2 12.8" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M18 14.5v4c0 .8-.6 1.4-1.4 1.4H5.4c-.8 0-1.4-.6-1.4-1.4V7.3c0-.8.6-1.4 1.4-1.4h4" })
   ] }),
-  group: /* @__PURE__ */ (0, import_jsx_runtime6.jsxs)(import_jsx_runtime6.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("rect", { x: "3.4", y: "4", width: "17.2", height: "16", rx: "2.4", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
-    /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M3.4 9.2h17.2" })
+  group: /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("rect", { x: "3.4", y: "4", width: "17.2", height: "16", rx: "2.4", fill: "none", stroke: "currentColor", strokeWidth: "1.9" }),
+    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("path", { fill: "none", stroke: "currentColor", strokeWidth: "1.9", strokeLinecap: "round", d: "M3.4 9.2h17.2" })
   ] })
 };
 function MenuIcon(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime6.jsx)("svg", { className: talk_map_default["menuIcon"], viewBox: "0 0 24 24", width: "14", height: "14", "aria-hidden": "true", children: PATHS[props.name] });
+  return /* @__PURE__ */ (0, import_jsx_runtime8.jsx)("svg", { className: talk_map_default["menuIcon"], viewBox: "0 0 24 24", width: "14", height: "14", "aria-hidden": "true", children: PATHS[props.name] });
 }
 
 // src/client/ContextMenu.tsx
-var import_jsx_runtime7 = require("react/jsx-runtime");
+var import_jsx_runtime9 = require("react/jsx-runtime");
 function ContextMenu(props) {
   const { menu } = props;
-  const [query, setQuery] = (0, import_react5.useState)("");
-  const [busy, setBusy] = (0, import_react5.useState)(false);
-  const [error, setError] = (0, import_react5.useState)(void 0);
-  const inputRef = (0, import_react5.useRef)(null);
+  const [query, setQuery] = (0, import_react7.useState)("");
+  const [busy, setBusy] = (0, import_react7.useState)(false);
+  const [error, setError] = (0, import_react7.useState)(void 0);
+  const inputRef = (0, import_react7.useRef)(null);
   const submitPrompt = async () => {
     const prompt = menu.prompt;
     if (prompt === void 0 || busy || query.trim() === "") return;
@@ -11703,7 +12191,7 @@ function ContextMenu(props) {
       setBusy(false);
     }
   };
-  (0, import_react5.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     const release = mapUi.claimEscape("context-menu");
     const onKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -11717,12 +12205,12 @@ function ContextMenu(props) {
       release();
     };
   }, []);
-  (0, import_react5.useEffect)(() => {
+  (0, import_react7.useEffect)(() => {
     if (menu.searchable === true || menu.prompt !== void 0) inputRef.current?.focus();
   }, [menu.searchable, menu.prompt]);
   const normalized = query.trim().toLowerCase();
   const visible = normalized === "" ? menu.items : menu.items.filter((item) => item.label.toLowerCase().includes(normalized));
-  return /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
     "div",
     {
       className: talk_map_default["menu"],
@@ -11738,9 +12226,9 @@ function ContextMenu(props) {
         event.preventDefault();
       },
       children: [
-        menu.title !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: talk_map_default["menuTitle"], children: menu.title }) : null,
-        menu.prompt !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(import_jsx_runtime7.Fragment, { children: [
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        menu.title !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: talk_map_default["menuTitle"], children: menu.title }) : null,
+        menu.prompt !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(import_jsx_runtime9.Fragment, { children: [
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
             "input",
             {
               ref: inputRef,
@@ -11758,9 +12246,9 @@ function ContextMenu(props) {
               }
             }
           ),
-          menu.prompt.preview !== void 0 && query.trim() !== "" ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: talk_map_default["menuPreview"], children: menu.prompt.preview(query.trim()) }) : null,
-          error !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: talk_map_default["menuError"], children: error }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+          menu.prompt.preview !== void 0 && query.trim() !== "" ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: talk_map_default["menuPreview"], children: menu.prompt.preview(query.trim()) }) : null,
+          error !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: talk_map_default["menuError"], children: error }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
             "button",
             {
               type: "button",
@@ -11773,7 +12261,7 @@ function ContextMenu(props) {
             }
           )
         ] }) : null,
-        menu.searchable === true ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(
+        menu.searchable === true ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
           "input",
           {
             ref: inputRef,
@@ -11785,7 +12273,7 @@ function ContextMenu(props) {
             }
           }
         ) : null,
-        menu.prompt !== void 0 ? null : visible.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("div", { className: talk_map_default["menuEmpty"], children: t("menu.empty") }) : visible.map((item) => /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)(
+        menu.prompt !== void 0 ? null : visible.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: talk_map_default["menuEmpty"], children: t("menu.empty") }) : visible.map((item) => /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
           "button",
           {
             type: "button",
@@ -11796,9 +12284,9 @@ function ContextMenu(props) {
               item.onPick();
             },
             children: [
-              item.icon !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsx)(MenuIcon, { name: item.icon }) : /* @__PURE__ */ (0, import_jsx_runtime7.jsx)("span", { className: talk_map_default["menuIcon"] }),
+              item.icon !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(MenuIcon, { name: item.icon }) : /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("span", { className: talk_map_default["menuIcon"] }),
               item.label,
-              item.hint !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime7.jsxs)("span", { className: talk_map_default["menuHint"], children: [
+              item.hint !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("span", { className: talk_map_default["menuHint"], children: [
                 " ",
                 item.hint
               ] }) : null
@@ -11927,8 +12415,8 @@ var Heap = class {
 function dedupe(values, epsilon = 0.5) {
   const sorted = [...values].sort((a, b) => a - b);
   const out = [];
-  for (const value of sorted) {
-    if (out.length === 0 || Math.abs(value - out[out.length - 1]) > epsilon) out.push(value);
+  for (const value2 of sorted) {
+    if (out.length === 0 || Math.abs(value2 - out[out.length - 1]) > epsilon) out.push(value2);
   }
   return out;
 }
@@ -12003,8 +12491,8 @@ function snapToChannels(points, obstacles, margin) {
     const b = candidate[index2];
     const steps = Math.max(2, Math.ceil((Math.abs(b.x - a.x) + Math.abs(b.y - a.y)) / 4));
     for (let step2 = 0; step2 <= steps; step2 += 1) {
-      const t2 = step2 / steps;
-      if (sameRectSet({ x: a.x + (b.x - a.x) * t2, y: a.y + (b.y - a.y) * t2 })) return points;
+      const t4 = step2 / steps;
+      if (sameRectSet({ x: a.x + (b.x - a.x) * t4, y: a.y + (b.y - a.y) * t4 })) return points;
     }
   }
   return candidate;
@@ -12106,8 +12594,8 @@ function routeRaw(ends, from, to, obstacles, options = {}) {
     y2: Math.max(start2.y, end.y) + pad
   };
   const near = obstacles.filter((rect) => rect.x + rect.w >= window2.x1 && rect.x <= window2.x2 && rect.y + rect.h >= window2.y1 && rect.y <= window2.y2);
-  const withinX = (value) => value >= window2.x1 && value <= window2.x2;
-  const withinY = (value) => value >= window2.y1 && value <= window2.y2;
+  const withinX = (value2) => value2 >= window2.x1 && value2 <= window2.x2;
+  const withinY = (value2) => value2 >= window2.y1 && value2 <= window2.y2;
   const lanes = obstacles;
   const xs = corridors(lanes, "x", minCorridor).filter(withinX);
   const ys = corridors(lanes, "y", minCorridor).filter(withinY);
@@ -12121,27 +12609,27 @@ function routeRaw(ends, from, to, obstacles, options = {}) {
   const trim = (values, mustKeep, limit) => {
     if (values.length <= limit) return values;
     const keep = new Set(mustKeep);
-    const rest = values.filter((value) => !keep.has(value));
+    const rest = values.filter((value2) => !keep.has(value2));
     const slots = Math.max(1, limit - keep.size);
     const stride = Math.max(1, Math.floor(rest.length / slots));
     for (let index2 = 0; index2 < rest.length && keep.size < limit; index2 += stride) {
       keep.add(rest[index2]);
     }
-    return values.filter((value) => keep.has(value));
+    return values.filter((value2) => keep.has(value2));
   };
   const MAX_LINES = 72;
   const xsTrimmed = xCands.length > MAX_LINES ? trim(xCands, [start2.x, end.x, startStub.x, endStub.x], MAX_LINES) : xCands;
   const ysTrimmed = yCands.length > MAX_LINES ? trim(yCands, [start2.y, end.y, startStub.y, endStub.y], MAX_LINES) : yCands;
   __routeDebug.candidates = { x: xsTrimmed.length, y: ysTrimmed.length, near: near.length };
-  const corridorX = new Set(xs.map((value) => Math.round(value)));
-  const corridorY = new Set(ys.map((value) => Math.round(value)));
+  const corridorX = new Set(xs.map((value2) => Math.round(value2)));
+  const corridorY = new Set(ys.map((value2) => Math.round(value2)));
   const nodeId = (ix, iy) => `${ix},${iy}`;
   const pointAt = (id2) => {
     const [ix, iy] = id2.split(",").map(Number);
     return { x: xsTrimmed[ix], y: ysTrimmed[iy] };
   };
-  const startIndex = { x: xsTrimmed.findIndex((value) => Math.abs(value - startStub.x) < 0.5), y: ysTrimmed.findIndex((value) => Math.abs(value - startStub.y) < 0.5) };
-  const endIndex = { x: xsTrimmed.findIndex((value) => Math.abs(value - endStub.x) < 0.5), y: ysTrimmed.findIndex((value) => Math.abs(value - endStub.y) < 0.5) };
+  const startIndex = { x: xsTrimmed.findIndex((value2) => Math.abs(value2 - startStub.x) < 0.5), y: ysTrimmed.findIndex((value2) => Math.abs(value2 - startStub.y) < 0.5) };
+  const endIndex = { x: xsTrimmed.findIndex((value2) => Math.abs(value2 - endStub.x) < 0.5), y: ysTrimmed.findIndex((value2) => Math.abs(value2 - endStub.y) < 0.5) };
   if (startIndex.x < 0 || startIndex.y < 0 || endIndex.x < 0 || endIndex.y < 0) {
     __routeDebug.reason = "no-index";
     __routeDebug.index = { startIndex, endIndex, xs: xsTrimmed.length, ys: ysTrimmed.length };
@@ -12245,8 +12733,8 @@ function roundedPath(points, radius = 10) {
   parts.push(`L ${round(last.x)} ${round(last.y)}`);
   return parts.join(" ");
 }
-function round(value) {
-  return Math.round(value * 100) / 100;
+function round(value2) {
+  return Math.round(value2 * 100) / 100;
 }
 function routeBetween(ends, from, to, obstacles, options = {}) {
   const raw = routeRaw(ends, from, to, obstacles, options);
@@ -12259,8 +12747,8 @@ function routeBetween(ends, from, to, obstacles, options = {}) {
       const b = points[index2];
       const steps = Math.max(2, Math.ceil((Math.abs(b.x - a.x) + Math.abs(b.y - a.y)) / 3));
       for (let step2 = 0; step2 <= steps; step2 += 1) {
-        const t2 = step2 / steps;
-        const point = { x: a.x + (b.x - a.x) * t2, y: a.y + (b.y - a.y) * t2 };
+        const t4 = step2 / steps;
+        const point = { x: a.x + (b.x - a.x) * t4, y: a.y + (b.y - a.y) * t4 };
         if (near(point, ends.start) || near(point, ends.end)) continue;
         for (const box of boxes) {
           const inside = point.x > box.x + 1 && point.x < box.x + box.w - 1 && point.y > box.y + 1 && point.y < box.y + box.h - 1;
@@ -12320,7 +12808,7 @@ function routeBetween(ends, from, to, obstacles, options = {}) {
 }
 
 // src/client/TalkMapEdge.tsx
-var import_jsx_runtime8 = require("react/jsx-runtime");
+var import_jsx_runtime10 = require("react/jsx-runtime");
 var boardCache = { at: 0, boxes: [] };
 function boardBoxes() {
   if (typeof document === "undefined") return [];
@@ -12398,8 +12886,8 @@ function TalkMapEdge(props) {
         const b = points[index2];
         const steps = Math.max(2, Math.ceil((Math.abs(b.x - a.x) + Math.abs(b.y - a.y)) / 4));
         for (let step2 = 0; step2 <= steps; step2 += 1) {
-          const t2 = step2 / steps;
-          const point = { x: a.x + (b.x - a.x) * t2, y: a.y + (b.y - a.y) * t2 };
+          const t4 = step2 / steps;
+          const point = { x: a.x + (b.x - a.x) * t4, y: a.y + (b.y - a.y) * t4 };
           if (nearAnchor(point)) continue;
           if (boxesForHit.some((box) => point.x > box.x + 1 && point.x < box.x + box.w - 1 && point.y > box.y + 1 && point.y < box.y + box.h - 1)) return true;
         }
@@ -12436,9 +12924,9 @@ function TalkMapEdge(props) {
       const b = points[index2];
       const steps = Math.max(2, Math.ceil((Math.abs(b.x - a.x) + Math.abs(b.y - a.y)) / 3));
       for (let step2 = 0; step2 <= steps; step2 += 1) {
-        const t2 = step2 / steps;
-        const x = a.x + (b.x - a.x) * t2;
-        const y = a.y + (b.y - a.y) * t2;
+        const t4 = step2 / steps;
+        const x = a.x + (b.x - a.x) * t4;
+        const y = a.y + (b.y - a.y) * t4;
         for (const rect of rects) {
           if (x > rect.x + 1 && x < rect.x + rect.w - 1 && y > rect.y + 1 && y < rect.y + rect.h - 1) return true;
         }
@@ -12479,8 +12967,8 @@ function TalkMapEdge(props) {
     if (position === "bottom") return -90;
     return 0;
   })();
-  return /* @__PURE__ */ (0, import_jsx_runtime8.jsxs)(import_jsx_runtime8.Fragment, { children: [
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime10.jsxs)(import_jsx_runtime10.Fragment, { children: [
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
       BaseEdge,
       {
         id: props.id,
@@ -12496,7 +12984,7 @@ function TalkMapEdge(props) {
         }
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime8.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime10.jsx)(
       "path",
       {
         d: "M0 0 L-11 -5 L-11 5 Z",
@@ -12511,14 +12999,14 @@ function TalkMapEdge(props) {
 var edgeTypes = { talkMap: TalkMapEdge };
 
 // src/client/RenameDialog.tsx
-var import_react7 = require("react");
-var import_jsx_runtime9 = require("react/jsx-runtime");
+var import_react9 = require("react");
+var import_jsx_runtime11 = require("react/jsx-runtime");
 function RenameDialog(props) {
-  const [value, setValue] = (0, import_react7.useState)(props.target.title);
-  const [busy, setBusy] = (0, import_react7.useState)(false);
-  const [error, setError] = (0, import_react7.useState)(null);
-  const inputRef = (0, import_react7.useRef)(null);
-  (0, import_react7.useEffect)(() => {
+  const [value2, setValue] = (0, import_react9.useState)(props.target.title);
+  const [busy, setBusy] = (0, import_react9.useState)(false);
+  const [error, setError] = (0, import_react9.useState)(null);
+  const inputRef = (0, import_react9.useRef)(null);
+  (0, import_react9.useEffect)(() => {
     const release = mapUi.claimEscape("rename-dialog");
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
@@ -12534,7 +13022,7 @@ function RenameDialog(props) {
     };
   }, [props]);
   const submit = async () => {
-    const title = value.trim();
+    const title = value2.trim();
     if (title === "" || busy) return;
     if (title === props.target.title) {
       props.onDone(null);
@@ -12566,9 +13054,9 @@ function RenameDialog(props) {
       setBusy(false);
     }
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: talk_map_default["renameBackdrop"], onClick: () => {
+  return /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["renameBackdrop"], onClick: () => {
     props.onDone(null);
-  }, children: /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)(
+  }, children: /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
     "div",
     {
       className: talk_map_default["renameDialog"],
@@ -12578,13 +13066,13 @@ function RenameDialog(props) {
       role: "dialog",
       "aria-label": t("rename.title"),
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: talk_map_default["renameHeading"], children: t("rename.title") }),
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["renameHeading"], children: t("rename.title") }),
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
           "input",
           {
             ref: inputRef,
             className: talk_map_default["renameInput"],
-            value,
+            value: value2,
             maxLength: 120,
             placeholder: t("rename.placeholder"),
             onChange: (event) => {
@@ -12597,17 +13085,17 @@ function RenameDialog(props) {
             }
           }
         ),
-        error !== null ? /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("div", { className: talk_map_default["renameError"], children: error }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime9.jsxs)("div", { className: talk_map_default["renameActions"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)("button", { type: "button", className: talk_map_default["renameButton"], onClick: () => {
+        error !== null ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["renameError"], children: error }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["renameActions"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("button", { type: "button", className: talk_map_default["renameButton"], onClick: () => {
             props.onDone(null);
           }, children: t("rename.cancel") }),
-          /* @__PURE__ */ (0, import_jsx_runtime9.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
             "button",
             {
               type: "button",
               className: `${talk_map_default["renameButton"]} ${talk_map_default["renamePrimary"]}`,
-              disabled: busy || value.trim() === "",
+              disabled: busy || value2.trim() === "",
               onClick: () => {
                 void submit();
               },
@@ -12621,13 +13109,13 @@ function RenameDialog(props) {
 }
 
 // src/client/ArchivedBadge.tsx
-var import_jsx_runtime10 = require("react/jsx-runtime");
+var import_jsx_runtime12 = require("react/jsx-runtime");
 function ArchivedBadge(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime10.jsx)("span", { className: talk_map_default["cardArchivedBadge"], "data-talkmap-archived": "1", title: props.count === void 0 ? t("card.archivedHint") : t("card.archivedCountHint", { n: String(props.count) }), children: props.count === void 0 ? t("card.archived") : t("card.archivedCount", { n: String(props.count) }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("span", { className: talk_map_default["cardArchivedBadge"], "data-talkmap-archived": "1", title: props.count === void 0 ? t("card.archivedHint") : t("card.archivedCountHint", { n: String(props.count) }), children: props.count === void 0 ? t("card.archived") : t("card.archivedCount", { n: String(props.count) }) });
 }
 
 // src/client/SessionCard.tsx
-var import_jsx_runtime11 = require("react/jsx-runtime");
+var import_jsx_runtime13 = require("react/jsx-runtime");
 var LAMP_CLASS = {
   running: "cardLampRunning",
   done: "cardLampDone",
@@ -12643,13 +13131,13 @@ var LAMP_CHIP = {
 function statusChip(glow, running) {
   const spec = glow !== void 0 ? LAMP_CHIP[glow] : running ? LAMP_CHIP.running : void 0;
   if (spec === void 0) return null;
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
     "span",
     {
       className: `${talk_map_default["cardChip"]} ${talk_map_default[spec.className]}`,
       "data-talkmap-chip": glow ?? "running",
       children: [
-        spec.dot ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
+        spec.dot ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
         t(spec.key)
       ]
     }
@@ -12674,7 +13162,7 @@ function SessionCardNode(props) {
   if (data.glow !== void 0) classNames.push(talk_map_default[LAMP_CLASS[data.glow]] ?? "");
   const quiet = data.current !== true && data.pinned !== true && data.glow === void 0 && data.pendingDraft !== true && data.interrupted !== true;
   if (quiet) classNames.push(talk_map_default["cardQuiet"] ?? "");
-  return /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
     "div",
     {
       className: classNames.filter(Boolean).join(" "),
@@ -12687,16 +13175,16 @@ function SessionCardNode(props) {
       "data-talkmap-session": data.sessionId,
       "data-talkmap-archived": data.archived === true ? "1" : void 0,
       children: [
-        data.current === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("span", { className: talk_map_default["cardReticle"], "aria-hidden": "true", children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {}),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {}),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {}),
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("i", {})
+        data.current === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("span", { className: talk_map_default["cardReticle"], "aria-hidden": "true", children: [
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {}),
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("i", {})
         ] }) : null,
         "      ",
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "t", type: "source", position: Position.Top, className: talk_map_default["cardHandle"] ?? "" }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "l", type: "source", position: Position.Left, className: talk_map_default["cardHandle"] ?? "" }),
-        data.onPick !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Handle, { id: "t", type: "source", position: Position.Top, className: talk_map_default["cardHandle"] ?? "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Handle, { id: "l", type: "source", position: Position.Left, className: talk_map_default["cardHandle"] ?? "" }),
+        data.onPick !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
           "span",
           {
             className: `${talk_map_default["pickBox"]}${selected2 === true ? ` ${talk_map_default["pickBoxChecked"]}` : ""}`,
@@ -12706,12 +13194,12 @@ function SessionCardNode(props) {
             children: selected2 === true ? "✓" : ""
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["cardTop"], children: [
-          data.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "aria-label": t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["cardTitle"], children: data.ghost ? t("card.ghostTitle") : data.title }),
-          data.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(ArchivedBadge, {}) : null
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: talk_map_default["cardTop"], children: [
+          data.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "aria-label": t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["cardTitle"], children: data.ghost ? t("card.ghostTitle") : data.title }),
+          data.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(ArchivedBadge, {}) : null
         ] }),
-        data.ghost ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        data.ghost ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
           "button",
           {
             type: "button",
@@ -12721,10 +13209,10 @@ function SessionCardNode(props) {
             },
             children: t("card.remove")
           }
-        ) : /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(import_jsx_runtime11.Fragment, { children: data.preview !== void 0 && data.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("div", { className: talk_map_default["cardSummary"], children: data.preview }) : null }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime11.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(data.updatedAt) }),
-          data.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+        ) : /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(import_jsx_runtime13.Fragment, { children: data.preview !== void 0 && data.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["cardSummary"], children: data.preview }) : null }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(data.updatedAt) }),
+          data.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
             "span",
             {
               className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipDraft"]}`,
@@ -12733,7 +13221,7 @@ function SessionCardNode(props) {
               children: t("card.draft")
             }
           ) : null,
-          data.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(
+          data.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
             "span",
             {
               className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipInterrupted"]}`,
@@ -12744,25 +13232,25 @@ function SessionCardNode(props) {
           ) : null,
           statusChip(data.glow, data.running === true)
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "r", type: "source", position: Position.Right, className: talk_map_default["cardHandle"] ?? "" }),
-        /* @__PURE__ */ (0, import_jsx_runtime11.jsx)(Handle, { id: "b", type: "source", position: Position.Bottom, className: talk_map_default["cardHandle"] ?? "" })
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Handle, { id: "r", type: "source", position: Position.Right, className: talk_map_default["cardHandle"] ?? "" }),
+        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(Handle, { id: "b", type: "source", position: Position.Bottom, className: talk_map_default["cardHandle"] ?? "" })
       ]
     }
   );
 }
 
 // src/client/SpawnPreview.tsx
-var import_react9 = require("react");
-var import_jsx_runtime12 = require("react/jsx-runtime");
+var import_react11 = require("react");
+var import_jsx_runtime14 = require("react/jsx-runtime");
 function SpawnPreview(props) {
   const { pending } = props;
   const digest = canvas.get().digests[pending.parent.sessionId];
-  const [mode, setMode] = (0, import_react9.useState)("full");
-  const [text, setText] = (0, import_react9.useState)(() => buildInjectionText(pending.parent.title, digest));
-  const [firstMessage, setFirstMessage] = (0, import_react9.useState)("");
-  const [busy, setBusy] = (0, import_react9.useState)(false);
-  const [error, setError] = (0, import_react9.useState)(void 0);
-  (0, import_react9.useEffect)(() => {
+  const [mode, setMode] = (0, import_react11.useState)("full");
+  const [text, setText] = (0, import_react11.useState)(() => buildInjectionText(pending.parent.title, digest));
+  const [firstMessage, setFirstMessage] = (0, import_react11.useState)("");
+  const [busy, setBusy] = (0, import_react11.useState)(false);
+  const [error, setError] = (0, import_react11.useState)(void 0);
+  (0, import_react11.useEffect)(() => {
     const release = mapUi.claimEscape("spawn-preview");
     const onKeyDown = (event) => {
       if (event.key === "Escape") {
@@ -12808,7 +13296,7 @@ function SpawnPreview(props) {
     setBusy(true);
     setError(void 0);
     try {
-      const createSession = async () => callRpc2(
+      const createSession = async () => callRpc(
         "session/create",
         pending.parentWorkspaceId !== void 0 ? { workspaceId: pending.parentWorkspaceId } : {}
       );
@@ -12839,7 +13327,7 @@ function SpawnPreview(props) {
       if (firstMessage.trim() === "") throw new Error(t("spawn.needFirstMessage"));
       const created = await createSession();
       addCardAndEdge(created.sessionId, "none");
-      await callRpc2("session/prompt", {
+      await callRpc("session/prompt", {
         sessionId: created.sessionId,
         mode: "queue",
         content: [{ type: "text", text: firstMessage }],
@@ -12855,15 +13343,15 @@ function SpawnPreview(props) {
     { id: "digest", label: t("spawn.mode.digest") },
     { id: "full", label: t("spawn.mode.full") }
   ];
-  return /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: talk_map_default["spawnPanel"], role: "dialog", "aria-label": t("spawn.heading"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHeading"], children: t("spawn.heading") }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: talk_map_default["spawnFrom"], children: [
+  return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["spawnPanel"], role: "dialog", "aria-label": t("spawn.heading"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["spawnHeading"], children: t("spawn.heading") }),
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["spawnFrom"], children: [
       t("spawn.from"),
       "「",
       pending.parent.title,
       "」"
     ] }),
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnModes"], children: modes.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["spawnModes"], children: modes.map((entry) => /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
       "button",
       {
         type: "button",
@@ -12875,9 +13363,9 @@ function SpawnPreview(props) {
       },
       entry.id
     )) }),
-    mode === "digest" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.hint") }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    mode === "digest" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.hint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "textarea",
         {
           className: `${talk_map_default["spawnTextarea"]} nodrag nowheel`,
@@ -12888,9 +13376,9 @@ function SpawnPreview(props) {
           }
         }
       )
-    ] }) : mode === "none" ? /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)(import_jsx_runtime12.Fragment, { children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.noneHint") }),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    ] }) : mode === "none" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(import_jsx_runtime14.Fragment, { children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.noneHint") }),
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "textarea",
         {
           className: `${talk_map_default["spawnTextarea"]} nodrag nowheel`,
@@ -12908,10 +13396,10 @@ function SpawnPreview(props) {
           }
         }
       )
-    ] }) : /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.fullHint") }),
-    error !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime12.jsx)("div", { className: talk_map_default["spawnError"], children: error }) : null,
-    /* @__PURE__ */ (0, import_jsx_runtime12.jsxs)("div", { className: talk_map_default["spawnActions"], children: [
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+    ] }) : /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["spawnHint"], children: t("spawn.fullHint") }),
+    error !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["spawnError"], children: error }) : null,
+    /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["spawnActions"], children: [
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "button",
         {
           type: "button",
@@ -12921,7 +13409,7 @@ function SpawnPreview(props) {
           children: t("spawn.cancel")
         }
       ),
-      /* @__PURE__ */ (0, import_jsx_runtime12.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
         "button",
         {
           type: "button",
@@ -12954,7 +13442,7 @@ function colorOf(tagId) {
 }
 
 // src/client/WsFrame.tsx
-var import_jsx_runtime13 = require("react/jsx-runtime");
+var import_jsx_runtime15 = require("react/jsx-runtime");
 var EDGE = 10;
 var CORNER = 26;
 var EDGE_HANDLES = [
@@ -12977,7 +13465,7 @@ function WsFrameNode(props) {
     event.stopPropagation();
     data.onResizeStart?.(axis, event);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
     "div",
     {
       className: `${talk_map_default["wsFrame"]}${selected2 === true ? ` ${talk_map_default["wsFrameSelected"]}` : ""}${data.blocked === true ? ` ${talk_map_default["wsFrameBlocked"]}` : ""}`,
@@ -12991,23 +13479,23 @@ function WsFrameNode(props) {
       "data-talkmap-frame": "",
       "data-talkmap-workspace": data.workspaceId,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
           "div",
           {
             className: talk_map_default["wsFrameLabel"],
             style: color2 !== void 0 ? { borderColor: color2.border, backgroundImage: `linear-gradient(${color2.fill}, ${color2.fill})` } : {},
             children: [
               data.title,
-              /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("span", { className: talk_map_default["wsFrameCount"], children: data.count }),
-              (data.archivedCount ?? 0) > 0 ? /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(ArchivedBadge, { count: data.archivedCount }) : null
+              /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["wsFrameCount"], children: data.count }),
+              (data.archivedCount ?? 0) > 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ArchivedBadge, { count: data.archivedCount }) : null
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, left: 0, right: 0, height: EDGE } }),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { bottom: 0, left: 0, right: 0, height: EDGE } }),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, left: 0, width: EDGE } }),
-        /* @__PURE__ */ (0, import_jsx_runtime13.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, right: 0, width: EDGE } }),
-        [...EDGE_HANDLES, ...CORNER_HANDLES].map((handle) => /* @__PURE__ */ (0, import_jsx_runtime13.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, left: 0, right: 0, height: EDGE } }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { bottom: 0, left: 0, right: 0, height: EDGE } }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, left: 0, width: EDGE } }),
+        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("div", { className: talk_map_default["wsFrameEdge"], style: { top: 0, bottom: 0, right: 0, width: EDGE } }),
+        [...EDGE_HANDLES, ...CORNER_HANDLES].map((handle) => /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(
           "div",
           {
             className: `${talk_map_default["wsFrameResize"]} ${talk_map_default[handle.className] ?? ""}`,
@@ -13124,13 +13612,13 @@ function visibleCount(capacity, total) {
 function readingOrder(cards) {
   return [...cards].sort((a, b) => a.y - b.y || a.x - b.x || a.cardId.localeCompare(b.cardId)).map((card) => card.cardId);
 }
-function clamp2(value, min, max) {
-  return Math.min(max, Math.max(min, value));
+function clamp2(value2, min, max) {
+  return Math.min(max, Math.max(min, value2));
 }
 
 // src/client/StackDrawer.tsx
-var import_react10 = require("react");
-var import_jsx_runtime14 = require("react/jsx-runtime");
+var import_react12 = require("react");
+var import_jsx_runtime16 = require("react/jsx-runtime");
 var LAMP_CLASS2 = {
   running: "cardLampRunning",
   done: "cardLampDone",
@@ -13141,16 +13629,16 @@ function isIndexDisabled(message) {
   return message.includes("search is disabled") || message.includes("SESSION_QUERY_SEARCH_DISABLED");
 }
 function StackDrawer(props) {
-  const scrollerRef = (0, import_react10.useRef)(null);
-  const [wires, setWires] = (0, import_react10.useState)([]);
-  const [wireSize, setWireSize] = (0, import_react10.useState)({ width: 0, height: 0 });
+  const scrollerRef = (0, import_react12.useRef)(null);
+  const [wires, setWires] = (0, import_react12.useState)([]);
+  const [wireSize, setWireSize] = (0, import_react12.useState)({ width: 0, height: 0 });
   const remembered = loadSearch("drawer:" + props.groupId);
-  const [query, setQuery] = (0, import_react10.useState)(remembered?.query ?? "");
-  const [hits, setHits] = (0, import_react10.useState)(remembered?.hits ?? []);
-  const [searching, setSearching] = (0, import_react10.useState)(false);
-  const [dragId, setDragId] = (0, import_react10.useState)(null);
-  const [dropIndex, setDropIndex] = (0, import_react10.useState)(null);
-  const [searchError, setSearchError] = (0, import_react10.useState)(null);
+  const [query, setQuery] = (0, import_react12.useState)(remembered?.query ?? "");
+  const [hits, setHits] = (0, import_react12.useState)(remembered?.hits ?? []);
+  const [searching, setSearching] = (0, import_react12.useState)(false);
+  const [dragId, setDragId] = (0, import_react12.useState)(null);
+  const [dropIndex, setDropIndex] = (0, import_react12.useState)(null);
+  const [searchError, setSearchError] = (0, import_react12.useState)(null);
   const runSearch = async () => {
     const trimmed = query.trim();
     if (trimmed.length < 2 || props.onSearchContent === void 0) {
@@ -13174,7 +13662,7 @@ function StackDrawer(props) {
   };
   const needle = query.trim().toLowerCase();
   const visibleItems = needle === "" ? props.items : props.items.filter((item) => item.title.toLowerCase().includes(needle));
-  (0, import_react10.useLayoutEffect)(() => {
+  (0, import_react12.useLayoutEffect)(() => {
     const scroller = scrollerRef.current;
     const links = (props.links ?? []).filter((link2) => link2.visible);
     if (scroller === null || links.length === 0) {
@@ -13289,13 +13777,13 @@ function StackDrawer(props) {
         let bestCost = Number.POSITIVE_INFINITY;
         let arrival = { x: endPoint.x - startPoint.x, y: endPoint.y - startPoint.y };
         const tryCurve = (control1, control2) => {
-          const u1 = (t2) => (1 - t2) * (1 - t2) * (1 - t2);
-          const u2 = (t2) => 3 * (1 - t2) * (1 - t2) * t2;
-          const u3 = (t2) => 3 * (1 - t2) * t2 * t2;
-          const u4 = (t2) => t2 * t2 * t2;
-          const sample = (t2) => ({
-            x: u1(t2) * startPoint.x + u2(t2) * control1.x + u3(t2) * control2.x + u4(t2) * endPoint.x,
-            y: u1(t2) * startPoint.y + u2(t2) * control1.y + u3(t2) * control2.y + u4(t2) * endPoint.y
+          const u1 = (t4) => (1 - t4) * (1 - t4) * (1 - t4);
+          const u2 = (t4) => 3 * (1 - t4) * (1 - t4) * t4;
+          const u3 = (t4) => 3 * (1 - t4) * t4 * t4;
+          const u4 = (t4) => t4 * t4 * t4;
+          const sample = (t4) => ({
+            x: u1(t4) * startPoint.x + u2(t4) * control1.x + u3(t4) * control2.x + u4(t4) * endPoint.x,
+            y: u1(t4) * startPoint.y + u2(t4) * control1.y + u3(t4) * control2.y + u4(t4) * endPoint.y
           });
           const cost = badness(sample);
           if (cost < bestCost) {
@@ -13345,13 +13833,13 @@ function StackDrawer(props) {
             }
             return lanes;
           };
-          const samplePolyline = (points) => (t2) => {
+          const samplePolyline = (points) => (t4) => {
             let total = 0;
             for (let index2 = 1; index2 < points.length; index2 += 1) {
               total += Math.abs(points[index2].x - points[index2 - 1].x) + Math.abs(points[index2].y - points[index2 - 1].y);
             }
             let walked = 0;
-            const target = t2 * total;
+            const target = t4 * total;
             for (let index2 = 1; index2 < points.length; index2 += 1) {
               const a = points[index2 - 1];
               const b = points[index2];
@@ -13453,12 +13941,12 @@ function StackDrawer(props) {
       window.cancelAnimationFrame(raf);
     };
   }, [props.links, props.items, query, visibleItems.length]);
-  (0, import_react10.useEffect)(() => {
+  (0, import_react12.useEffect)(() => {
     const scroller = scrollerRef.current;
     if (scroller === null) return;
     scroller.scrollTop = drawerState.readScroll();
   }, []);
-  (0, import_react10.useEffect)(() => {
+  (0, import_react12.useEffect)(() => {
     const release = mapUi.claimEscape("stack-drawer");
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
@@ -13471,9 +13959,9 @@ function StackDrawer(props) {
       release();
     };
   }, []);
-  const lastScrollAt = (0, import_react10.useRef)(0);
-  const [leaving, setLeaving] = (0, import_react10.useState)(false);
-  const leaveTimer = (0, import_react10.useRef)(null);
+  const lastScrollAt = (0, import_react12.useRef)(0);
+  const [leaving, setLeaving] = (0, import_react12.useState)(false);
+  const leaveTimer = (0, import_react12.useRef)(null);
   const requestClose = () => {
     if (leaving) return;
     setLeaving(true);
@@ -13482,10 +13970,10 @@ function StackDrawer(props) {
       props.onClose();
     }, 130);
   };
-  (0, import_react10.useEffect)(() => () => {
+  (0, import_react12.useEffect)(() => () => {
     if (leaveTimer.current !== null) window.clearTimeout(leaveTimer.current);
   }, []);
-  const scrollSaveTimer = (0, import_react10.useRef)(null);
+  const scrollSaveTimer = (0, import_react12.useRef)(null);
   const slotUnder = (clientX, clientY) => {
     const scroller = scrollerRef.current;
     if (scroller === null) return null;
@@ -13509,7 +13997,7 @@ function StackDrawer(props) {
     setDragId(null);
     setDropIndex(null);
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
     "div",
     {
       className: `${talk_map_default["drawerBackdrop"]}${leaving ? ` ${talk_map_default["drawerBackdropOut"]}` : ""}`,
@@ -13519,19 +14007,19 @@ function StackDrawer(props) {
       onClick: (event) => {
         if (event.target === event.currentTarget) requestClose();
       },
-      children: /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+      children: /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
         "div",
         {
           className: `${talk_map_default["drawer"]}${leaving ? ` ${talk_map_default["drawerOut"]}` : ""}`,
           role: "dialog",
           "aria-label": props.workspaceTitle,
           children: [
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["drawerHead"], children: [
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerTitle"], children: props.workspaceTitle }),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerCount"], children: t("stack.total", { n: String(props.items.length) }) }),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerSpace"] }),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerHint"], children: t("stack.hint") }),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["drawerHead"], children: [
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["drawerTitle"], children: props.workspaceTitle }),
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["drawerCount"], children: t("stack.total", { n: String(props.items.length) }) }),
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["drawerSpace"] }),
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["drawerHint"], children: t("stack.hint") }),
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                 "button",
                 {
                   type: "button",
@@ -13543,8 +14031,8 @@ function StackDrawer(props) {
                 }
               )
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["drawerSearchRow"], children: [
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["drawerSearchRow"], children: [
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                 "input",
                 {
                   className: talk_map_default["drawerSearch"],
@@ -13570,7 +14058,7 @@ function StackDrawer(props) {
                   }
                 }
               ),
-              /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+              /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                 "button",
                 {
                   type: "button",
@@ -13582,10 +14070,10 @@ function StackDrawer(props) {
                   children: t("global.searchRun")
                 }
               ),
-              searching ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerSearchState"], children: t("stack.searching") }) : null,
-              searchError !== null ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["drawerSearchError"], title: searchError, children: isIndexDisabled(searchError) ? t("stack.searchDisabled") : t("stack.searchFailed") + "：" + (searchError.length > 70 ? searchError.slice(0, 70) + "…" : searchError) }) : null
+              searching ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["drawerSearchState"], children: t("stack.searching") }) : null,
+              searchError !== null ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["drawerSearchError"], title: searchError, children: isIndexDisabled(searchError) ? t("stack.searchDisabled") : t("stack.searchFailed") + "：" + (searchError.length > 70 ? searchError.slice(0, 70) + "…" : searchError) }) : null
             ] }),
-            /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+            /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
               "div",
               {
                 className: talk_map_default["drawerScroll"],
@@ -13600,15 +14088,15 @@ function StackDrawer(props) {
                   }, 200);
                 },
                 children: [
-                  wires.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  wires.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                     "svg",
                     {
                       className: talk_map_default["drawerWires"],
                       width: Math.max(1, wireSize.width),
                       height: Math.max(1, wireSize.height),
                       "aria-hidden": "true",
-                      children: wires.map((wire, index2) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("g", { children: [
-                        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                      children: wires.map((wire, index2) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("g", { children: [
+                        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                           "path",
                           {
                             d: wire.d,
@@ -13621,7 +14109,7 @@ function StackDrawer(props) {
                             strokeDasharray: "6 5"
                           }
                         ),
-                        /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                        /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                           "path",
                           {
                             d: "M0 0 L-9 -4 L-9 4 Z",
@@ -13638,7 +14126,7 @@ function StackDrawer(props) {
                     const quiet = item.glow === void 0 && item.pendingDraft !== true && item.interrupted !== true && item.pinned !== true;
                     if (quiet) classNames.push(talk_map_default["cardQuiet"] ?? "");
                     if (item.selected === true) classNames.push(talk_map_default["cardSelected"] ?? "");
-                    return /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+                    return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
                       "button",
                       {
                         type: "button",
@@ -13679,19 +14167,19 @@ function StackDrawer(props) {
                           props.onCardMenu?.(item.cardId, event);
                         },
                         children: [
-                          item.current === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("span", { className: talk_map_default["cardReticle"], children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {}),
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {}),
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {}),
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("i", {})
+                          item.current === true ? /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { className: talk_map_default["cardReticle"], children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("i", {}),
+                            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("i", {}),
+                            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("i", {}),
+                            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("i", {})
                           ] }) : null,
-                          /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["cardTop"], children: [
-                            item.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["cardTitle"], children: item.title }),
-                            item.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(ArchivedBadge, {}) : null
+                          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["cardTop"], children: [
+                            item.pinned === true ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["cardPin"], title: t("card.pinned"), "data-talkmap-pin": "1", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("svg", { viewBox: "0 0 24 24", width: "13", height: "13", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("path", { fill: "currentColor", d: "M16 8.6V4h1c.55 0 1-.45 1-1s-.45-1-1-1H7c-.55 0-1 .45-1 1s.45 1 1 1h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z" }) }) }) : null,
+                            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["cardTitle"], children: item.title }),
+                            item.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ArchivedBadge, {}) : null
                           ] }),
-                          item.preview !== void 0 && item.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["cardSummary"], children: item.preview }) : null,
-                          item.links !== void 0 && item.links.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["cardLinks"], "data-talkmap-card-links": item.links.length, children: item.links.slice(0, 3).map((link2) => /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+                          item.preview !== void 0 && item.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["cardSummary"], children: item.preview }) : null,
+                          item.links !== void 0 && item.links.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["cardLinks"], "data-talkmap-card-links": item.links.length, children: item.links.slice(0, 3).map((link2) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
                             "span",
                             {
                               className: talk_map_default["cardLinkChip"],
@@ -13704,9 +14192,9 @@ function StackDrawer(props) {
                             },
                             (link2.outgoing ? "out-" : "in-") + link2.toCardId
                           )) }) : null,
-                          /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
-                            /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(item.updatedAt) }),
-                            item.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
+                            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(item.updatedAt) }),
+                            item.pendingDraft === true ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                               "span",
                               {
                                 className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipDraft"]}`,
@@ -13715,7 +14203,7 @@ function StackDrawer(props) {
                                 children: t("card.draft")
                               }
                             ) : null,
-                            item.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                            item.interrupted === true ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                               "span",
                               {
                                 className: `${talk_map_default["cardChip"]} ${talk_map_default["cardChipInterrupted"]}`,
@@ -13724,13 +14212,13 @@ function StackDrawer(props) {
                                 children: t("card.interrupted")
                               }
                             ) : null,
-                            item.glow === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime14.jsxs)(
+                            item.glow === void 0 ? null : /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
                               "span",
                               {
                                 className: `${talk_map_default["cardChip"]} ${talk_map_default[LAMP_CHIP[item.glow].className]}`,
                                 "data-talkmap-chip": item.glow,
                                 children: [
-                                  item.glow === "running" ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
+                                  item.glow === "running" ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
                                   t(LAMP_CHIP[item.glow].key)
                                 ]
                               }
@@ -13741,7 +14229,7 @@ function StackDrawer(props) {
                       item.cardId
                     );
                   }),
-                  hits.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)(
+                  hits.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
                     SearchResults,
                     {
                       query,
@@ -13752,7 +14240,7 @@ function StackDrawer(props) {
                       }
                     }
                   ) : null,
-                  needle !== "" && visibleItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime14.jsx)("div", { className: talk_map_default["drawerEmpty"], children: t("stack.noTitleMatch") }) : null
+                  needle !== "" && visibleItems.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["drawerEmpty"], children: t("stack.noTitleMatch") }) : null
                 ]
               }
             )
@@ -13764,13 +14252,13 @@ function StackDrawer(props) {
 }
 
 // src/client/StackNode.tsx
-var import_jsx_runtime15 = require("react/jsx-runtime");
+var import_jsx_runtime17 = require("react/jsx-runtime");
 function StackNode(props) {
   const { data } = props;
   const open = () => {
     data.onOpen();
   };
-  return /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
     "div",
     {
       className: [talk_map_default["stackCell"], talk_map_default["cardQuiet"] ?? ""].filter(Boolean).join(" "),
@@ -13788,12 +14276,12 @@ function StackNode(props) {
         open();
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["stackSheetBack"] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["stackSheetMid"] }),
-        /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("div", { className: talk_map_default["stackFace"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsx)("span", { className: talk_map_default["stackFaceTitle"], children: data.topTitle ?? t("frame.unknown") }),
-          (data.archivedCount ?? 0) > 0 ? /* @__PURE__ */ (0, import_jsx_runtime15.jsx)(ArchivedBadge, { count: data.archivedCount }) : null,
-          /* @__PURE__ */ (0, import_jsx_runtime15.jsxs)("span", { className: [talk_map_default["stackBadge"], data.busy === true ? talk_map_default["stackBadgeBusy"] ?? "" : ""].filter(Boolean).join(" "), children: [
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["stackSheetBack"] }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["stackSheetMid"] }),
+        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: talk_map_default["stackFace"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["stackFaceTitle"], children: data.topTitle ?? t("frame.unknown") }),
+          (data.archivedCount ?? 0) > 0 ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ArchivedBadge, { count: data.archivedCount }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("span", { className: [talk_map_default["stackBadge"], data.busy === true ? talk_map_default["stackBadgeBusy"] ?? "" : ""].filter(Boolean).join(" "), children: [
             "+",
             data.count
           ] })
@@ -13804,40 +14292,40 @@ function StackNode(props) {
 }
 
 // src/client/StatusRail.tsx
-var import_react11 = require("react");
+var import_react13 = require("react");
 
 // src/client/rail-gesture.ts
 var RAIL_DRAG_THRESHOLD = 6;
 function createRailGesture() {
-  let pointer = null;
+  let pointer2 = null;
   let dragging = false;
   let suppressClick = false;
   return {
     begin(next) {
-      if (pointer !== null) return false;
-      pointer = next;
+      if (pointer2 !== null) return false;
+      pointer2 = next;
       dragging = false;
       suppressClick = false;
       return true;
     },
     move(next) {
-      if (pointer === null || pointer.pointerId !== next.pointerId) return false;
-      if (Math.hypot(next.clientX - pointer.clientX, next.clientY - pointer.clientY) >= RAIL_DRAG_THRESHOLD) {
+      if (pointer2 === null || pointer2.pointerId !== next.pointerId) return false;
+      if (Math.hypot(next.clientX - pointer2.clientX, next.clientY - pointer2.clientY) >= RAIL_DRAG_THRESHOLD) {
         dragging = true;
       }
       return dragging;
     },
     end(pointerId, cancelled = false) {
-      if (pointer === null || pointer.pointerId !== pointerId) return null;
+      if (pointer2 === null || pointer2.pointerId !== pointerId) return null;
       const commit = dragging && !cancelled;
       suppressClick = dragging || cancelled;
-      pointer = null;
+      pointer2 = null;
       dragging = false;
       return { commit };
     },
     cancel() {
-      if (pointer !== null) suppressClick = true;
-      pointer = null;
+      if (pointer2 !== null) suppressClick = true;
+      pointer2 = null;
       dragging = false;
     },
     consumeClick() {
@@ -13849,7 +14337,7 @@ function createRailGesture() {
 }
 
 // src/client/StatusRail.tsx
-var import_jsx_runtime16 = require("react/jsx-runtime");
+var import_jsx_runtime18 = require("react/jsx-runtime");
 var OPEN_KEY = "dsh.talk-map.status-rail.open.v1";
 var ORDER_KEY = "dsh.talk-map.status-rail.order.v1";
 var FLIP_MS = 180;
@@ -13907,26 +14395,26 @@ function writeOrder(order) {
   }
 }
 function StatusRail(props) {
-  const open = (0, import_react11.useSyncExternalStore)(subscribeOpen, openSnapshot, openSnapshot);
-  const [order, setOrder] = (0, import_react11.useState)(() => readOrder());
-  const [drag, setDrag] = (0, import_react11.useState)(null);
-  const [shift, setShift] = (0, import_react11.useState)({});
-  const seenRef = (0, import_react11.useRef)(/* @__PURE__ */ new Map());
-  const slotsRef = (0, import_react11.useRef)(/* @__PURE__ */ new Map());
-  const prevTops = (0, import_react11.useRef)(/* @__PURE__ */ new Map());
-  const panelRef = (0, import_react11.useRef)(null);
-  const orderRef = (0, import_react11.useRef)(order);
+  const open = (0, import_react13.useSyncExternalStore)(subscribeOpen, openSnapshot, openSnapshot);
+  const [order, setOrder] = (0, import_react13.useState)(() => readOrder());
+  const [drag2, setDrag] = (0, import_react13.useState)(null);
+  const [shift, setShift] = (0, import_react13.useState)({});
+  const seenRef = (0, import_react13.useRef)(/* @__PURE__ */ new Map());
+  const slotsRef = (0, import_react13.useRef)(/* @__PURE__ */ new Map());
+  const prevTops = (0, import_react13.useRef)(/* @__PURE__ */ new Map());
+  const panelRef = (0, import_react13.useRef)(null);
+  const orderRef = (0, import_react13.useRef)(order);
   orderRef.current = order;
-  const pointerDragRef = (0, import_react11.useRef)(null);
-  const gestureRef = (0, import_react11.useRef)(createRailGesture());
-  (0, import_react11.useEffect)(() => {
+  const pointerDragRef = (0, import_react13.useRef)(null);
+  const gestureRef = (0, import_react13.useRef)(createRailGesture());
+  (0, import_react13.useEffect)(() => {
     props.onOpenChange?.(open);
   }, [open, props.onOpenChange]);
-  const signature = (0, import_react11.useMemo)(
+  const signature = (0, import_react13.useMemo)(
     () => props.entries.map((entry) => `${entry.cardId}:${entry.lamp}:${entry.stamp}`).join("|"),
     [props.entries]
   );
-  (0, import_react11.useEffect)(() => {
+  (0, import_react13.useEffect)(() => {
     const seen = seenRef.current;
     const fresh = [];
     for (const entry of props.entries) {
@@ -13950,7 +14438,7 @@ function StatusRail(props) {
       if (!alive.has(cardId)) seen.delete(cardId);
     }
   }, [signature]);
-  const ordered = (0, import_react11.useMemo)(() => {
+  const ordered = (0, import_react13.useMemo)(() => {
     const byId2 = new Map(props.entries.map((entry) => [entry.cardId, entry]));
     const rows = [];
     for (const cardId of order) {
@@ -13962,8 +14450,8 @@ function StatusRail(props) {
     }
     return rows;
   }, [order, props.entries]);
-  (0, import_react11.useLayoutEffect)(() => {
-    if (drag !== null) return;
+  (0, import_react13.useLayoutEffect)(() => {
+    if (drag2 !== null) return;
     const next = /* @__PURE__ */ new Map();
     const deltas = {};
     for (const [cardId, element] of slotsRef.current) {
@@ -13986,8 +14474,8 @@ function StatusRail(props) {
       cancelAnimationFrame(outer);
       if (inner !== 0) cancelAnimationFrame(inner);
     };
-  }, [order, drag === null]);
-  (0, import_react11.useEffect)(() => {
+  }, [order, drag2 === null]);
+  (0, import_react13.useEffect)(() => {
     const gesture = gestureRef.current;
     const indexUnder = (pointerY) => {
       const ids = orderRef.current;
@@ -14052,10 +14540,10 @@ function StatusRail(props) {
       gesture.cancel();
     };
   }, []);
-  const toggle = (0, import_react11.useCallback)(() => {
+  const toggle = (0, import_react13.useCallback)(() => {
     setOpenState(!openSnapshot());
   }, []);
-  const beginDrag = (0, import_react11.useCallback)((event, cardId) => {
+  const beginDrag = (0, import_react13.useCallback)((event, cardId) => {
     if (event.button !== 0 || !event.isPrimary) return;
     const element = slotsRef.current.get(cardId);
     if (element === void 0 || !gestureRef.current.begin({
@@ -14077,7 +14565,7 @@ function StatusRail(props) {
       width: rect.width
     };
   }, []);
-  const renderCard = (entry, floating) => /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  const renderCard = (entry, floating) => /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
     "div",
     {
       className: `${talk_map_default["card"]} ${talk_map_default[LAMP_CLASS3[entry.lamp]] ?? ""} ${talk_map_default["statusRailCard"]}${floating ? ` ${talk_map_default["statusRailCardDragging"]}` : ""}`,
@@ -14103,45 +14591,45 @@ function StatusRail(props) {
       },
       title: entry.title,
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["cardTop"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["cardTitle"], children: entry.title }),
-          entry.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(ArchivedBadge, {}) : null
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["cardTop"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["cardTitle"], children: entry.title }),
+          entry.archived === true ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(ArchivedBadge, {}) : null
         ] }),
-        entry.preview !== void 0 && entry.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["cardSummary"], children: entry.preview }) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(entry.updatedAt) }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("span", { className: `${talk_map_default["cardChip"]} ${talk_map_default[LAMP_CHIP[entry.lamp].className]}`, children: [
-            LAMP_CHIP[entry.lamp].dot ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
+        entry.preview !== void 0 && entry.preview !== "" ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: talk_map_default["cardSummary"], children: entry.preview }) : null,
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["cardFooter"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["cardTime"], children: relativeTime(entry.updatedAt) }),
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("span", { className: `${talk_map_default["cardChip"]} ${talk_map_default[LAMP_CHIP[entry.lamp].className]}`, children: [
+            LAMP_CHIP[entry.lamp].dot ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["runningDot"] }) : null,
             t(LAMP_CHIP[entry.lamp].key)
           ] })
         ] })
       ]
     }
   );
-  const floatingEntry = drag === null ? void 0 : ordered.find((entry) => entry.cardId === drag.cardId);
-  return /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+  const floatingEntry = drag2 === null ? void 0 : ordered.find((entry) => entry.cardId === drag2.cardId);
+  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
     "div",
     {
       className: talk_map_default["statusRail"],
       "data-open": open ? "1" : "0",
       style: { ["--rail-card-w"]: `${props.cardWidth}px` },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["statusRailPanel"], "aria-hidden": !open, ref: panelRef, children: [
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["statusRailHead"], children: [
-            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["statusRailTitle"], children: t("statusRail.title") }),
-            /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["statusRailCount"], children: props.entries.length })
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["statusRailPanel"], "aria-hidden": !open, ref: panelRef, children: [
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["statusRailHead"], children: [
+            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["statusRailTitle"], children: t("statusRail.title") }),
+            /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["statusRailCount"], children: props.entries.length })
           ] }),
-          /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("div", { className: talk_map_default["statusRailList"], role: "list", children: [
-            ordered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["statusRailEmpty"], children: t("statusRail.empty") }) : null,
+          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["statusRailList"], role: "list", children: [
+            ordered.length === 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: talk_map_default["statusRailEmpty"], children: t("statusRail.empty") }) : null,
             ordered.map((entry, index2) => {
-              const dragging = drag !== null && drag.cardId === entry.cardId;
+              const dragging = drag2 !== null && drag2.cardId === entry.cardId;
               let moved = 0;
-              if (drag !== null && !dragging) {
-                if (drag.hover > drag.origin && index2 > drag.origin && index2 <= drag.hover) moved = -drag.step;
-                else if (drag.hover < drag.origin && index2 >= drag.hover && index2 < drag.origin) moved = drag.step;
+              if (drag2 !== null && !dragging) {
+                if (drag2.hover > drag2.origin && index2 > drag2.origin && index2 <= drag2.hover) moved = -drag2.step;
+                else if (drag2.hover < drag2.origin && index2 >= drag2.hover && index2 < drag2.origin) moved = drag2.step;
               }
-              const style2 = drag !== null ? { transform: `translateY(${moved}px)`, transition: `transform ${FLIP_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` } : shift[entry.cardId] !== void 0 ? { transform: `translateY(${shift[entry.cardId]}px)`, transition: "none" } : { transition: `transform ${FLIP_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` };
-              return /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+              const style2 = drag2 !== null ? { transform: `translateY(${moved}px)`, transition: `transform ${FLIP_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` } : shift[entry.cardId] !== void 0 ? { transform: `translateY(${shift[entry.cardId]}px)`, transition: "none" } : { transition: `transform ${FLIP_MS}ms cubic-bezier(0.22, 0.61, 0.36, 1)` };
+              return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
                 "div",
                 {
                   role: "listitem",
@@ -14151,26 +14639,26 @@ function StatusRail(props) {
                   },
                   className: talk_map_default["statusRailSlot"],
                   style: style2,
-                  children: dragging ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("div", { className: talk_map_default["statusRailGhost"], children: renderCard(entry, false) }) : renderCard(entry, false)
+                  children: dragging ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("div", { className: talk_map_default["statusRailGhost"], children: renderCard(entry, false) }) : renderCard(entry, false)
                 },
                 entry.cardId
               );
             })
           ] })
         ] }),
-        drag !== null && floatingEntry !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)(
+        drag2 !== null && floatingEntry !== void 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
           "div",
           {
             className: talk_map_default["statusRailFloating"],
             style: {
-              left: drag.left,
-              width: drag.width,
-              top: drag.baseTop + (drag.pointerY - drag.startPointerY)
+              left: drag2.left,
+              width: drag2.width,
+              top: drag2.baseTop + (drag2.pointerY - drag2.startPointerY)
             },
             children: renderCard(floatingEntry, true)
           }
         ) : null,
-        /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
           "button",
           {
             type: "button",
@@ -14180,13 +14668,13 @@ function StatusRail(props) {
             title: open ? t("statusRail.close") : t("statusRail.open"),
             onClick: toggle,
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime16.jsxs)("svg", { viewBox: "0 0 12 28", width: "14", height: "30", "aria-hidden": "true", children: [
-                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("rect", { x: "1.4", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
-                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("rect", { x: "8.6", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
-                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { cx: "2.4", cy: "25", r: "1.5", fill: "currentColor" }),
-                /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("circle", { cx: "9.6", cy: "25", r: "1.5", fill: "currentColor" })
+              /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("svg", { viewBox: "0 0 12 28", width: "14", height: "30", "aria-hidden": "true", children: [
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("rect", { x: "1.4", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("rect", { x: "8.6", y: "1", width: "2", height: "20", rx: "1", fill: "currentColor" }),
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("circle", { cx: "2.4", cy: "25", r: "1.5", fill: "currentColor" }),
+                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("circle", { cx: "9.6", cy: "25", r: "1.5", fill: "currentColor" })
               ] }),
-              props.entries.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime16.jsx)("span", { className: talk_map_default["statusRailTabCount"], children: props.entries.length }) : null
+              props.entries.length > 0 ? /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["statusRailTabCount"], children: props.entries.length }) : null
             ]
           }
         )
@@ -14196,9 +14684,9 @@ function StatusRail(props) {
 }
 
 // src/client/use-dark.ts
-var import_react12 = require("react");
+var import_react14 = require("react");
 var DARK_ATTRIBUTE = "data-ds-dark-theme";
-function subscribe(listener) {
+function subscribe2(listener) {
   if (typeof document === "undefined") return () => {
   };
   const observer = new MutationObserver(listener);
@@ -14212,11 +14700,11 @@ function getSnapshot() {
   return document.body.hasAttribute(DARK_ATTRIBUTE);
 }
 function useDsDarkTheme() {
-  return (0, import_react12.useSyncExternalStore)(subscribe, getSnapshot);
+  return (0, import_react14.useSyncExternalStore)(subscribe2, getSnapshot);
 }
 
 // src/client/MapCanvas.tsx
-var import_jsx_runtime17 = require("react/jsx-runtime");
+var import_jsx_runtime19 = require("react/jsx-runtime");
 var TALK_MAP_EDGE_TYPE = "talkMap";
 var nodeTypes = {
   sessionCard: SessionCardNode,
@@ -14228,8 +14716,8 @@ var COLS = 3;
 var LAYOUT_VERSION = 4;
 var EMPTY_SESSION_STATUS = /* @__PURE__ */ new Map();
 var lastActivitySeen = /* @__PURE__ */ new Map();
-function snap(value) {
-  return Math.round(value / GRID) * GRID;
+function snap(value2) {
+  return Math.round(value2 / GRID) * GRID;
 }
 function placeableSessionIds(sessions) {
   return sessions.ids.filter((id2) => {
@@ -14270,14 +14758,14 @@ function fitRect(members, obstacles) {
 }
 function CanvasInner(props) {
   const dark = useDsDarkTheme();
-  const canvasState = (0, import_react13.useSyncExternalStore)(canvas.subscribe, canvas.get);
+  const canvasState = (0, import_react15.useSyncExternalStore)(canvas.subscribe, canvas.get);
   const sessions = props.useSessions((state3) => state3);
   const workspaces = props.useWorkspaces((state3) => state3);
   const statusById = typeof props.useSessionStatus === "function" ? props.useSessionStatus((status) => status) : EMPTY_SESSION_STATUS;
-  const alertById = (0, import_react13.useSyncExternalStore)(sessionAlerts.subscribe, sessionAlerts.getSnapshot);
-  const finishedById = (0, import_react13.useSyncExternalStore)(sessionActivity.subscribe, sessionActivity.getSnapshot);
-  const interruptedById = (0, import_react13.useSyncExternalStore)(sessionActivity.subscribe, sessionActivity.getInterrupted);
-  (0, import_react13.useEffect)(() => {
+  const alertById = (0, import_react15.useSyncExternalStore)(sessionAlerts.subscribe, sessionAlerts.getSnapshot);
+  const finishedById = (0, import_react15.useSyncExternalStore)(sessionActivity.subscribe, sessionActivity.getSnapshot);
+  const interruptedById = (0, import_react15.useSyncExternalStore)(sessionActivity.subscribe, sessionActivity.getInterrupted);
+  (0, import_react15.useEffect)(() => {
     const onUnload = () => {
       sessionActivity.recordShutdown(statusById, sessions.byId);
     };
@@ -14286,14 +14774,14 @@ function CanvasInner(props) {
       window.removeEventListener("beforeunload", onUnload);
     };
   }, [statusById, sessions]);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     sessionActivity.beginPanelSession();
   }, []);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     sessionActivity.observe(statusById, sessions.byId);
   }, [statusById, sessions]);
-  const draftSessions = (0, import_react13.useSyncExternalStore)(draftWatch.subscribe, draftWatch.getSnapshot);
-  (0, import_react13.useEffect)(() => {
+  const draftSessions = (0, import_react15.useSyncExternalStore)(draftWatch.subscribe, draftWatch.getSnapshot);
+  (0, import_react15.useEffect)(() => {
     draftWatch.refresh();
     const timer4 = setInterval(() => {
       draftWatch.refresh();
@@ -14302,22 +14790,22 @@ function CanvasInner(props) {
       clearInterval(timer4);
     };
   }, []);
-  const [previews, setPreviews] = (0, import_react13.useState)(readPreviewTexts);
-  const previewStamp = (0, import_react13.useRef)(
+  const [previews, setPreviews] = (0, import_react15.useState)(readPreviewTexts);
+  const previewStamp = (0, import_react15.useRef)(
     // Only entries that still make a usable body count as cached: a rule fix that
     // empties an old entry must trigger a refetch, not leave a blank card.
     new Map(Object.entries(loadPreviewCache()).filter(([, entry]) => typeof entry?.text === "string" && cleanPreviewText(entry.text) !== "").map(([sessionId, entry]) => [sessionId, entry.stamp]))
   );
   const { screenToFlowPosition, zoomTo, setNodes, setCenter, getZoom } = useReactFlow();
-  const [selectedIds, setSelectedIds] = (0, import_react13.useState)(/* @__PURE__ */ new Set());
-  const [selectedEdgeIds, setSelectedEdgeIds] = (0, import_react13.useState)(/* @__PURE__ */ new Set());
-  const [connecting, setConnecting] = (0, import_react13.useState)(false);
-  const connectCancelledRef = (0, import_react13.useRef)(false);
-  const [toast, setToast] = (0, import_react13.useState)(null);
-  const toastTimer = (0, import_react13.useRef)(void 0);
-  const [pendingSpawn, setPendingSpawn] = (0, import_react13.useState)(null);
-  const [menu, setMenu] = (0, import_react13.useState)(null);
-  const [drawer, setDrawer] = (0, import_react13.useState)(() => {
+  const [selectedIds, setSelectedIds] = (0, import_react15.useState)(/* @__PURE__ */ new Set());
+  const [selectedEdgeIds, setSelectedEdgeIds] = (0, import_react15.useState)(/* @__PURE__ */ new Set());
+  const [connecting, setConnecting] = (0, import_react15.useState)(false);
+  const connectCancelledRef = (0, import_react15.useRef)(false);
+  const [toast, setToast] = (0, import_react15.useState)(null);
+  const toastTimer = (0, import_react15.useRef)(void 0);
+  const [pendingSpawn, setPendingSpawn] = (0, import_react15.useState)(null);
+  const [menu, setMenu] = (0, import_react15.useState)(null);
+  const [drawer, setDrawer] = (0, import_react15.useState)(() => {
     const remembered = drawerState.readGroup();
     return remembered === null ? null : { groupId: remembered };
   });
@@ -14325,11 +14813,11 @@ function CanvasInner(props) {
     setDrawer(null);
     drawerState.clear();
   };
-  const [digestTarget, setDigestTarget] = (0, import_react13.useState)(null);
-  const [pushEpoch, setPushEpoch] = (0, import_react13.useState)(0);
+  const [digestTarget, setDigestTarget] = (0, import_react15.useState)(null);
+  const [pushEpoch, setPushEpoch] = (0, import_react15.useState)(0);
   const LINEAGE_KEY = "dsh.talk-map.lineage-hidden.v1";
   const LINEAGE_CUT_KEY = "dsh.talk-map.lineage-cut.v1";
-  const [lineageCut, setLineageCut] = (0, import_react13.useState)(() => {
+  const [lineageCut, setLineageCut] = (0, import_react15.useState)(() => {
     try {
       const raw = window.localStorage.getItem(LINEAGE_CUT_KEY);
       const parsed = raw === null ? [] : JSON.parse(raw);
@@ -14350,7 +14838,7 @@ function CanvasInner(props) {
       return next;
     });
   };
-  const [lineageHidden, setLineageHiddenState] = (0, import_react13.useState)(() => {
+  const [lineageHidden, setLineageHiddenState] = (0, import_react15.useState)(() => {
     try {
       return localStorage.getItem("dsh.talk-map.lineage-hidden.v1") === "1";
     } catch {
@@ -14364,17 +14852,17 @@ function CanvasInner(props) {
     } catch {
     }
   };
-  const [renameTarget, setRenameTarget] = (0, import_react13.useState)(null);
-  const [renamedTitles, setRenamedTitles] = (0, import_react13.useState)({});
-  const [renamedWorkspaces, setRenamedWorkspaces] = (0, import_react13.useState)({});
-  const [batchMode, setBatchMode] = (0, import_react13.useState)(false);
-  const [batchPicks, setBatchPicks] = (0, import_react13.useState)(/* @__PURE__ */ new Set());
-  const [batchBusy, setBatchBusy] = (0, import_react13.useState)(false);
-  const wrapperRef = (0, import_react13.useRef)(null);
-  const [draggingCardId, setDraggingCardId] = (0, import_react13.useState)(null);
-  const [liveFrame, setLiveFrame] = (0, import_react13.useState)(null);
-  const [statusRailOpen, setStatusRailOpen] = (0, import_react13.useState)(false);
-  const [manualFrames, setManualFrames] = (0, import_react13.useState)(() => {
+  const [renameTarget, setRenameTarget] = (0, import_react15.useState)(null);
+  const [renamedTitles, setRenamedTitles] = (0, import_react15.useState)({});
+  const [renamedWorkspaces, setRenamedWorkspaces] = (0, import_react15.useState)({});
+  const [batchMode, setBatchMode] = (0, import_react15.useState)(false);
+  const [batchPicks, setBatchPicks] = (0, import_react15.useState)(/* @__PURE__ */ new Set());
+  const [batchBusy, setBatchBusy] = (0, import_react15.useState)(false);
+  const wrapperRef = (0, import_react15.useRef)(null);
+  const [draggingCardId, setDraggingCardId] = (0, import_react15.useState)(null);
+  const [liveFrame, setLiveFrame] = (0, import_react15.useState)(null);
+  const [statusRailOpen, setStatusRailOpen] = (0, import_react15.useState)(false);
+  const [manualFrames, setManualFrames] = (0, import_react15.useState)(() => {
     try {
       const saved = JSON.parse(localStorage.getItem("dsh.talk-map.manual-frames.v1") ?? "[]");
       return new Set(Array.isArray(saved) ? saved.filter((id2) => typeof id2 === "string") : []);
@@ -14382,7 +14870,7 @@ function CanvasInner(props) {
       return /* @__PURE__ */ new Set();
     }
   });
-  const setFrameManual = (0, import_react13.useCallback)((groupId, manual) => {
+  const setFrameManual = (0, import_react15.useCallback)((groupId, manual) => {
     setManualFrames((previous) => {
       if (previous.has(groupId) === manual) return previous;
       const next = new Set(previous);
@@ -14395,27 +14883,27 @@ function CanvasInner(props) {
       return next;
     });
   }, []);
-  const frameRectsRef = (0, import_react13.useRef)({});
-  const [blockedFrame, setBlockedFrame] = (0, import_react13.useState)(null);
-  const [dragCenter, setDragCenter] = (0, import_react13.useState)(null);
-  const [isSelecting, setIsSelecting] = (0, import_react13.useState)(false);
-  const frozenRef = (0, import_react13.useRef)(null);
-  const locale = (0, import_react13.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
-  const sessionWs = (0, import_react13.useMemo)(() => sessionWorkspaceIndex(workspaces), [workspaces]);
-  const wsTitles = (0, import_react13.useMemo)(
+  const frameRectsRef = (0, import_react15.useRef)({});
+  const [blockedFrame, setBlockedFrame] = (0, import_react15.useState)(null);
+  const [dragCenter, setDragCenter] = (0, import_react15.useState)(null);
+  const [isSelecting, setIsSelecting] = (0, import_react15.useState)(false);
+  const frozenRef = (0, import_react15.useRef)(null);
+  const locale = (0, import_react15.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
+  const sessionWs = (0, import_react15.useMemo)(() => sessionWorkspaceIndex(workspaces), [workspaces]);
+  const wsTitles = (0, import_react15.useMemo)(
     () => new Map(workspaces.items.map((item) => [item.workspaceId, item.title])),
     [workspaces]
   );
   const workspacesReady = workspaces.baselinesReady !== false;
-  const pinnedSessions = (0, import_react13.useMemo)(() => new Set(workspaces.pinnedSessionIds ?? []), [workspaces]);
-  const archivedSessions = (0, import_react13.useMemo)(() => new Set(workspaces.archivedSessionIds ?? []), [workspaces]);
-  const boardSessionIds = (0, import_react13.useMemo)(
+  const pinnedSessions = (0, import_react15.useMemo)(() => new Set(workspaces.pinnedSessionIds ?? []), [workspaces]);
+  const archivedSessions = (0, import_react15.useMemo)(() => new Set(workspaces.archivedSessionIds ?? []), [workspaces]);
+  const boardSessionIds = (0, import_react15.useMemo)(
     () => new Set(Object.values(canvasState.cards).map((card) => card.sessionId)),
     [canvasState.cards]
   );
   const wsFrames = canvasState.global?.wsFrames ?? {};
   const layoutVersion = canvasState.global?.layoutVersion ?? 1;
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     if (canvasState.phase !== "ready" || layoutVersion >= LAYOUT_VERSION || !workspacesReady) return;
     const byGroup = /* @__PURE__ */ new Map();
     for (const card of Object.values(canvasState.cards)) {
@@ -14434,7 +14922,7 @@ function CanvasInner(props) {
     }
     canvas.patchGlobalNow({ layoutVersion: LAYOUT_VERSION, wsFrames: framesNext });
   }, [canvasState.phase, layoutVersion, workspacesReady, canvasState.cards, canvasState.global, sessionWs]);
-  const visibleCards = (0, import_react13.useMemo)(() => {
+  const visibleCards = (0, import_react15.useMemo)(() => {
     const out = {};
     for (const [cardId, card] of Object.entries(canvasState.cards)) {
       if (sessions.byId[card.sessionId]?.blank === true) continue;
@@ -14442,11 +14930,11 @@ function CanvasInner(props) {
     }
     return out;
   }, [canvasState.cards, sessions]);
-  const previewInputs = (0, import_react13.useRef)({ cards: visibleCards, sessions });
+  const previewInputs = (0, import_react15.useRef)({ cards: visibleCards, sessions });
   previewInputs.current = { cards: visibleCards, sessions };
-  const previewTick = (0, import_react13.useRef)(() => {
+  const previewTick = (0, import_react15.useRef)(() => {
   });
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     const tick = () => {
       const { cards, sessions: latest } = previewInputs.current;
       const pending = [];
@@ -14462,11 +14950,11 @@ function CanvasInner(props) {
       void talkMapApi.lastUserMessages(pending).then(({ texts }) => {
         const cleaned = {};
         for (const [sessionId, text] of Object.entries(texts)) {
-          const value = cleanPreviewText(text).slice(0, 240);
+          const value2 = cleanPreviewText(text).slice(0, 240);
           const stamp = stamps.find(([id2]) => id2 === sessionId)?.[1] ?? 0;
           putPreview(sessionId, text, stamp);
-          if (value === "") continue;
-          cleaned[sessionId] = value;
+          if (value2 === "") continue;
+          cleaned[sessionId] = value2;
         }
         setPreviews((previous) => ({ ...previous, ...cleaned }));
       }).catch(() => void 0);
@@ -14478,10 +14966,10 @@ function CanvasInner(props) {
       clearInterval(timer4);
     };
   }, []);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     previewTick.current();
   }, [visibleCards]);
-  const membersByGroup = (0, import_react13.useMemo)(() => {
+  const membersByGroup = (0, import_react15.useMemo)(() => {
     const index2 = /* @__PURE__ */ new Map();
     for (const [cardId, card] of Object.entries(visibleCards)) {
       const groupId = sessionWs.get(card.sessionId);
@@ -14490,7 +14978,7 @@ function CanvasInner(props) {
     }
     return index2;
   }, [visibleCards, sessionWs]);
-  const frameRects = (0, import_react13.useMemo)(() => {
+  const frameRects = (0, import_react15.useMemo)(() => {
     const out = {};
     for (const [groupId, stored] of Object.entries(wsFrames)) out[groupId] = frameRect(stored);
     if (liveFrame !== null) {
@@ -14506,10 +14994,10 @@ function CanvasInner(props) {
     }
     return out;
   }, [wsFrames, liveFrame, membersByGroup, manualFrames]);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     frameRectsRef.current = frameRects;
   }, [frameRects]);
-  const folderLayouts = (0, import_react13.useMemo)(() => {
+  const folderLayouts = (0, import_react15.useMemo)(() => {
     const out = {};
     for (const [groupId, rect] of Object.entries(frameRects)) {
       const members = (membersByGroup.get(groupId) ?? []).map((cardId) => {
@@ -14541,21 +15029,21 @@ function CanvasInner(props) {
     }
     return out;
   }, [frameRects, membersByGroup, visibleCards, pinnedSessions, draggingCardId, dragCenter, manualFrames]);
-  const cardLayout = (0, import_react13.useMemo)(() => {
+  const cardLayout = (0, import_react15.useMemo)(() => {
     const out = {};
     for (const layout of Object.values(folderLayouts)) {
       Object.assign(out, layoutFor(layout.rect, layout.ordered));
     }
     return out;
   }, [folderLayouts]);
-  const foldedCards = (0, import_react13.useMemo)(() => {
+  const foldedCards = (0, import_react15.useMemo)(() => {
     const out = {};
     for (const [groupId, layout] of Object.entries(folderLayouts)) {
       if (layout.folded.length > 0) out[groupId] = layout.folded;
     }
     return out;
   }, [folderLayouts]);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     if (canvasState.phase !== "ready") return;
     if (draggingCardId !== null || liveFrame !== null) return;
     const timer4 = window.setTimeout(() => {
@@ -14570,8 +15058,8 @@ function CanvasInner(props) {
     }, 140);
     return () => window.clearTimeout(timer4);
   }, [cardLayout, canvasState.cards, canvasState.phase, draggingCardId, liveFrame]);
-  const foldedSet = (0, import_react13.useMemo)(() => new Set(Object.values(foldedCards).flat()), [foldedCards]);
-  (0, import_react13.useEffect)(() => {
+  const foldedSet = (0, import_react15.useMemo)(() => new Set(Object.values(foldedCards).flat()), [foldedCards]);
+  (0, import_react15.useEffect)(() => {
     if (canvasState.phase !== "ready") return;
     if (draggingCardId !== null || liveFrame !== null) return;
     const seen = lastActivitySeen;
@@ -14606,8 +15094,8 @@ function CanvasInner(props) {
     for (const [sessionId, stamp] of stamps) seen.set(sessionId, stamp);
     if (Object.keys(promoted).length > 0) canvas.moveCards(promoted);
   }, [canvasState.phase, visibleCards, sessions, folderLayouts, draggingCardId, liveFrame, pinnedSessions]);
-  const autoSyncedRef = (0, import_react13.useRef)(false);
-  (0, import_react13.useEffect)(() => {
+  const autoSyncedRef = (0, import_react15.useRef)(false);
+  (0, import_react15.useEffect)(() => {
     if (canvasState.phase !== "ready" || !workspacesReady || autoSyncedRef.current) return;
     autoSyncedRef.current = true;
     const remembered = canvasState.global?.layoutMemory ?? {};
@@ -14667,7 +15155,7 @@ function CanvasInner(props) {
     }
     if (Object.keys(added).length > 0) canvas.addCards(added);
   }, [canvasState.phase, canvasState.cards, canvasState.global, workspacesReady, wsFrames, frameRects, membersByGroup, sessions, sessionWs, boardSessionIds]);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     if (!connecting) return;
     const release = mapUi.claimEscape("connecting");
     const onKeyDown = (event) => {
@@ -14688,7 +15176,7 @@ function CanvasInner(props) {
       release();
     };
   }, [connecting]);
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     const onKeyDown = (event) => {
       if (!(event.metaKey || event.ctrlKey) || event.code !== "KeyZ") return;
       const target = event.target;
@@ -14703,7 +15191,7 @@ function CanvasInner(props) {
       window.removeEventListener("keydown", onKeyDown, { capture: true });
     };
   }, []);
-  const liveSelectedIds = (0, import_react13.useMemo)(() => {
+  const liveSelectedIds = (0, import_react15.useMemo)(() => {
     const next = /* @__PURE__ */ new Set();
     for (const id2 of selectedIds) {
       if (id2.startsWith("frame-")) {
@@ -14714,7 +15202,7 @@ function CanvasInner(props) {
     }
     return next;
   }, [selectedIds, visibleCards, wsFrames]);
-  const liveSelectedEdgeIds = (0, import_react13.useMemo)(() => {
+  const liveSelectedEdgeIds = (0, import_react15.useMemo)(() => {
     const next = /* @__PURE__ */ new Set();
     for (const id2 of selectedEdgeIds) {
       if (canvasState.edges[id2] !== void 0) next.add(id2);
@@ -14722,7 +15210,7 @@ function CanvasInner(props) {
     return next;
   }, [selectedEdgeIds, canvasState.edges]);
   const hasSelection = liveSelectedIds.size > 0 || liveSelectedEdgeIds.size > 0;
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     if (!hasSelection) return;
     const release = mapUi.claimEscape("selection");
     const onKeyDown = (event) => {
@@ -14751,7 +15239,7 @@ function CanvasInner(props) {
       release();
     };
   });
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     if (!batchMode) return;
     const release = mapUi.claimEscape("batch-mode");
     const onKeyDown = (event) => {
@@ -14854,7 +15342,7 @@ function CanvasInner(props) {
     if (status?.completionUnread === true || finishedById.has(sessionId)) return "done";
     return void 0;
   };
-  const statusEntries = (0, import_react13.useMemo)(() => {
+  const statusEntries = (0, import_react15.useMemo)(() => {
     const rows = [];
     for (const [cardId, card] of Object.entries(visibleCards)) {
       if (card.boardId !== INBOX_BOARD_ID) continue;
@@ -14875,7 +15363,7 @@ function CanvasInner(props) {
     }
     return rows;
   }, [visibleCards, sessions, renamedTitles, previews, pinnedSessions, archivedSessions, statusById, alertById, finishedById]);
-  const liveNodes = (0, import_react13.useMemo)(() => {
+  const liveNodes = (0, import_react15.useMemo)(() => {
     const wsColors = canvasState.global?.wsColors ?? {};
     const frameNodes = Object.entries(frameRects).map(([groupId, rect]) => {
       const members = membersByGroup.get(groupId) ?? [];
@@ -14989,7 +15477,7 @@ function CanvasInner(props) {
     });
     return [...frameNodes, ...cardNodes, ...stackNodes];
   }, [frameRects, folderLayouts, foldedCards, foldedSet, cardLayout, draggingCardId, membersByGroup, wsTitles, visibleCards, canvasState.digests, canvasState.global, sessions, statusById, alertById, finishedById, interruptedById, draftSessions, previews, pinnedSessions, archivedSessions, renamedTitles, renamedWorkspaces, liveSelectedIds, batchMode, batchPicks, locale]);
-  const sessionIdToCardId = (0, import_react13.useMemo)(() => {
+  const sessionIdToCardId = (0, import_react15.useMemo)(() => {
     const index2 = /* @__PURE__ */ new Map();
     for (const [cardId, card] of Object.entries(visibleCards)) {
       if (!index2.has(card.sessionId)) index2.set(card.sessionId, cardId);
@@ -15023,9 +15511,9 @@ function CanvasInner(props) {
   };
   const CARD_PAINTED_W = 250;
   const CARD_PAINTED_H = 129;
-  const [boardTick, setBoardTick] = (0, import_react13.useState)(0);
-  (0, import_react13.useEffect)(() => {
-    const timer4 = window.setTimeout(() => setBoardTick((value) => value + 1), 150);
+  const [boardTick, setBoardTick] = (0, import_react15.useState)(0);
+  (0, import_react15.useEffect)(() => {
+    const timer4 = window.setTimeout(() => setBoardTick((value2) => value2 + 1), 150);
     return () => window.clearTimeout(timer4);
   }, []);
   const obstaclesFor = (fromCardId, toCardId) => {
@@ -15062,7 +15550,7 @@ function CanvasInner(props) {
     const picked = sideHandles(fromCardId, toCardId);
     return { sourceHandle: picked.fromHandle, targetHandle: picked.toHandle };
   };
-  const liveEdges = (0, import_react13.useMemo)(() => {
+  const liveEdges = (0, import_react15.useMemo)(() => {
     const out = [];
     const present = new Set(Object.keys(visibleCards).filter((cardId) => !foldedSet.has(cardId)));
     const explicitPairs = /* @__PURE__ */ new Set();
@@ -15166,7 +15654,7 @@ function CanvasInner(props) {
     }
     return out;
   }, [visibleCards, canvasState.edges, sessions, sessionIdToCardId, liveSelectedEdgeIds, foldedSet, locale, pushEpoch, lineageHidden, liveNodes, boardTick]);
-  const drawerWireLinks = (0, import_react13.useMemo)(() => {
+  const drawerWireLinks = (0, import_react15.useMemo)(() => {
     if (drawer === null) return [];
     const layout = folderLayouts[drawer.groupId];
     const inFolder = new Set(layout === void 0 ? [] : [...layout.shown, ...layout.folded]);
@@ -15296,8 +15784,8 @@ function CanvasInner(props) {
     }
     if (removedIds.length > 0) canvas.removeEdges(removedIds);
   };
-  const mountedRef = (0, import_react13.useRef)(true);
-  (0, import_react13.useEffect)(() => {
+  const mountedRef = (0, import_react15.useRef)(true);
+  (0, import_react15.useEffect)(() => {
     mountedRef.current = true;
     return () => {
       mountedRef.current = false;
@@ -15457,7 +15945,7 @@ function CanvasInner(props) {
     agent: hit.agent,
     depth: hit.depth
   });
-  (0, import_react13.useEffect)(() => {
+  (0, import_react15.useEffect)(() => {
     setTitleResolver((sessionId) => renamedTitles[sessionId] ?? sessions.byId[sessionId]?.displayTitle);
     setCardTable(Object.entries(canvasState.cards).map(([cardId, card]) => ({
       cardId,
@@ -15554,11 +16042,14 @@ function CanvasInner(props) {
     setBatchBusy(true);
     try {
       if (kind === "archive") await archiveSessions(sessionIds);
-      else await trashSessions(sessionIds, () => {
-        showToast(t("toast.stopping"));
-      });
-      if (kind === "delete") for (const cardId of cardIds) canvas.removeCard(cardId);
-      showToast(t(kind === "archive" ? "toast.archived" : "toast.deleted", { n: String(sessionIds.length) }));
+      else {
+        const results = await trashSessions(sessionIds);
+        if (!results.length) return;
+        canvas.refresh();
+        showToast(describeTrashResults(results));
+        return;
+      }
+      showToast(t("toast.archived", { n: String(sessionIds.length) }));
     } catch (error) {
       showToast(`${t(kind === "archive" ? "toast.archiveFailed" : "toast.deleteFailed")}${String(error)}`);
     } finally {
@@ -15581,11 +16072,11 @@ function CanvasInner(props) {
       canvas.moveCard(id2, point.x, point.y);
     });
   };
-  const selectedCardIds = (0, import_react13.useMemo)(
+  const selectedCardIds = (0, import_react15.useMemo)(
     () => [...batchPicks].filter((id2) => visibleCards[id2] !== void 0),
     [batchPicks, visibleCards]
   );
-  const selectedFrameWs = (0, import_react13.useMemo)(
+  const selectedFrameWs = (0, import_react15.useMemo)(
     () => [...liveSelectedIds].filter((id2) => id2.startsWith("frame-")).map((id2) => id2.slice("frame-".length)),
     [liveSelectedIds]
   );
@@ -15707,27 +16198,17 @@ function CanvasInner(props) {
   const deleteWorkspace = async (groupId) => {
     const sessionIds = (membersByGroup.get(groupId) ?? []).map((cardId) => visibleCards[cardId]?.sessionId).filter((sessionId) => sessionId !== void 0);
     try {
-      const bin = await recycleBinReady();
-      if (sessionIds.length > 0) {
-        if (bin) {
-          try {
-            await trashSessions(sessionIds, () => {
-              showToast(t("toast.stopping"));
-            });
-          } catch (error) {
-            if (!/HTTP (404|405)|未注册|not found/i.test(String(error.message))) throw error;
-            await deleteSessionsDirect(sessionIds);
-            await deleteWorkspaceRegistration(groupId);
-          }
-        } else {
-          await deleteSessionsDirect(sessionIds);
-          await deleteWorkspaceRegistration(groupId);
-        }
+      if (sessionIds.length === 0) {
+        if (await confirmAction(t("confirm.removeGroup.title"), t("trash.emptyGroup"))) removeGroup(groupId);
+        return;
       }
-      removeGroup(groupId);
-      showToast(t(bin ? "toast.workspaceTrashed" : "toast.workspaceDeleted", { n: String(sessionIds.length) }));
+      const results = await trashSessions(sessionIds, t("confirm.removeGroup.title"));
+      if (!results.length) return;
+      canvas.refresh();
+      if (results.every((r) => r.status === "trashed")) removeGroup(groupId);
+      showToast(describeTrashResults(results));
     } catch (error) {
-      showToast(String(error?.message ?? error));
+      showToast(String(error));
     }
   };
   const removeGroup = (groupId) => {
@@ -15754,7 +16235,7 @@ function CanvasInner(props) {
       view: "root"
     });
   };
-  const menuState = (0, import_react13.useMemo)(() => {
+  const menuState = (0, import_react15.useMemo)(() => {
     if (menu === null) return null;
     const close = () => {
       setMenu(null);
@@ -15775,13 +16256,13 @@ function CanvasInner(props) {
         prompt: {
           placeholder: t("draft.wsNamePlaceholder"),
           submitLabel: t("menu.createAndImport"),
-          preview: (value) => `${parentDir}/${value}`,
-          onSubmit: async (value) => {
+          preview: (value2) => `${parentDir}/${value2}`,
+          onSubmit: async (value2) => {
             const services2 = getServices();
             if (services2 === void 0 || parentDir === "") throw new Error("no workspace root available");
-            const path = `${parentDir}/${value}`;
+            const path = `${parentDir}/${value2}`;
             await talkMapApi.ensureDir(path);
-            const created = await callRpc2("workspace/create", { path });
+            const created = await callRpc("workspace/create", { path });
             importWorkspace(created.workspace.workspaceId, menu.flowX, menu.flowY);
             close();
           }
@@ -16039,7 +16520,7 @@ function CanvasInner(props) {
   }, [menu, workspaces.items, sessions, boardSessionIds, wsFrames, wsTitles, canvasState.cards, canvasState.edges, canvasState.digests, pinnedSessions, archivedSessions, manualFrames, locale]);
   const savedCamera = canvas.savedCamera(INBOX_BOARD_ID);
   const hasContent = Object.keys(visibleCards).length > 0 || Object.keys(wsFrames).length > 0;
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
     "div",
     {
       ref: wrapperRef,
@@ -16065,7 +16546,7 @@ function CanvasInner(props) {
         if (menu !== null) setMenu(null);
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
           index,
           {
             nodes,
@@ -16133,15 +16614,15 @@ function CanvasInner(props) {
             proOptions: { hideAttribution: true },
             ...savedCamera !== void 0 ? { defaultViewport: savedCamera } : { fitView: hasContent },
             children: [
-              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Background, { variant: BackgroundVariant.Dots, gap: GRID, size: 1 }),
-              /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(Controls, { showInteractive: false, className: talk_map_default["mapControls"], children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ControlButton, { title: t("map.zoom100"), onClick: () => {
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Background, { variant: BackgroundVariant.Dots, gap: GRID, size: 1 }),
+              /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(Controls, { showInteractive: false, className: talk_map_default["mapControls"], children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ControlButton, { title: t("map.zoom100"), onClick: () => {
                 void zoomTo(1, { duration: 200 });
-              }, children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["zoomResetLabel"], children: "1:1" }) }) })
+              }, children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: talk_map_default["zoomResetLabel"], children: "1:1" }) }) })
             ]
           }
         ),
-        /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(StatusRail, { entries: statusEntries, cardWidth: CARD_W, onOpenSession: openSession, onOpenChange: setStatusRailOpen }),
-        batchMode ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(StatusRail, { entries: statusEntries, cardWidth: CARD_W, onOpenSession: openSession, onOpenChange: setStatusRailOpen }),
+        batchMode ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           BatchBar,
           {
             count: selectedCardIds.length,
@@ -16158,14 +16639,14 @@ function CanvasInner(props) {
             }
           }
         ) : null,
-        hasContent ? null : /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.empty") }),
-        menuState !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ContextMenu, { menu: menuState, onClose: () => {
+        hasContent ? null : /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.empty") }),
+        menuState !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ContextMenu, { menu: menuState, onClose: () => {
           setMenu(null);
         } }, menu?.view ?? "root") : null,
-        pendingSpawn !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(SpawnPreview, { pending: pendingSpawn, onClose: () => {
+        pendingSpawn !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(SpawnPreview, { pending: pendingSpawn, onClose: () => {
           setPendingSpawn(null);
         } }) : null,
-        digestTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        digestTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           DigestDialog,
           {
             title: digestTarget.title,
@@ -16175,7 +16656,7 @@ function CanvasInner(props) {
             }
           }
         ) : null,
-        renameTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        renameTarget !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           RenameDialog,
           {
             target: renameTarget,
@@ -16192,7 +16673,7 @@ function CanvasInner(props) {
             }
           }
         ) : null,
-        drawer !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+        drawer !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
           StackDrawer,
           {
             workspaceTitle: renamedWorkspaces[drawer.groupId] ?? wsTitles.get(drawer.groupId) ?? t("frame.unknown"),
@@ -16217,16 +16698,16 @@ function CanvasInner(props) {
             onClose: closeDrawer
           }
         ) : null,
-        toast !== null ? /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["toast"], children: toast }) : null
+        toast !== null ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: talk_map_default["toast"], children: toast }) : null
       ]
     }
   );
 }
 function BatchBar(props) {
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: talk_map_default["batchBar"], role: "toolbar", "aria-label": t("batch.title"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["batchCount"], children: t("batch.count", { n: String(props.count) }) }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("span", { className: talk_map_default["batchSpace"] }),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: talk_map_default["batchBar"], role: "toolbar", "aria-label": t("batch.title"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: talk_map_default["batchCount"], children: t("batch.count", { n: String(props.count) }) }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: talk_map_default["batchSpace"] }),
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       "button",
       {
         type: "button",
@@ -16236,7 +16717,7 @@ function BatchBar(props) {
         children: t("batch.archive")
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       "button",
       {
         type: "button",
@@ -16246,7 +16727,7 @@ function BatchBar(props) {
         children: t("batch.delete")
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
       "button",
       {
         type: "button",
@@ -16260,18 +16741,18 @@ function BatchBar(props) {
 }
 var DRAW_LINEAGE_LINKS = true;
 function MapCanvas(props) {
-  const canvasState = (0, import_react13.useSyncExternalStore)(canvas.subscribe, canvas.get);
-  (0, import_react13.useEffect)(() => {
+  const canvasState = (0, import_react15.useSyncExternalStore)(canvas.subscribe, canvas.get);
+  (0, import_react15.useEffect)(() => {
     canvas.ensureLoaded();
     canvas.refresh();
     return canvas.connect();
   }, []);
   if (canvasState.phase === "error") {
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime17.jsxs)("div", { className: talk_map_default["emptyHint"], children: [
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("div", { className: talk_map_default["emptyHint"], children: [
       t("map.loadError"),
       " ",
       canvasState.error,
-      /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(
+      /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(
         "button",
         {
           type: "button",
@@ -16286,17 +16767,17 @@ function MapCanvas(props) {
     ] }) });
   }
   if (canvasState.phase !== "ready") {
-    return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.loading") }) });
+    return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: talk_map_default["canvas"], children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("div", { className: talk_map_default["emptyHint"], children: t("map.loading") }) });
   }
-  return /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(ReactFlowProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime17.jsx)(CanvasInner, { ...props }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(ReactFlowProvider, { children: /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(CanvasInner, { ...props }) });
 }
 
 // src/client/MapOverlay.tsx
-var import_jsx_runtime18 = require("react/jsx-runtime");
+var import_jsx_runtime20 = require("react/jsx-runtime");
 function FontSizeButtons() {
-  const step2 = (0, import_react15.useSyncExternalStore)(fontScale.subscribe, fontScale.getSnapshot);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["fontGroup"], role: "group", "aria-label": t("font.group"), children: [
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+  const step2 = (0, import_react17.useSyncExternalStore)(fontScale.subscribe, fontScale.getSnapshot);
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: talk_map_default["fontGroup"], role: "group", "aria-label": t("font.group"), children: [
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
       "button",
       {
         type: "button",
@@ -16308,12 +16789,12 @@ function FontSizeButtons() {
           fontScale.decrease();
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontGlyphSmall"], children: "A" }),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontSign"], children: "−" })
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: talk_map_default["fontGlyphSmall"], children: "A" }),
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: talk_map_default["fontSign"], children: "−" })
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
       "button",
       {
         type: "button",
@@ -16325,12 +16806,12 @@ function FontSizeButtons() {
           fontScale.increase();
         },
         children: [
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontGlyphLarge"], children: "A" }),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["fontSign"], children: "+" })
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: talk_map_default["fontGlyphLarge"], children: "A" }),
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: talk_map_default["fontSign"], children: "+" })
         ]
       }
     ),
-    /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+    /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
       "button",
       {
         type: "button",
@@ -16347,15 +16828,15 @@ function FontSizeButtons() {
   ] });
 }
 function BackIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M15 5l-7 7 7 7" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("path", { d: "M15 5l-7 7 7 7" }) });
 }
 function CloseIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("path", { d: "M6 6l12 12M18 6L6 18" }) });
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("svg", { width: "18", height: "18", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", "aria-hidden": "true", children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("path", { d: "M6 6l12 12M18 6L6 18" }) });
 }
 function MapOverlay(props) {
-  (0, import_react15.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
-  const fontStep = (0, import_react15.useSyncExternalStore)(fontScale.subscribe, fontScale.getSnapshot);
-  (0, import_react15.useEffect)(() => {
+  (0, import_react17.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
+  const fontStep = (0, import_react17.useSyncExternalStore)(fontScale.subscribe, fontScale.getSnapshot);
+  (0, import_react17.useEffect)(() => {
     mapUi.setOpen(true);
     hideSidebarForMap();
     return () => {
@@ -16363,7 +16844,7 @@ function MapOverlay(props) {
       restoreSidebarAfterMap();
     };
   }, []);
-  (0, import_react15.useEffect)(() => {
+  (0, import_react17.useEffect)(() => {
     const onKeyDown = (event) => {
       if (event.key !== "Escape") return;
       if (mapUi.escapeClaimed()) return;
@@ -16375,7 +16856,7 @@ function MapOverlay(props) {
       window.removeEventListener("keydown", onKeyDown, { capture: true });
     };
   }, []);
-  return /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
     "div",
     {
       className: talk_map_default["panel"],
@@ -16384,8 +16865,8 @@ function MapOverlay(props) {
       "aria-label": t("map.title"),
       style: { "--tm-font-step": `${fontStep}px` },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)("div", { className: talk_map_default["header"], children: [
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsxs)(
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)("div", { className: talk_map_default["header"], children: [
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsxs)(
             "button",
             {
               type: "button",
@@ -16394,17 +16875,18 @@ function MapOverlay(props) {
               "aria-label": t("map.back"),
               onClick: closeMapPanel,
               children: [
-                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(BackIcon, {}),
-                /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { children: t("map.back") })
+                /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(BackIcon, {}),
+                /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { children: t("map.back") })
               ]
             }
           ),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)("span", { className: talk_map_default["headerSpace"] }),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(GlobalSearch, { onOpenSession: (sessionId) => {
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)("span", { className: talk_map_default["headerSpace"] }),
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(GlobalSearch, { onOpenSession: (sessionId) => {
             openSessionInUi(sessionId);
           } }),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(FontSizeButtons, {}),
-          /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(TrashButton, { wide: false }),
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(FontSizeButtons, {}),
+          /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(
             "button",
             {
               type: "button",
@@ -16412,36 +16894,36 @@ function MapOverlay(props) {
               title: t("map.close"),
               "aria-label": t("map.close"),
               onClick: closeMapPanel,
-              children: /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(CloseIcon, {})
+              children: /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(CloseIcon, {})
             }
           )
         ] }),
-        /* @__PURE__ */ (0, import_jsx_runtime18.jsx)(MapCanvas, { ...props })
+        /* @__PURE__ */ (0, import_jsx_runtime20.jsx)(MapCanvas, { ...props })
       ]
     }
   );
 }
 
 // src/client/MapToggleButton.tsx
-var import_react16 = require("react");
-var import_jsx_runtime19 = require("react/jsx-runtime");
+var import_react18 = require("react");
+var import_jsx_runtime21 = require("react/jsx-runtime");
 function MapIcon() {
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)("svg", { className: talk_map_default["toggleIcon"], viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("path", { d: "M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z" }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("path", { d: "M9 4v14" }),
-    /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("path", { d: "M15 6v14" })
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)("svg", { className: talk_map_default["toggleIcon"], viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "1.8", strokeLinecap: "round", strokeLinejoin: "round", "aria-hidden": "true", children: [
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("path", { d: "M9 4 3.5 6v14L9 18l6 2 5.5-2V4L15 6 9 4Z" }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("path", { d: "M9 4v14" }),
+    /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("path", { d: "M15 6v14" })
   ] });
 }
 function MapToggleButton(props) {
-  const open = (0, import_react16.useSyncExternalStore)(mapUi.subscribe, () => mapUi.get().open);
-  const locale = (0, import_react16.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
+  const open = (0, import_react18.useSyncExternalStore)(mapUi.subscribe, () => mapUi.get().open);
+  const locale = (0, import_react18.useSyncExternalStore)(subscribeLocale, activeLocale, activeLocale);
   const wide = props.wide;
-  (0, import_react16.useEffect)(() => {
+  (0, import_react18.useEffect)(() => {
     reportSidebarWide(wide);
   }, [wide]);
   const classNames = [wide ? talk_map_default["toggleRow"] : talk_map_default["toggleButton"]];
   if (open) classNames.push(talk_map_default["toggleButtonActive"]);
-  return /* @__PURE__ */ (0, import_jsx_runtime19.jsxs)(
+  return /* @__PURE__ */ (0, import_jsx_runtime21.jsxs)(
     "button",
     {
       type: "button",
@@ -16454,11 +16936,79 @@ function MapToggleButton(props) {
         mapUi.toggle();
       },
       children: [
-        /* @__PURE__ */ (0, import_jsx_runtime19.jsx)(MapIcon, {}),
-        wide ? /* @__PURE__ */ (0, import_jsx_runtime19.jsx)("span", { className: talk_map_default["toggleLabel"], children: t("map.toggle") }) : null
+        /* @__PURE__ */ (0, import_jsx_runtime21.jsx)(MapIcon, {}),
+        wide ? /* @__PURE__ */ (0, import_jsx_runtime21.jsx)("span", { className: talk_map_default["toggleLabel"], children: t("map.toggle") }) : null
       ]
     }
   );
+}
+
+// src/client/NativeSessionActions.tsx
+var import_react19 = require("react");
+var import_jsx_runtime22 = require("react/jsx-runtime");
+var openMenus = /* @__PURE__ */ new Map();
+function NativeDeleteMenuItem(props) {
+  const [open, setOpen] = props.useMenuOpenState();
+  const menuId = (0, import_react19.useId)();
+  (0, import_react19.useEffect)(() => {
+    if (!open) return;
+    const release = mapUi.claimEscape(`native-session-menu:${menuId}`);
+    openMenus.set(props.sessionId, (openMenus.get(props.sessionId) ?? 0) + 1);
+    return () => {
+      release();
+      const count = (openMenus.get(props.sessionId) ?? 1) - 1;
+      if (count > 0) openMenus.set(props.sessionId, count);
+      else openMenus.delete(props.sessionId);
+    };
+  }, [open, props.sessionId, menuId]);
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
+    "button",
+    {
+      type: "button",
+      role: "menuitem",
+      className: `${talk_map_default["menuItem"]} ${talk_map_default["menuItemDanger"]}`,
+      onClick: () => {
+        setOpen(false);
+        void trashSessions([props.sessionId]).catch((e) => actionNotice(String(e)));
+      },
+      children: [
+        /* @__PURE__ */ (0, import_jsx_runtime22.jsx)(MenuIcon, { name: "delete" }),
+        t("menu.deleteSession")
+      ]
+    }
+  );
+}
+function NativeRowContextMenu({ sessionId }) {
+  const marker = (0, import_react19.useRef)(null);
+  (0, import_react19.useEffect)(() => {
+    const node = marker.current;
+    const row = node?.closest("[data-row-key]");
+    if (!row || row.dataset.rowKey !== `session:${sessionId}`) return;
+    if (row.querySelector("button[data-context-menu-trigger]")) return;
+    const outlet = node?.closest('[data-slot="sidebar.workspaces.session.row.action"]');
+    const more = outlet?.previousElementSibling?.querySelector(
+      ':scope > button[type="button"][aria-label]'
+    );
+    if (!more || !row.contains(more)) return;
+    const show = (e) => {
+      if (e.defaultPrevented) return;
+      e.preventDefault();
+      e.stopPropagation();
+      row.focus({ preventScroll: true });
+      if (!openMenus.has(sessionId)) more.click();
+    };
+    const key = (e) => {
+      if (e.repeat || e.isComposing || e.ctrlKey || e.altKey || e.metaKey) return;
+      if (e.key === "ContextMenu" || e.shiftKey && e.key === "F10") show(e);
+    };
+    row.addEventListener("contextmenu", show);
+    row.addEventListener("keydown", key);
+    return () => {
+      row.removeEventListener("contextmenu", show);
+      row.removeEventListener("keydown", key);
+    };
+  }, [sessionId]);
+  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { ref: marker, hidden: true, "aria-hidden": "true" });
 }
 
 // src/client/index.ts
@@ -16469,8 +17019,8 @@ function resolveUiWorkspace2(ctx) {
   } catch {
   }
   try {
-    const value = typeof ctx.get === "function" ? ctx.get("uiWorkspace") : void 0;
-    return value === void 0 || value === null ? void 0 : value;
+    const value2 = typeof ctx.get === "function" ? ctx.get("uiWorkspace") : void 0;
+    return value2 === void 0 || value2 === null ? void 0 : value2;
   } catch {
     return void 0;
   }
@@ -16482,8 +17032,8 @@ function resolveLayout2(ctx) {
   } catch {
   }
   try {
-    const value = typeof ctx.get === "function" ? ctx.get("layout") : void 0;
-    return value === void 0 || value === null ? void 0 : value;
+    const value2 = typeof ctx.get === "function" ? ctx.get("layout") : void 0;
+    return value2 === void 0 || value2 === null ? void 0 : value2;
   } catch {
     return void 0;
   }
@@ -16495,8 +17045,8 @@ function resolveRemote(ctx) {
   } catch {
   }
   try {
-    const value = typeof ctx.get === "function" ? ctx.get("remote") : void 0;
-    return value === void 0 || value === null ? void 0 : value;
+    const value2 = typeof ctx.get === "function" ? ctx.get("remote") : void 0;
+    return value2 === void 0 || value2 === null ? void 0 : value2;
   } catch {
     return void 0;
   }
@@ -16523,6 +17073,11 @@ function apply(ctx) {
       key: MAP_PANEL_ID,
       label: () => t("map.title")
     }, MapOverlay), "main panel");
+    registerSafely("main", () => ctx.slots.register({ name: "main", key: TRASH_PANEL_ID, label: () => t("trash.title") }, TrashPanel), "trash panel");
+    registerSafely("shell.overlay", () => ctx.slots.register({ name: "shell.overlay", id: "talk-map-actions", order: 100 }, ActionSurface), "action surface");
+    registerSafely("sidebar.footer.action", () => ctx.slots.register({ name: "sidebar.footer.action", id: "talk-map-trash", order: 11, label: () => t("trash.title") }, TrashButton), "trash button");
+    registerSafely("sidebar.workspaces.session.menu.item", () => ctx.slots.register({ name: "sidebar.workspaces.session.menu.item", id: "talk-map.delete", order: 500 }, NativeDeleteMenuItem), "session delete");
+    registerSafely("sidebar.workspaces.session.row.action", () => ctx.slots.register({ name: "sidebar.workspaces.session.row.action", id: "talk-map.context-menu", order: 1e3 }, NativeRowContextMenu), "session context menu");
     attachServices({
       sessions: ctx.sessions,
       workspaces: ctx.workspaces,

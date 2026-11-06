@@ -1,6 +1,22 @@
 /* All colors come from the shell's --dsw-alias-* semantic tokens (ui-theme
  * design-platform.css), so light/dark follow the app theme automatically. */
 
+.trashPanel { padding: 24px; height: 100%; overflow: auto; box-sizing: border-box; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); }
+.trashToolbar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 20px; }
+.trashToolbar h2 { flex: 1; margin: 0; font-size: 20px; }
+.trashToolbar button, .trashEntry button, .trashNotice button { padding: 8px 12px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 8px; color: inherit; background: var(--dsw-alias-interactive-bg-hover); cursor: pointer; }
+.trashPanel button:disabled { opacity: .45; cursor: default; }
+.trashPanel button:focus-visible, .trashPanel input:focus-visible { outline: 2px solid var(--dsw-alias-brand-primary); outline-offset: 2px; }
+.trashList { display: flex; flex-direction: column; gap: 10px; }
+.trashEntry { display: flex; align-items: center; gap: 12px; padding: 16px; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; }
+.trashDetails { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 6px; overflow-wrap: anywhere; }
+.trashDetails code, .trashDetails small { color: var(--dsw-alias-label-secondary); }
+.trashError { white-space: pre-wrap; color: var(--dsw-alias-state-error-primary); }
+.trashCopy { line-height: 1.6; color: var(--dsw-alias-label-secondary); }
+.trashDanger { color: var(--dsw-alias-color-danger); }
+.trashNotice { position: fixed; z-index: 10000; bottom: 24px; left: 50%; transform: translateX(-50%); display: flex; align-items: center; gap: 12px; padding: 14px 18px; max-width: min(720px, 90vw); max-height: 40vh; overflow: auto; border: 1px solid var(--dsw-alias-border-l2); border-radius: 12px; background: var(--dsw-alias-bg-layer-1); color: var(--dsw-alias-label-primary); box-shadow: 0 8px 32px var(--dsw-alias-interactive-bg-hover); white-space: pre-wrap; }
+@media (max-width: 620px) { .trashPanel { padding: 12px; } .trashEntry { flex-wrap: wrap; } .trashDetails { flex-basis: 70%; } }
+
 .toggleButton {
   display: flex;
   align-items: center;

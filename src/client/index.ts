@@ -15,6 +15,9 @@ import { MapOverlay } from './MapOverlay.tsx'
 import { MapToggleButton } from './MapToggleButton.tsx'
 import { attachAlertSource } from './session-alerts.ts'
 import { t } from './i18n.ts'
+import { ActionSurface } from './ActionSurface.tsx'
+import { NativeDeleteMenuItem, NativeRowContextMenu } from './NativeSessionActions.tsx'
+import { TrashButton, TrashPanel, TRASH_PANEL_ID } from './TrashPanel.tsx'
 
 /**
  * ctx.uiWorkspace carries the real session opener. It is not in `inject` so a
@@ -106,6 +109,11 @@ export function apply(ctx: TalkMapClientContext): void {
       key: MAP_PANEL_ID,
       label: () => t('map.title'),
     }, MapOverlay), 'main panel')
+    registerSafely('main', () => ctx.slots.register({ name: 'main', key: TRASH_PANEL_ID, label: () => t('trash.title') }, TrashPanel), 'trash panel')
+    registerSafely('shell.overlay', () => ctx.slots.register({ name: 'shell.overlay', id: 'talk-map-actions', order: 100 }, ActionSurface), 'action surface')
+    registerSafely('sidebar.footer.action', () => ctx.slots.register({ name: 'sidebar.footer.action', id: 'talk-map-trash', order: 11, label: () => t('trash.title') }, TrashButton), 'trash button')
+    registerSafely('sidebar.workspaces.session.menu.item', () => ctx.slots.register({ name: 'sidebar.workspaces.session.menu.item', id: 'talk-map.delete', order: 500 }, NativeDeleteMenuItem), 'session delete')
+    registerSafely('sidebar.workspaces.session.row.action', () => ctx.slots.register({ name: 'sidebar.workspaces.session.row.action', id: 'talk-map.context-menu', order: 1000 }, NativeRowContextMenu), 'session context menu')
     attachServices({
       sessions: ctx.sessions,
       workspaces: ctx.workspaces,

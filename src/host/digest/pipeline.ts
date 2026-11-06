@@ -36,6 +36,7 @@ export class DigestPipeline {
      * inputHash) — the auto-sync fan-out hangs off this. Never fired for
      * hash-identical refreshes, so sync edges cannot flood their targets. */
     private readonly onFresh?: (sessionId: string, digest: Digest) => void,
+    private readonly writeActive: <T>(id: string, write: () => Promise<T>) => Promise<T> = (_id, write) => write(),
   ) {}
 
   /** Wire the turn/end trigger; returns the disposer. */
@@ -120,7 +121,7 @@ export class DigestPipeline {
         ...(extracted.todoNext !== undefined ? { todoNext: extracted.todoNext } : {}),
         generatedAt: Date.now(),
       }
-      await store.digests.put(sessionId, digest)
+      await this.persistDigest(store, sessionId, digest)
       return digest
     }
 
@@ -143,7 +144,7 @@ export class DigestPipeline {
         model: `${route.provider}/${route.model}`,
         inputHash,
       }
-      await store.digests.put(sessionId, digest)
+      await this.persistDigest(store, sessionId, digest)
       if (previous?.inputHash !== inputHash) {
         // Isolated: a throwing consumer must not fall into the outer catch,
         // which would overwrite the just-persisted digest with an error one.
@@ -164,9 +165,16 @@ export class DigestPipeline {
         generatedAt: Date.now(),
         error: String(error).slice(0, 500),
       }
-      await store.digests.put(sessionId, digest)
+      await this.persistDigest(store, sessionId, digest)
       return digest
     }
+  }
+
+  private async persistDigest(store: TalkMapStore, id: string, digest: Digest): Promise<void> {
+    await this.writeActive(id, async () => {
+      if (this.disposed) throw new Error('digest pipeline disposed')
+      await store.digests.put(id, digest)
+    })
   }
 
   private async generate(

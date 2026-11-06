@@ -410,7 +410,8 @@
   let searchRouteFails = false
   let searchRouteMessage = 'host search route down'
   const posts = []
-  /** Every POST the map makes to dsh-recycle-bin's route. */
+  /** Offline transport double; file transactions are covered by session-trash.test.mjs. */
+  const trashEntries = new Map()
   const recycleCalls = []
   /** Simulate the host refusing a move because the session still has work. */
   let recycleBusyFlag = false
@@ -423,22 +424,40 @@
   }
   window.fetch = function (url, init) {
     const path = String(url)
-    if (path.indexOf('dsh-session-recycle-bin/api') >= 0) {
-      let body = null
-      try { body = JSON.parse(init?.body ?? 'null') } catch { body = null }
-      recycleCalls.push(body)
-      // Refuse the first move while the flag is on — the host's `session-open`
-      // answer for a session that still has work.
-      if (recycleBusyFlag && recycleBusyLeft > 0) {
-        recycleBusyLeft -= 1
-        return json({
-          ok: false,
-          code: 'session-open',
-          message: 'the session still has work in this Harness process: the Agent is running or has queued input',
-        }, 409)
+    if (path === '/talk-map/trash') return json({entries: [...trashEntries.values()].map(e => e.entry)})
+    if (/^\/talk-map\/sessions\/(trash|restore|purge)$/.test(path)) {
+      const body = JSON.parse(init?.body ?? '{}')
+      const action = path.split('/').at(-1)
+      recycleCalls.push({action, ...body})
+      const results = []
+      for (const id of body.sessionIds ?? body.entryIds ?? []) {
+        if (action === 'trash') {
+          if (recycleBusyFlag && recycleBusyLeft-- > 0) {
+            results.push({requestId:id,sessionId:id,status:'failed',affectedSessionIds:[],error:{code:'SESSION_RUNNING',message:'session running'}})
+            continue
+          }
+          const eid = crypto.randomUUID()
+          const cards = Object.fromEntries(Object.entries(payload.cards).filter(([,c]) => c.sessionId === id))
+          const summary = sessionsState.byId[id]
+          const entry = {entryId:eid,sessionId:id,title:summary?.displayTitle ?? id,sessionCount:1,workspace:'Test',deletedAt:Date.now(),state:'trashed'}
+          trashEntries.set(eid,{entry,cards,summary,index:sessionsState.ids.indexOf(id)})
+          for (const key of Object.keys(cards)) delete payload.cards[key]
+          delete sessionsState.byId[id]
+          sessionsState.ids = sessionsState.ids.filter(s => s !== id)
+          results.push({requestId:id,sessionId:id,entryId:eid,status:'trashed',affectedSessionIds:[id]})
+        } else {
+          const saved = trashEntries.get(id)
+          if (!saved) {results.push({requestId:id,status:'failed',affectedSessionIds:[],error:{code:'ENTRY_NOT_FOUND',message:'missing entry'}});continue}
+          if (action === 'restore') {
+            Object.assign(payload.cards,saved.cards)
+            if(saved.summary){sessionsState.byId[saved.entry.sessionId]=saved.summary;sessionsState.ids.splice(saved.index,0,saved.entry.sessionId)}
+          }
+          trashEntries.delete(id)
+          results.push({requestId:id,sessionId:saved.entry.sessionId,entryId:id,status:action==='restore'?'restored':'purged',affectedSessionIds:[saved.entry.sessionId]})
+        }
       }
-      const count = Array.isArray(body?.sessionIds) ? body.sessionIds.length : 1
-      return json({ ok: true, trashedCount: count, archivedCount: count, failedCount: 0 })
+      sync()
+      return json({results})
     }
     if (init && init.method === 'POST') {
       let body = null
@@ -566,6 +585,9 @@
 
   // ---- fake cordis context --------------------------------------------
   const registered = {}
+  const footerEntries = []
+  let showNativeRows = false
+  let nativeMenuOwner = 'legacy'
   /** `main` entries by key — the map is one now, like the recycle bin's page. */
   const panels = {}
   const remoteListeners = new Map()
@@ -708,7 +730,8 @@
     slots: {
       inject(_name, callback) { callback() },
       register(descriptor, component) {
-        registered[descriptor.name] = { descriptor, component }
+        registered[descriptor.name] ??= { descriptor, component }
+        if(descriptor.name === 'sidebar.footer.action') footerEntries.push({descriptor,component})
         if (descriptor.name === 'main' && typeof descriptor.key === 'string') panels[descriptor.key] = component
         return () => {
           delete registered[descriptor.name]
@@ -741,6 +764,75 @@
     useSessionStatus: (select) => select ? select(statusById) : statusById,
   }
 
+  // SessionNodeItem + SlotOutlet contracts: rc.5 uses Menu + the inline
+  // display:contents outlet; 0.2.2-rc.1 owns context menus and nests quick actions.
+  // Keep the real outlet wrapper: omitting it previously hid a broken selector.
+  function NativeRow({ id }) {
+    const [open, setOpen] = React.useState(false)
+    const rowRef = React.useRef(null)
+    const menuRef = React.useRef(null)
+    const Delete = registered['sidebar.workspaces.session.menu.item']?.component
+    const Bridge = registered['sidebar.workspaces.session.row.action']?.component
+    const h = React.createElement
+    const hostOwnsMenu = nativeMenuOwner === 'host'
+    React.useEffect(() => {
+      if (!open) return
+      const dismiss = e => {
+        if (e.type === 'keydown') {
+          if (e.key === 'Escape') setOpen(false)
+        } else if (!rowRef.current?.contains(e.target) && !menuRef.current?.contains(e.target)) {
+          setOpen(false)
+        }
+      }
+      document.addEventListener('pointerdown', dismiss)
+      document.addEventListener('keydown', dismiss)
+      return () => {
+        document.removeEventListener('pointerdown', dismiss)
+        document.removeEventListener('keydown', dismiss)
+      }
+    }, [open])
+    const show = e => {
+      if (e.defaultPrevented) return
+      e.preventDefault()
+      e.stopPropagation()
+      log('native.contextMenu', { id })
+      setOpen(true)
+    }
+    const more = h('button', {
+      type: 'button', 'aria-label': 'More ' + id,
+      ...(hostOwnsMenu ? { 'data-context-menu-trigger': '' } : {}),
+      onClick: e => { e.stopPropagation(); log('native.more', { id }); setOpen(!open) },
+    }, '⋯')
+    const actions = h('span', {
+      'data-slot': 'sidebar.workspaces.session.row.action', style: { display: 'contents' },
+    }, h('button', {
+      type: 'button', 'aria-label': 'Other action ' + id,
+      onClick: e => { e.stopPropagation(); log('native.otherAction', { id }) },
+    }, '☆'), Bridge && h(Bridge, { sessionId: id, displayTitle: id }))
+    const menu = open && ReactDOM.createPortal(h('div', {
+      role: 'menu', ref: menuRef, onClick: e => e.stopPropagation(),
+      style: { position: 'fixed', left: 230, top: 20, zIndex: 100, width: 200,
+        background: 'var(--dsw-alias-bg-layer-1, #fff)', padding: 4, borderRadius: 8,
+        boxShadow: '0 4px 24px #0003' },
+    }, h('button', {
+      role: 'menuitem', style: { display: 'flex', alignItems: 'center', gap: 8, padding: '6px 10px',
+        border: 0, background: 'transparent', color: 'var(--dsw-alias-label-primary, #111)', fontSize: 13 },
+    }, h('svg', { width: 14, height: 14, viewBox: '0 0 24 24', 'aria-hidden': true },
+      h('path', { d: 'M16 8.6V4h1V2H7v2h1v4.6c0 1.66-1.34 3-3 3v2h5.1v7.9l.9 1 .9-1V13.6H19v-2c-1.66 0-3-1.34-3-3z', fill: 'currentColor' })), '原生置顶'),
+    h('span', { 'data-slot': 'sidebar.workspaces.session.menu.item', style: { display: 'contents' } },
+      Delete && h(Delete, { sessionId: id, displayTitle: id, useMenuOpenState: () => [open, setOpen] }))), document.body)
+    return h('div', {
+      ref: rowRef, 'data-row-key': 'session:' + id, role: 'treeitem', tabIndex: 0,
+      onClick: () => log('native.open', { id }), style: { padding: 12 },
+      ...(hostOwnsMenu ? {
+        onContextMenu: show,
+        onKeyDown: e => { if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) show(e) },
+      } : {}),
+    }, h('span', null, sessionsState.byId[id]?.displayTitle ?? id),
+    h('span', { onClick: e => e.stopPropagation() },
+      hostOwnsMenu ? more : h('span', null, more, menu),
+      hostOwnsMenu ? h('span', null, actions) : actions), hostOwnsMenu ? menu : null)
+  }
   function sync() {
     const MapPanel = panels['talk-map']
     const Toggle = registered['sidebar.footer.action']?.component
@@ -764,18 +856,22 @@
           boxSizing: 'border-box',
           background: '#1f2126',
         },
-      }, Toggle === undefined ? null : h(Toggle, { wide: !sidebarCollapsed })),
+      }, showNativeRows ? sessionsState.ids.slice(0,3).map(id => h(NativeRow,{key:nativeMenuOwner+id,id})) : null,
+        ...footerEntries.map(e => h(e.component,{key:e.descriptor.id,wide:!sidebarCollapsed}))),
       h('div', { style: { flex: 1, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column' } },
-        selectedPanel === 'talk-map' && MapPanel !== undefined
-          ? h(MapPanel, props)
+        selectedPanel !== null && panels[selectedPanel] !== undefined
+          ? h(panels[selectedPanel], props)
           : h('div', {
               'data-harness-placeholder': 'conversation',
               style: { padding: 24, fontSize: 13, color: '#8b90a0' },
             }, '会话（占位）')),
+      registered['shell.overlay'] ? h(registered['shell.overlay'].component) : null,
     ))
   }
 
   window.__harness = {
+    nativeRows(on=true, owner='legacy') {showNativeRows=on;nativeMenuOwner=owner;sync()},
+    selectPanel(id) {ctx.layout.selectPanel(id)},
     boot() {
       const entry = registry['dsh-talk-map']
       if (entry === undefined) throw new Error('client.js did not reach __ModuleLoader__')
@@ -799,7 +895,7 @@
     state: () => payload,
     getRoot: () => root,
     panelState: () => ({ selectedPanel }),
-    /** Every dsh-recycle-bin POST the map made (delete path). */
+    /** Every built-in trash action submitted by the client. */
     recycleCalls: () => recycleCalls.slice(),
     /** Refuse the next N moves with session-open (1 = only the first). */
     recycleBusy(on, times = 1) {

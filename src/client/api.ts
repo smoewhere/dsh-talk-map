@@ -2,12 +2,24 @@
  * Thin fetch/EventSource layer over the host half's /talk-map/* routes.
  * Same-origin by construction (relative URLs against the serving shell).
  */
+import type { TrashListing, TrashResult } from '../shared/trash.ts'
 import type { Card, Digest, MapEdgeData, MapGlobal, MapStatePayload } from '../shared/model.ts'
 
 /** Error shape thrown on non-2xx: `code` carries the host's structured
  * error code (e.g. 'session-not-live') when the body provides one. */
 export interface ApiError extends Error {
   code?: string
+}
+
+const trashListeners = new Set<() => void>()
+export function subscribeTrashChanges(listener: () => void): () => void {
+  trashListeners.add(listener)
+  return () => { trashListeners.delete(listener) }
+}
+async function trashMutation(path: string, body: unknown): Promise<{results: TrashResult[]}> {
+  const value = await postJson<{results: TrashResult[]}>(path, body)
+  for (const listener of trashListeners) listener()
+  return value
 }
 
 async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
@@ -41,6 +53,10 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const talkMapApi = {
+  getTrash(): Promise<TrashListing> { return requestJson('/talk-map/trash') },
+  trashSessions(sessionIds: readonly string[]): Promise<{results: TrashResult[]}> { return trashMutation('/talk-map/sessions/trash', {sessionIds}) },
+  restoreSessions(entryIds: readonly string[]): Promise<{results: TrashResult[]}> { return trashMutation('/talk-map/sessions/restore', {entryIds}) },
+  purgeSessions(entryIds: readonly string[]): Promise<{results: TrashResult[]}> { return trashMutation('/talk-map/sessions/purge', {entryIds}) },
   getState(): Promise<MapStatePayload> {
     return requestJson<MapStatePayload>('/talk-map/state')
   },

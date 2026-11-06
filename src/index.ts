@@ -15,6 +15,9 @@ import { DigestPipeline } from './host/digest/pipeline.ts'
 import { mountTalkMapRoutes, type TalkMapRuntime } from './host/routes.ts'
 import { Spawner } from './host/spawn.ts'
 import { openTalkMapStore, type TalkMapStore } from './host/store.ts'
+import { SessionTrash, type TrashServices } from './host/session-trash.ts'
+import { homedir } from 'node:os'
+import { resolve } from 'node:path'
 
 export const name = 'dsh-talk-map'
 
@@ -67,7 +70,8 @@ export function apply(ctx: OuterContext): void {
     services.effect(() => {
       // Auto-sync is shelved: the pipeline's onFresh hook and
       // host/auto-sync.ts stay unwired until the feature is wanted.
-      const pipeline = new DigestPipeline(services, storeReady)
+      const pipeline = new DigestPipeline(services, storeReady, undefined, undefined,
+        (id, write) => runtime.trash ? runtime.trash.writeActive([id], write) : write())
       const stop = pipeline.start()
       runtime.digest = pipeline
     /**
@@ -103,6 +107,24 @@ export function apply(ctx: OuterContext): void {
         if (runtime.digest === pipeline) delete runtime.digest
       }
     }, 'dsh-talk-map: digest pipeline')
+  })
+
+  ctx.inject(['storageDomain', 'sessions', 'agents', 'sessionPersistence', 'sessionProjectionCache', 'workspaceRegistry'], (injected: unknown) => {
+    const services = injected as TrashServices & Pick<TalkMapHostServices, 'effect'>
+    services.effect(() => {
+      let disposed = false
+      let trash: SessionTrash | undefined
+      void storeReady.then(async store => {
+        if (disposed) return
+        trash = new SessionTrash(services, store, resolve(process.env.DSH_HOME ?? resolve(homedir(), '.dsh')))
+        runtime.trash = trash
+        await trash.initialize()
+        if (disposed) await trash.close()
+      }).catch(error => services.logger?.warn(`[dsh-talk-map] trash unavailable: ${String(error)}`))
+      // Retain the closed fence until the replacement is initialized; writes must
+      // fail closed during service reload rather than resurrect deleted metadata.
+      return async () => { disposed = true; await trash?.close() }
+    }, 'dsh-talk-map: session trash')
   })
 
   // Defaults for the draft composer (each optional — missing service just
