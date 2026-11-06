@@ -1,25 +1,15 @@
 /** Shared lifecycle actions for the canvas and the native session list. */
 import { uiWorkspaceService } from './map-state.ts'
-import { talkMapApi } from './api.ts'
+import { talkMapApi, type ApiError } from './api.ts'
 import { actionNotice, confirmAction } from './ActionSurface.tsx'
 import { t } from './i18n.ts'
 import type { TrashResult } from '../shared/trash.ts'
 import { canvas } from './canvas-store.ts'
 
-export function describeTrashResults(results: readonly TrashResult[]): string {
-  const successes = results.filter((r) => r.status === 'trashed')
-  const failures = results.filter((r) => r.status === 'failed')
-  return [
-    successes.length
-      ? t('toast.deleted', {
-          n: String(new Set(successes.flatMap((r) => r.affectedSessionIds)).size),
-        })
-      : '',
-    ...failures.map(
-      (r) => (r.sessionId ?? r.requestId) + ': ' + (r.error?.message ?? t('toast.deleteFailed')),
-    ),
-  ]
-    .filter(Boolean)
+/** Successful deletion is visible in the list itself; only failures need a notice. */
+function describeTrashFailures(results: readonly TrashResult[]): string {
+  return results.filter(r => r.status === 'failed')
+    .map(r => (r.sessionId ?? r.requestId) + ': ' + (r.error?.message ?? t('toast.deleteFailed')))
     .join('\n')
 }
 
@@ -36,55 +26,19 @@ export async function trashSessions(
   let { results } = await talkMapApi.trashSessions(ids)
   const running = results.filter((r) => r.error?.code === 'SESSION_RUNNING')
   if (running.length && (await confirmAction(t('trash.stopTitle'), t('trash.stopBody')))) {
-    const ui = uiWorkspaceService()
-    for (const item of running) {
-      try {
-        if (!ui?.archiveSession) throw new Error(t('toast.needUiWorkspace'))
-        await ui.archiveSession(item.requestId, { stopActivity: true })
-        await new Promise((resolve) => setTimeout(resolve, 1000))
-        const retry = await talkMapApi.trashSessions([item.requestId])
-        results = results.map((r) => (r.requestId === item.requestId ? retry.results[0] : r))
-      } catch (e) {
-        results = results.map((r) =>
-          r.requestId === item.requestId
-            ? { ...r, error: { code: 'STOP_FAILED', message: String(e) } }
-            : r,
-        )
-      }
+    try {
+      const retry = await talkMapApi.trashSessions(running.map(item => item.requestId), true)
+      results = results.map(item => retry.results.find(r => r.requestId === item.requestId) ?? item)
+    } catch (error) {
+      results = results.map(item => running.includes(item)
+        ? { ...item, error: { code: (error as ApiError).code ?? 'STOP_FAILED', message: String(error) } } : item)
     }
   }
-  const entries = [
-    ...new Set(
-      results
-        .filter((r) => r.status === 'trashed')
-        .map((r) => r.entryId)
-        .filter((id): id is string => id !== undefined),
-    ),
-  ]
   canvas.acceptTrashedSessions(
-    results.filter((r) => r.status === 'trashed').flatMap((r) => r.affectedSessionIds),
+    results.filter(r => r.status === 'trashed').flatMap(r => r.affectedSessionIds),
   )
-  actionNotice(
-    describeTrashResults(results),
-    entries.length
-      ? () => {
-          void talkMapApi
-            .restoreSessions(entries)
-            .then(({ results }) => {
-              canvas.refresh()
-              actionNotice(
-                results.some((r) => r.status === 'failed')
-                  ? results
-                      .filter((r) => r.status === 'failed')
-                      .map((r) => r.error?.message)
-                      .join('\n')
-                  : t('trash.restored', { n: String(results.length) }),
-              )
-            })
-            .catch((e) => actionNotice(String(e)))
-        }
-      : undefined,
-  )
+  const failure = describeTrashFailures(results)
+  if (failure) actionNotice(failure)
   return results
 }
 

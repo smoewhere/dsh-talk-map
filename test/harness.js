@@ -412,7 +412,13 @@
   const posts = []
   /** Offline transport double; file transactions are covered by session-trash.test.mjs. */
   const trashEntries = new Map()
+  // Persisted restorations deliberately arrive without native added events.
+  // Only sessions.refresh() may install these rows, as in a missed-event recovery.
+  const restoredSummaries = new Map()
+  let nativeRefreshFails = false
   const recycleCalls = []
+  let storageFails = false
+  const purgeFailures = new Set()
   /** Simulate the host refusing a move because the session still has work. */
   let recycleBusyFlag = false
   let recycleBusyLeft = 0
@@ -424,7 +430,9 @@
   }
   window.fetch = function (url, init) {
     const path = String(url)
-    if (path === '/talk-map/trash') return json({entries: [...trashEntries.values()].map(e => e.entry)})
+    if (path === '/talk-map/storage' && storageFails) return json({error:'fixture unavailable'}, 500)
+    if (path === '/talk-map/storage') return json({categories: {sessions: {sizeBytes: 17746207, complete: true}, projectionCache: {sizeBytes: 3496754, complete: true}, trash: {sizeBytes: [...trashEntries.values()].reduce((n, v) => n + (v.entry.sizeBytes ?? 0), 0), complete: true}, attachments: {sizeBytes: 23748249, complete: true}}, measuredAt: Date.now(), complete: true})
+    if (path === '/talk-map/trash') return json({capabilities:{stopActivity:true},entries: [...trashEntries.values()].map(e => e.entry)})
     if (/^\/talk-map\/sessions\/(trash|restore|purge)$/.test(path)) {
       const body = JSON.parse(init?.body ?? '{}')
       const action = path.split('/').at(-1)
@@ -432,25 +440,28 @@
       const results = []
       for (const id of body.sessionIds ?? body.entryIds ?? []) {
         if (action === 'trash') {
-          if (recycleBusyFlag && recycleBusyLeft-- > 0) {
+          if (!body.stopActivity && recycleBusyFlag && recycleBusyLeft-- > 0) {
             results.push({requestId:id,sessionId:id,status:'failed',affectedSessionIds:[],error:{code:'SESSION_RUNNING',message:'session running'}})
             continue
           }
           const eid = crypto.randomUUID()
           const cards = Object.fromEntries(Object.entries(payload.cards).filter(([,c]) => c.sessionId === id))
           const summary = sessionsState.byId[id]
-          const entry = {entryId:eid,sessionId:id,title:summary?.displayTitle ?? id,sessionCount:1,workspace:'Test',deletedAt:Date.now(),state:'trashed'}
+          const entry = {entryId:eid,sessionId:id,title:summary?.displayTitle ?? id,sessionCount:1,workspace:'Test',deletedAt:Date.now(),state:'trashed',sizeBytes:2048}
           trashEntries.set(eid,{entry,cards,summary,index:sessionsState.ids.indexOf(id)})
           for (const key of Object.keys(cards)) delete payload.cards[key]
-          delete sessionsState.byId[id]
-          sessionsState.ids = sessionsState.ids.filter(s => s !== id)
+          const byId = {...sessionsState.byId}
+          delete byId[id]
+          delete sessionRows[id]
+          sessionsState = {...sessionsState, byId, ids:sessionsState.ids.filter(s => s !== id)}
           results.push({requestId:id,sessionId:id,entryId:eid,status:'trashed',affectedSessionIds:[id]})
         } else {
+          if (action === 'purge' && purgeFailures.has(id)) { results.push({requestId:id,status:'failed',affectedSessionIds:[],error:{code:'FILE_CHANGED',message:'fixture file changed'}}); continue }
           const saved = trashEntries.get(id)
           if (!saved) {results.push({requestId:id,status:'failed',affectedSessionIds:[],error:{code:'ENTRY_NOT_FOUND',message:'missing entry'}});continue}
           if (action === 'restore') {
             Object.assign(payload.cards,saved.cards)
-            if(saved.summary){sessionsState.byId[saved.entry.sessionId]=saved.summary;sessionsState.ids.splice(saved.index,0,saved.entry.sessionId)}
+            if (saved.summary) restoredSummaries.set(saved.entry.sessionId, {summary:saved.summary, index:saved.index})
           }
           trashEntries.delete(id)
           results.push({requestId:id,sessionId:saved.entry.sessionId,entryId:id,status:action==='restore'?'restored':'purged',affectedSessionIds:[saved.entry.sessionId]})
@@ -602,6 +613,20 @@
       list: {
         getSnapshot: () => sessionsState,
         subscribe: () => () => {},
+      },
+      refresh: async () => {
+        log('sessions.refresh')
+        if (nativeRefreshFails) throw new Error('fixture native refresh failed')
+        const byId = {...sessionsState.byId}
+        const ids = [...sessionsState.ids]
+        for (const [id, {summary, index}] of restoredSummaries) {
+          byId[id] = summary
+          sessionRows[id] = summary
+          if (!ids.includes(id)) ids.splice(index, 0, id)
+        }
+        restoredSummaries.clear()
+        sessionsState = {...sessionsState, byId, ids}
+        sync()
       },
       open: (id) => { log('openSession', id) },
     },
@@ -897,6 +922,18 @@
     panelState: () => ({ selectedPanel }),
     /** Every built-in trash action submitted by the client. */
     recycleCalls: () => recycleCalls.slice(),
+    storageFails(on) { storageFails = on },
+    failNativeRefresh(on) { nativeRefreshFails = on },
+    trashFixture(on) {
+      trashEntries.clear(); purgeFailures.clear()
+      if (!on) return
+      for (const [title, sizeBytes] of [['小会话', 8192], ['大会话', 4194304], ['未知大小会话', null]]) {
+        const id = crypto.randomUUID()
+        const entry = {entryId:id,sessionId:id,title,sessionCount:2,workspace:'Test',deletedAt:Date.now(),state:'trashed',sizeBytes}
+        trashEntries.set(id, {entry, cards:{}})
+        if (sizeBytes === null) purgeFailures.add(id)
+      }
+    },
     /** Refuse the next N moves with session-open (1 = only the first). */
     recycleBusy(on, times = 1) {
       recycleBusyFlag = on

@@ -3,6 +3,7 @@ import test from 'node:test'
 import { mkdtemp, mkdir, writeFile, readFile, readdir, access, symlink, rm } from 'node:fs/promises'
 import path from 'node:path'
 import { build } from 'esbuild'
+import { stat } from 'node:fs/promises'
 import { createServer } from 'node:http'
 import { zstdCompressSync } from 'node:zlib'
 
@@ -281,7 +282,7 @@ test('partial batch failure; running child rejects whole tree; in-use and stoppe
   assert.equal(f.store.cards.get('card-b'), undefined)
   f.running.clear()
   f.live.add('a')
-  assert.equal((await f.trash.trash(['a']))[0].error.code, 'SESSION_IN_USE')
+  assert.equal((await f.trash.trash(['a']))[0].error.code, 'SESSION_RELEASE_UNAVAILABLE')
   f.live.clear()
   assert.equal((await f.trash.trash(['a']))[0].status, 'trashed')
 })
@@ -331,6 +332,7 @@ test('restore conflict preserves destination and trash; purge never removes conf
   const f = await fixture(t)
   const [r] = await f.trash.trash(['a'])
   const p = f.persistence.locate(f.headers.get('a')).path
+  await mkdir(path.dirname(p), { recursive: true })
   await writeFile(p, 'new data')
   assert.equal((await f.trash.restore([r.entryId]))[0].error.code, 'RESTORE_CONFLICT')
   assert.equal((await f.trash.purge([r.entryId]))[0].error.code, 'RESTORE_CONFLICT')
@@ -401,6 +403,7 @@ test('startup rolls incomplete trash back, and incomplete restore returns to tra
   const file = m.files[0],
     source = path.join(f.home, 'sessions', file.source),
     saved = path.join(path.dirname(manifest), 'logs', file.sessionId, file.name)
+  await mkdir(path.dirname(source), { recursive: true })
   await writeFile(source, await readFile(saved))
   await rm(saved)
   await writeFile(manifest, JSON.stringify(m))
@@ -424,10 +427,12 @@ test('all log generations move, unrelated files in session directory stay', asyn
     JSON.stringify({ id: 'a', version: 3 }) + '\nold log',
   )
   await writeFile(path.join(dir, 'notes.txt'), 'unrelated')
+  await writeFile(path.join(dir, 'session.lock'), 'do not unlink')
   const [r] = await f.trash.trash(['a'])
   assert.equal(r.status, 'trashed')
   assert.equal(await has(path.join(dir, 'session.v3.jsonl')), false)
   assert.equal(await readFile(path.join(dir, 'notes.txt'), 'utf8'), 'unrelated')
+  assert.equal(await readFile(path.join(dir, 'session.lock'), 'utf8'), 'do not unlink')
 })
 
 test('recovery refuses a new live owner and preserves files until the owner is gone', async (t) => {
@@ -550,11 +555,82 @@ test('HTTP routes validate IDs and origins, fail closed without services, and fe
     ).status,
     400,
   )
-  assert.equal((await (await fetch(base + '/talk-map/trash')).json()).entries.length, 1)
+  const listing = await (await fetch(base + '/talk-map/trash')).json()
+  assert.equal(listing.capabilities.stopActivity, true)
+  assert.equal(listing.entries.length, 1)
+  assert.ok(listing.entries[0].sizeBytes > 0)
+  const usage = await (await fetch(base + '/talk-map/storage')).json()
+  assert.equal(usage.complete, true)
+  assert.ok(usage.categories.trash.sizeBytes > 0)
+  assert.equal((await post('/talk-map/sessions/trash', {sessionIds:['b'],stopActivity:'yes'})).status, 400)
+  let active = true
+  f.services.waterfall = async (_event, {sessionId}) => active && sessionId === 'b' ? [{kind:'job'}] : []
+  f.services.parallel = async () => {active = false}
+  const stopped = await (await post('/talk-map/sessions/trash', {sessionIds:['b'],stopActivity:true})).json()
+  assert.equal(stopped.results[0].status, 'trashed')
   runtime.trash = undefined
   assert.equal((await fetch(base + '/talk-map/trash')).status, 503)
+  assert.equal((await fetch(base + '/talk-map/storage')).status, 503)
   assert.equal(
     (await post('/talk-map/sessions/purge', { entryIds: [reply.results[0].entryId] })).status,
     503,
   )
+})
+
+test('metadata-only usage includes logs/cache/attachments, and entry size includes manifest once', async t => {
+  const f = await fixture(t)
+  await mkdir(path.join(f.home, 'storages', 'session_projcache'), { recursive: true })
+  await writeFile(path.join(f.home, 'storages', 'session_projcache', 'cache.json'), '12345')
+  const before = await f.trash.storage()
+  assert.equal(before.complete, true)
+  assert.equal(before.categories.projectionCache.sizeBytes, 5)
+  assert.equal(before.categories.attachments.sizeBytes, Buffer.byteLength('shared attachment'))
+  const [r] = await f.trash.trash(['a'])
+  const dir = path.join(f.home, 'talk-map-trash', 'entries', r.entryId)
+  const manifestPath = path.join(dir, 'manifest.json')
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'))
+  let size = (await stat(manifestPath)).size
+  for (const file of manifest.files) size += (await stat(path.join(dir, 'logs', file.sessionId, file.name))).size
+  assert.equal((await f.trash.listing())[0].sizeBytes, size)
+  const after = await f.trash.storage()
+  assert.equal(after.categories.trash.sizeBytes, size)
+  assert.equal(await has(path.dirname(f.persistence.locate(f.headers.get('a')).path)), false)
+  assert.equal((await f.trash.purge([r.entryId]))[0].status, 'purged')
+  assert.equal((await f.trash.storage()).categories.trash.sizeBytes, (await stat(path.join(f.home, 'talk-map-trash', 'purged.json'))).size)
+})
+test('usage never follows junctions and marks incomplete measurements', async t => {
+  const f = await fixture(t)
+  await symlink(f.workspace, path.join(f.home, 'attachments', 'outside'), 'junction')
+  const result = await f.trash.storage()
+  assert.equal(result.complete, false)
+  assert.equal(result.categories.attachments.complete, false)
+  assert.equal(result.categories.attachments.sizeBytes, Buffer.byteLength('shared attachment'))
+})
+test('stopActivity is explicit, reports background activity, and preserves archive/pin state', async t => {
+  const f = await fixture(t)
+  const original = f.services.waterfall
+  const active = new Set(['child'])
+  f.services.waterfall = async (_event, { sessionId }) => active.has(sessionId) ? [{ kind: 'job' }, { kind: 'approval' }] : []
+  const first = (await f.trash.trash(['a']))[0]
+  assert.equal(first.error.code, 'SESSION_RUNNING')
+  assert.deepEqual(first.error.blockingSessionIds, ['child'])
+  assert.deepEqual(first.error.activityKinds, ['job', 'approval'])
+  assert.ok(await f.persistence.stat('a'))
+  f.state.pinned.push('a')
+  let stops = 0
+  f.services.parallel = async (event, { sessionId }) => { assert.equal(event, 'workspace/session-stop'); stops++; active.delete(sessionId) }
+  const [r] = await f.trash.trash(['a'], { stopActivity: true })
+  assert.equal(r.status, 'trashed', JSON.stringify(r)); assert.equal(stops, 2)
+  f.services.waterfall = original
+  assert.equal((await f.trash.restore([r.entryId]))[0].status, 'restored')
+  assert.ok(f.state.archived.includes('a')); assert.ok(f.state.pinned.includes('a'))
+})
+test('stop timeout never moves files or leaves a deletion fence', async t => {
+  const f = await fixture(t)
+  f.services.waterfall = async () => [{ kind: 'job' }]
+  f.services.parallel = async () => {}
+  const [r] = await f.trash.trash(['a'], { stopActivity: true })
+  assert.equal(r.error.code, 'SESSION_STOP_TIMEOUT')
+  assert.ok(await f.persistence.stat('a')); assert.ok(await f.persistence.stat('child'))
+  assert.equal(f.trash.isBlocked('a'), false)
 })

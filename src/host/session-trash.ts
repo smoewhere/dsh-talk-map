@@ -16,6 +16,8 @@ import {
 } from 'node:fs/promises'
 import { dirname, join, relative, resolve, isAbsolute, basename } from 'node:path'
 import { z } from 'zod'
+import { isLifecycleError, sessionLifecycleFor, type SessionLifecycle } from './session-lifecycle.ts'
+import { directorySize, storageUsage } from './storage-usage.ts'
 import type { TrashEntry, TrashResult } from '../shared/trash.ts'
 import type { Domain, KvTable } from './dsh-host.ts'
 import { cardSchema, edgeSchema, digestSchema, type TalkMapStore } from './store.ts'
@@ -79,6 +81,7 @@ export interface TrashServices {
     request: { sessionId: string },
     next: () => Promise<unknown[]>,
   ): Promise<unknown[]>
+  parallel?(event: string, request: { sessionId: string }): Promise<unknown>
   emit(event: string, ...args: unknown[]): void
   logger?: { warn(message: string): void }
 }
@@ -148,6 +151,7 @@ class TrashError extends Error {
   constructor(
     readonly code: string,
     message: string,
+    readonly details?: { blockingSessionIds: string[]; activityKinds: string[] },
   ) {
     super(message)
   }
@@ -174,6 +178,7 @@ const hash = async (path: string): Promise<string> => {
 export class SessionTrash {
   private chain: Promise<unknown> = Promise.resolve()
   private readonly blocked = new Set<string>()
+  private readonly deleting = new Set<string>()
   private readonly entries = new Map<string, Manifest>()
   private readonly purged = new Set<string>()
   private root = ''
@@ -184,13 +189,18 @@ export class SessionTrash {
     private readonly store: TalkMapStore,
     private readonly home: string,
   ) {}
+  private get lifecycle(): SessionLifecycle | undefined {
+    const adapter = sessionLifecycleFor(this.services.agents)
+    adapter?.setFence(id => this.isBlocked(id))
+    return adapter
+  }
   serial<T>(operation: () => Promise<T>): Promise<T> {
     const task = this.chain.then(operation)
     this.chain = task.catch(() => undefined)
     return task
   }
   isBlocked(id: string): boolean {
-    return this.blocked.has(id) || this.purged.has(id)
+    return this.deleting.has(id) || this.blocked.has(id) || this.purged.has(id)
   }
   async close(): Promise<void> {
     await this.serial(async () => {
@@ -325,21 +335,105 @@ export class SessionTrash {
       source.destroy()
     }
   }
-  private async ensureAvailable(headers: Header[]): Promise<void> {
+  private async activity(headers: Header[]): Promise<{ blockingSessionIds: string[]; activityKinds: string[] }> {
+    const blockingSessionIds: string[] = [], activityKinds = new Set<string>()
     for (const h of headers) {
-      if (
-        this.services.agents.get(h.id)?.status === 'running' ||
-        (
-          await this.services.waterfall(
-            'workspace/session-activity',
-            { sessionId: h.id },
-            async () => [],
-          )
-        ).length
-      )
-        fail('SESSION_RUNNING', '会话或子代理仍有运行中的任务')
+      const activities = await this.services.waterfall('workspace/session-activity', { sessionId: h.id }, async () => [])
+      const status = this.services.agents.get(h.id)?.status
+      if ((status && status !== 'idle') || activities.length) {
+        blockingSessionIds.push(h.id)
+        if (status && status !== 'idle') activityKinds.add('turn')
+        for (const item of activities) activityKinds.add(String((item as { kind?: string })?.kind ?? 'activity'))
+      }
+    }
+    return { blockingSessionIds, activityKinds: [...activityKinds] }
+  }
+  private async ensureAvailable(headers: Header[]): Promise<void> {
+    const activity = await this.activity(headers)
+    if (activity.blockingSessionIds.length)
+      throw new TrashError('SESSION_RUNNING', '会话或子代理仍有活动：' + activity.blockingSessionIds.join('、'), activity)
+    for (const h of headers)
       if (this.services.sessions.get(h.id) || this.services.agents.get(h.id))
-        fail('SESSION_IN_USE', '会话仍被占用，请重启 DSH 后再删除')
+        fail('SESSION_IN_USE', `会话 ${h.id} 尚未完成释放，请稍后重试`)
+  }
+  private async prepare(headers: Header[], stopActivity: boolean): Promise<() => void> {
+    const checkPaths = async () => {
+      for (const h of headers) {
+        const location = this.services.sessionPersistence.locate(h)
+        if (location.kind !== 'jsonl') fail('SERVICE_UNAVAILABLE', '当前存储格式不支持回收站')
+        await this.inside(this.sessionsRoot, location.path)
+      }
+    }
+    await checkPaths()
+    const ids = headers.map(h => h.id)
+    const activity = await this.activity(headers)
+    if (activity.blockingSessionIds.length && !stopActivity)
+      throw new TrashError('SESSION_RUNNING', '会话或子代理仍有活动：' + activity.blockingSessionIds.join('、'), activity)
+    ids.forEach(id => this.deleting.add(id))
+    const thaws: (() => void)[] = []
+    try {
+      if (this.lifecycle) {
+        thaws.push(await this.lifecycle.freeze(ids))
+        // A child admitted before the parent was frozen may finish setup during the drain.
+        const records = await this.services.sessionPersistence.list()
+        for (let i = 0; i < headers.length; i++) {
+          const added: string[] = []
+          for (const record of records) {
+            const h = record.header as Header
+            if (h.origin === 'subagent' && h.parentSession === headers[i].id && !ids.includes(h.id)) {
+              if (record.formatStatus && record.formatStatus !== 'current') fail('UNSUPPORTED_SESSION_FORMAT', '请先通过 DSH 升级此会话格式')
+              headers.push(headerSchema.parse(h)); ids.push(h.id); added.push(h.id); this.deleting.add(h.id)
+            }
+          }
+          if (added.length) thaws.push(await this.lifecycle.freeze(added))
+        }
+      }
+      else if (ids.some(id => this.services.sessions.get(id) || this.services.agents.get(id)))
+        fail('SESSION_RELEASE_UNAVAILABLE', '缺少原生释放句柄；首次升级后请正常重启 DSH 一次')
+      await checkPaths()
+      if (stopActivity && (await this.activity(headers)).blockingSessionIds.length) {
+        if (!this.services.parallel) fail('SERVICE_UNAVAILABLE', '宿主未提供停止活动接口')
+        const endDrain = this.lifecycle?.drain(ids)
+        const deadline = Date.now() + 15_000
+        let expired = false
+        let timer: ReturnType<typeof setTimeout> | undefined
+        try {
+          await Promise.race([
+            (async () => {
+              for (const h of headers) {
+                if (expired) return
+                const stop = () => this.services.parallel!('workspace/session-stop', { sessionId: h.id })
+                await (this.lifecycle ? this.lifecycle.own(stop) : stop())
+              }
+              while (!expired && (await this.activity(headers)).blockingSessionIds.length) {
+                if (Date.now() >= deadline) fail('SESSION_STOP_TIMEOUT', '停止任务超时，文件尚未搬移，请稍后重试')
+                await new Promise(resolve => setTimeout(resolve, 100))
+              }
+            })(),
+            new Promise<never>((_, reject) => { timer = setTimeout(() => reject(new TrashError('SESSION_STOP_TIMEOUT', '停止任务超时，文件尚未搬移，请稍后重试')), 15_000) }),
+          ])
+        } finally { expired = true; clearTimeout(timer); endDrain?.() }
+      }
+      const remaining = await this.activity(headers)
+      if (remaining.blockingSessionIds.length)
+        throw new TrashError('SESSION_RUNNING', '会话仍有活动', remaining)
+      await this.lifecycle?.release(ids)
+      await this.ensureAvailable(headers)
+      return () => { thaws.forEach(thaw => thaw()); ids.forEach(id => this.deleting.delete(id)) }
+    } catch (error) { thaws.forEach(thaw => thaw()); ids.forEach(id => this.deleting.delete(id)); throw error }
+  }
+  private async pruneSources(headers: Header[]): Promise<void> {
+    for (const h of headers) {
+      try {
+        const dir = await this.inside(this.sessionsRoot, dirname(this.services.sessionPersistence.locate(h).path))
+        await rmdir(dir)
+        const parent = dirname(dir)
+        if (parent !== this.sessionsRoot) await rmdir(await this.inside(this.sessionsRoot, parent))
+      } catch (error) {
+        const code = (error as NodeJS.ErrnoException).code
+        if (!['ENOENT', 'ENOTEMPTY', 'EEXIST', 'EBUSY'].includes(code ?? ''))
+          this.services.logger?.warn(`[talk-map] empty directory cleanup: ${String(error)}`)
+      }
     }
   }
   async initialize(): Promise<void> {
@@ -402,6 +496,7 @@ export class SessionTrash {
         }
       }
     }
+    this.lifecycle?.setFence(id => this.isBlocked(id))
     this.ready = true
   }
   list(): TrashEntry[] {
@@ -420,6 +515,13 @@ export class SessionTrash {
       }))
       .sort((a, b) => b.deletedAt - a.deletedAt)
   }
+  async listing(): Promise<TrashEntry[]> {
+    return this.serial(async () => Promise.all(this.list().map(async entry => {
+      const size = await directorySize(this.home, this.entryDir(entry.entryId))
+      return { ...entry, sizeBytes: size.complete ? size.sizeBytes : null }
+    })))
+  }
+  async storage() { return storageUsage(this.home) }
   private result(
     requestId: string,
     m: Manifest | undefined,
@@ -437,14 +539,15 @@ export class SessionTrash {
       ...(error
         ? {
             error: {
+              ...(error instanceof TrashError ? error.details : {}),
               code:
-                error instanceof TrashError
+                (error instanceof TrashError || isLifecycleError(error))
                   ? error.code
                   : locked
                     ? 'SESSION_IN_USE'
                     : 'INTERNAL_ERROR',
               message:
-                error instanceof TrashError
+                (error instanceof TrashError || isLifecycleError(error))
                   ? error.message
                   : locked
                     ? '会话文件仍被占用，请稍后重试'
@@ -454,7 +557,7 @@ export class SessionTrash {
         : {}),
     }
   }
-  async trash(ids: readonly string[]): Promise<TrashResult[]> {
+  async trash(ids: readonly string[], options: { stopActivity?: boolean } = {}): Promise<TrashResult[]> {
     return this.serial(async () => {
       this.requireReady()
       const results: TrashResult[] = []
@@ -482,6 +585,8 @@ export class SessionTrash {
       for (const id of ordered) {
         let m: Manifest | undefined
         let journaled = false
+        let release: (() => void) | undefined
+        let selected: Header[] = []
         const handles: { close(): Promise<void> }[] = []
         try {
           safeId.parse(id)
@@ -515,11 +620,14 @@ export class SessionTrash {
             )
           )
             fail('UNSUPPORTED_SESSION_FORMAT', '请先通过 DSH 升级此会话格式')
-          await this.ensureAvailable(headers)
+          selected = headers
+          release = await this.prepare(headers, options.stopActivity === true)
           for (const h of headers)
             await this.inside(this.sessionsRoot, this.services.sessionPersistence.locate(h).path)
           for (const h of [...headers].sort((a, b) => a.id.localeCompare(b.id)))
-            handles.push(await this.services.sessionPersistence.open(h.id, 'write'))
+            handles.push(await (this.lifecycle
+              ? this.lifecycle.own(() => this.services.sessionPersistence.open(h.id, 'write'))
+              : this.services.sessionPersistence.open(h.id, 'write')))
           await this.ensureAvailable(headers)
           const wanted = new Set(headers.map((h) => h.id))
           const files: Manifest['files'] = []
@@ -624,7 +732,9 @@ export class SessionTrash {
           }
           results.push(this.result(id, m, 'failed', error))
         } finally {
-          for (const h of handles.reverse()) await h.close()
+          try { for (const h of handles.reverse()) await h.close() }
+          finally { release?.() }
+          if (m?.state === 'trashed') await this.pruneSources(selected)
         }
       }
       return results
@@ -783,6 +893,7 @@ export class SessionTrash {
           results.push(this.result(id, m, 'failed', error))
         } finally {
           for (const lease of leases.reverse()) await lease.release()
+          if (m && !this.entries.has(m.entryId) && operation === 'purge') await this.pruneSources(m.headers)
         }
       }
       return results

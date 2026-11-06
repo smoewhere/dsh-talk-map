@@ -9,7 +9,7 @@ interface Confirmation {
   accept: (ok: boolean) => void
 }
 let confirmation: Confirmation | undefined
-let notice: { text: string; undo?: () => void } | undefined
+let notice: { text: string } | undefined
 const listeners = new Set<() => void>()
 const subscribe = (fn: () => void): (() => void) => {
   listeners.add(fn)
@@ -27,8 +27,13 @@ export function confirmAction(title: string, body: string): Promise<boolean> {
     publish()
   })
 }
-export function actionNotice(text: string, undo?: () => void): void {
-  notice = { text, undo }
+export function actionNotice(text: string): void {
+  notice = { text }
+  publish()
+}
+function dismissNotice(expected: typeof notice): void {
+  if (notice !== expected) return
+  notice = undefined
   publish()
 }
 function finish(ok: boolean): void {
@@ -43,6 +48,39 @@ export function ActionSurface(): React.JSX.Element | null {
   const message = useSyncExternalStore(subscribe, () => notice)
   const dialog = useRef<HTMLDivElement>(null)
   const cancel = useRef<HTMLButtonElement>(null)
+  const noticeElement = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    const element = noticeElement.current
+    if (!message || current || !element) return
+    let timer: ReturnType<typeof setTimeout> | undefined
+    let hovered = element.matches(':hover')
+    let focused = element.contains(document.activeElement)
+    const schedule = (): void => {
+      clearTimeout(timer)
+      // Reading or keyboard interaction pauses dismissal.
+      if (!hovered && !focused)
+        timer = setTimeout(() => dismissNotice(message), 5_000)
+    }
+    const enter = (): void => { hovered = true; schedule() }
+    const leave = (): void => { hovered = false; schedule() }
+    const focus = (): void => { focused = true; schedule() }
+    const blur = (event: FocusEvent): void => {
+      focused = element.contains(event.relatedTarget as Node | null)
+      schedule()
+    }
+    element.addEventListener('pointerenter', enter)
+    element.addEventListener('pointerleave', leave)
+    element.addEventListener('focusin', focus)
+    element.addEventListener('focusout', blur)
+    schedule()
+    return () => {
+      clearTimeout(timer)
+      element.removeEventListener('pointerenter', enter)
+      element.removeEventListener('pointerleave', leave)
+      element.removeEventListener('focusin', focus)
+      element.removeEventListener('focusout', blur)
+    }
+  }, [message, current])
   useEffect(() => {
     if (!current) return
     const before = document.activeElement as HTMLElement | null
@@ -115,27 +153,12 @@ export function ActionSurface(): React.JSX.Element | null {
         </div>
       )}
       {message && !current && (
-        <div className={styles['trashNotice']} role="status">
+        <div ref={noticeElement} className={styles['trashNotice']} role="status">
           <span>{message.text}</span>
-          {message.undo && (
-            <button
-              type="button"
-              onClick={() => {
-                notice = undefined
-                publish()
-                message.undo?.()
-              }}
-            >
-              {t('trash.undo')}
-            </button>
-          )}
           <button
             type="button"
             aria-label={t('map.close')}
-            onClick={() => {
-              notice = undefined
-              publish()
-            }}
+            onClick={() => dismissNotice(message)}
           >
             ×
           </button>

@@ -15,6 +15,7 @@ import { DigestPipeline } from './host/digest/pipeline.ts'
 import { mountTalkMapRoutes, type TalkMapRuntime } from './host/routes.ts'
 import { Spawner } from './host/spawn.ts'
 import { openTalkMapStore, type TalkMapStore } from './host/store.ts'
+import { installSessionLifecycle, type LifecycleHost } from './host/session-lifecycle.ts'
 import { SessionTrash, type TrashServices } from './host/session-trash.ts'
 import { homedir } from 'node:os'
 import { resolve } from 'node:path'
@@ -107,6 +108,16 @@ export function apply(ctx: OuterContext): void {
         if (runtime.digest === pipeline) delete runtime.digest
       }
     }, 'dsh-talk-map: digest pipeline')
+  })
+
+  // Install early; wrappers/handles survive plugin reload, but never dispose user agents on unload.
+  ctx.inject(['agents', 'sessions', 'agentLoop', 'sessionPersistence'], (injected: unknown) => {
+    const services = injected as LifecycleHost & { effect: TalkMapHostServices['effect']; on: (event: string, callback: (...args: any[]) => any) => () => void }
+    services.effect(() => {
+      const lifecycle = installSessionLifecycle(services)
+      return services.on('agent/pre-step', ({ agent }, next) => lifecycle?.blocks(agent.id)
+        ? Promise.resolve({ kind: 'reject' }) : next())
+    }, 'dsh-talk-map: native session lifecycle')
   })
 
   ctx.inject(['storageDomain', 'sessions', 'agents', 'sessionPersistence', 'sessionProjectionCache', 'workspaceRegistry'], (injected: unknown) => {

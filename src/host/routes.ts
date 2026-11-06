@@ -190,9 +190,15 @@ export function mountTalkMapRoutes(
           return
         }
 
+        if (route === 'GET /talk-map/storage') {
+          if (!runtime.trash) { sendJson(response, 503, { code: 'SERVICE_UNAVAILABLE', error: '存储服务不可用' }); return }
+          sendJson(response, 200, await runtime.trash.storage())
+          return
+        }
+
         if (route === 'GET /talk-map/trash') {
           if (!runtime.trash) { sendJson(response, 503, { code: 'SERVICE_UNAVAILABLE', error: '回收站服务不可用' }); return }
-          sendJson(response, 200, { entries: runtime.trash.list() })
+          sendJson(response, 200, { entries: await runtime.trash.listing(), capabilities: { stopActivity: true } })
           return
         }
 
@@ -230,11 +236,11 @@ export function mountTalkMapRoutes(
           if (!runtime.trash) { sendJson(response, 503, { code: 'SERVICE_UNAVAILABLE', error: '回收站服务不可用' }); return }
           const action = url.pathname.split('/').at(-1) as 'trash' | 'restore' | 'purge'
           const schema = action === 'trash'
-            ? z.object({ sessionIds: z.array(safeId).min(1).max(200) }).strict()
+            ? z.object({ sessionIds: z.array(safeId).min(1).max(200), stopActivity: z.boolean().optional() }).strict()
             : z.object({ entryIds: z.array(z.string().uuid()).min(1).max(200) }).strict()
           const body = schema.parse(await readJsonBody(request))
           const ids = 'sessionIds' in body ? body.sessionIds : body.entryIds
-          sendJson(response, 200, { results: await runtime.trash[action](ids) })
+          sendJson(response, 200, { results: await (action === 'trash' ? runtime.trash.trash(ids, { stopActivity: 'stopActivity' in body && body.stopActivity === true }) : runtime.trash[action](ids)) })
           return
         }
 

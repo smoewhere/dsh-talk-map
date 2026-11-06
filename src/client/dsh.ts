@@ -124,6 +124,8 @@ export interface SessionsService {
     getSnapshot(): SessionListState
     subscribe(listener: () => void): () => void
   }
+  /** Pull the native session-list baseline without opening or resuming an Agent (rc.5). */
+  refresh?(): Promise<void>
   /**
    * Legacy navigation/build APIs. The client runtime moved "open this session
    * in the main view" to ctx.uiWorkspace (see UiWorkspaceService) and current

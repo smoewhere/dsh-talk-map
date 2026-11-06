@@ -2,7 +2,8 @@
  * Thin fetch/EventSource layer over the host half's /talk-map/* routes.
  * Same-origin by construction (relative URLs against the serving shell).
  */
-import type { TrashListing, TrashResult } from '../shared/trash.ts'
+import { t } from './i18n.ts'
+import type { TrashListing, TrashResult, StorageUsage } from '../shared/trash.ts'
 import type { Card, Digest, MapEdgeData, MapGlobal, MapStatePayload } from '../shared/model.ts'
 
 /** Error shape thrown on non-2xx: `code` carries the host's structured
@@ -53,8 +54,20 @@ function postJson<T>(path: string, body: unknown): Promise<T> {
 }
 
 export const talkMapApi = {
+  getStorage(): Promise<StorageUsage> { return requestJson('/talk-map/storage') },
   getTrash(): Promise<TrashListing> { return requestJson('/talk-map/trash') },
-  trashSessions(sessionIds: readonly string[]): Promise<{results: TrashResult[]}> { return trashMutation('/talk-map/sessions/trash', {sessionIds}) },
+  async trashSessions(sessionIds: readonly string[], stopActivity = false): Promise<{results: TrashResult[]}> {
+    // Keep ordinary deletion compatible with the old strict {sessionIds} schema.
+    if (stopActivity) {
+      const host = await talkMapApi.getTrash()
+      if (!host.capabilities?.stopActivity) {
+        const error: ApiError = new Error(t('trash.hostUpgradeRequired'))
+        error.code = 'HOST_UPGRADE_REQUIRED'
+        throw error
+      }
+    }
+    return trashMutation('/talk-map/sessions/trash', stopActivity ? {sessionIds, stopActivity: true} : {sessionIds})
+  },
   restoreSessions(entryIds: readonly string[]): Promise<{results: TrashResult[]}> { return trashMutation('/talk-map/sessions/restore', {entryIds}) },
   purgeSessions(entryIds: readonly string[]): Promise<{results: TrashResult[]}> { return trashMutation('/talk-map/sessions/purge', {entryIds}) },
   getState(): Promise<MapStatePayload> {

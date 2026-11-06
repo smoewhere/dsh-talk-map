@@ -30,7 +30,7 @@ import { lastPushFor, stampPush } from './push-log.ts'
 import { confirmAction } from './ActionSurface.tsx'
 import { DigestDialog } from './DigestDialog.tsx'
 import { closeMapPanel, currentSessionId, getServices, mapUi, openSessionInUi, uiWorkspaceService } from './map-state.ts'
-import { archiveSessions, describeTrashResults, setPinned, trashSessions } from './session-actions.ts'
+import { archiveSessions, setPinned, trashSessions } from './session-actions.ts'
 import { allSessionTitles, setCardTable, setTitleResolver, setTitleTable } from './map-state.ts'
 import { drawerState } from './drawer-state.ts'
 import { callRpc, fetchSearchContext, fetchSessionHits, searchSessions, type ContentHit } from './rpc.ts'
@@ -1886,7 +1886,6 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
         const results = await trashSessions(sessionIds)
         if (!results.length) return
         canvas.refresh()
-        showToast(describeTrashResults(results))
         return
       }
       showToast(t('toast.archived', { n: String(sessionIds.length) }))
@@ -2107,7 +2106,6 @@ function CanvasInner(props: RootSlotStandardProps): React.JSX.Element {
       if (!results.length) return
       canvas.refresh()
       if (results.every(r => r.status === 'trashed')) removeGroup(groupId)
-      showToast(describeTrashResults(results))
     } catch (error) { showToast(String(error)) }
   }
 
