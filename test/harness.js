@@ -598,7 +598,6 @@
   const registered = {}
   const footerEntries = []
   let showNativeRows = false
-  let nativeMenuOwner = 'legacy'
   /** `main` entries by key — the map is one now, like the recycle bin's page. */
   const panels = {}
   const remoteListeners = new Map()
@@ -789,17 +788,14 @@
     useSessionStatus: (select) => select ? select(statusById) : statusById,
   }
 
-  // SessionNodeItem + SlotOutlet contracts: rc.5 uses Menu + the inline
-  // display:contents outlet; 0.2.2-rc.1 owns context menus and nests quick actions.
-  // Keep the real outlet wrapper: omitting it previously hid a broken selector.
+  // SessionNodeItem contract from 0.2.2-rc.1: the host owns right click,
+  // keyboard invocation and the ellipsis trigger for the same row menu.
   function NativeRow({ id }) {
     const [open, setOpen] = React.useState(false)
     const rowRef = React.useRef(null)
     const menuRef = React.useRef(null)
     const Delete = registered['sidebar.workspaces.session.menu.item']?.component
-    const Bridge = registered['sidebar.workspaces.session.row.action']?.component
     const h = React.createElement
-    const hostOwnsMenu = nativeMenuOwner === 'host'
     React.useEffect(() => {
       if (!open) return
       const dismiss = e => {
@@ -824,8 +820,7 @@
       setOpen(true)
     }
     const more = h('button', {
-      type: 'button', 'aria-label': 'More ' + id,
-      ...(hostOwnsMenu ? { 'data-context-menu-trigger': '' } : {}),
+      type: 'button', 'aria-label': 'More ' + id, 'data-context-menu-trigger': '',
       onClick: e => { e.stopPropagation(); log('native.more', { id }); setOpen(!open) },
     }, '⋯')
     const actions = h('span', {
@@ -833,7 +828,7 @@
     }, h('button', {
       type: 'button', 'aria-label': 'Other action ' + id,
       onClick: e => { e.stopPropagation(); log('native.otherAction', { id }) },
-    }, '☆'), Bridge && h(Bridge, { sessionId: id, displayTitle: id }))
+    }, '☆'))
     const menu = open && ReactDOM.createPortal(h('div', {
       role: 'menu', ref: menuRef, onClick: e => e.stopPropagation(),
       style: { position: 'fixed', left: 230, top: 20, zIndex: 100, width: 200,
@@ -849,14 +844,11 @@
     return h('div', {
       ref: rowRef, 'data-row-key': 'session:' + id, role: 'treeitem', tabIndex: 0,
       onClick: () => log('native.open', { id }), style: { padding: 12 },
-      ...(hostOwnsMenu ? {
-        onContextMenu: show,
-        onKeyDown: e => { if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) show(e) },
-      } : {}),
+      onContextMenu: show,
+      onKeyDown: e => { if (e.key === 'ContextMenu' || (e.shiftKey && e.key === 'F10')) show(e) },
     }, h('span', null, sessionsState.byId[id]?.displayTitle ?? id),
     h('span', { onClick: e => e.stopPropagation() },
-      hostOwnsMenu ? more : h('span', null, more, menu),
-      hostOwnsMenu ? h('span', null, actions) : actions), hostOwnsMenu ? menu : null)
+      more, h('span', null, actions)), menu)
   }
   function sync() {
     const MapPanel = panels['talk-map']
@@ -881,7 +873,7 @@
           boxSizing: 'border-box',
           background: '#1f2126',
         },
-      }, showNativeRows ? sessionsState.ids.slice(0,3).map(id => h(NativeRow,{key:nativeMenuOwner+id,id})) : null,
+      }, showNativeRows ? sessionsState.ids.slice(0,3).map(id => h(NativeRow,{key:id,id})) : null,
         ...footerEntries.map(e => h(e.component,{key:e.descriptor.id,wide:!sidebarCollapsed}))),
       h('div', { style: { flex: 1, minWidth: 0, position: 'relative', display: 'flex', flexDirection: 'column' } },
         selectedPanel !== null && panels[selectedPanel] !== undefined
@@ -895,7 +887,7 @@
   }
 
   window.__harness = {
-    nativeRows(on=true, owner='legacy') {showNativeRows=on;nativeMenuOwner=owner;sync()},
+    nativeRows(on=true) {showNativeRows=on;sync()},
     selectPanel(id) {ctx.layout.selectPanel(id)},
     boot() {
       const entry = registry['dsh-talk-map']
