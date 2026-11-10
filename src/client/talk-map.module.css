@@ -1351,6 +1351,40 @@
   cursor: default;
 }
 
+/* Native session menu row, matched to DSH 0.2.2's Menu item and danger tone. */
+.nativeMenuItemDanger {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  min-height: 34px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: var(--dsw-radius-md);
+  background: transparent;
+  color: var(--dsw-alias-state-error-primary);
+  font-size: 13px;
+  line-height: 20px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.nativeMenuItemDanger:hover,
+.nativeMenuItemDanger:focus-visible {
+  background: var(--dsw-alias-interactive-bg-hover-danger);
+  outline: none;
+}
+
+.nativeMenuIcon {
+  display: inline-flex;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  align-items: center;
+  justify-content: center;
+  color: currentColor;
+}
+
 .wsFrameHidden {
   font-weight: 400;
   color: var(--dsw-alias-state-warn-primary);

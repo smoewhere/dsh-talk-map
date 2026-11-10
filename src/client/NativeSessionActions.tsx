@@ -2,7 +2,7 @@ import { useEffect, useId } from 'react'
 import { t } from './i18n.ts'
 import { actionNotice } from './ActionSurface.tsx'
 import { trashSessions } from './session-actions.ts'
-import { MenuIcon } from './MenuIcons.tsx'
+import { DshTrashIcon } from './MenuIcons.tsx'
 import { mapUi } from './map-state.ts'
 import styles from './talk-map.module.css'
 
@@ -24,13 +24,15 @@ export function NativeDeleteMenuItem(props: RowProps): React.JSX.Element {
     <button
       type="button"
       role="menuitem"
-      className={`${styles['menuItem']} ${styles['menuItemDanger']}`}
+      className={styles['nativeMenuItemDanger']}
       onClick={() => {
         setOpen(false)
         void trashSessions([props.sessionId]).catch((e) => actionNotice(String(e)))
       }}
     >
-      <MenuIcon name="delete" />
+      <span className={styles['nativeMenuIcon']}>
+        <DshTrashIcon />
+      </span>
       {t('menu.deleteSession')}
     </button>
   )

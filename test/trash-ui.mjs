@@ -63,7 +63,21 @@ try {
   const icon = deleteItem.locator('svg[aria-hidden="true"]')
   assert.equal(await icon.count(), 1, 'delete has a decorative icon like other menu entries')
   assert.equal((await icon.boundingBox()).width, 14)
-  assert.ok(await icon.locator('path').count())
+  assert.equal(await icon.getAttribute('viewBox'), '0 0 16 16', 'delete uses DSH trash-outline geometry')
+  assert.equal(await icon.getAttribute('stroke-width'), '1', 'delete uses DSH regular stroke')
+  assert.equal(await icon.locator('path').count(), 5)
+  assert.equal(
+    await deleteItem.evaluate((el) => getComputedStyle(el).color),
+    await deleteItem.evaluate((el) => {
+      const probe = document.createElement('span')
+      probe.style.color = 'var(--dsw-alias-state-error-primary)'
+      el.append(probe)
+      const color = getComputedStyle(probe).color
+      probe.remove()
+      return color
+    }),
+    'delete uses DSH danger tone',
+  )
   await page.getByRole('menu').screenshot({ path: '.agent-tmp/trash-ui/session-menu-dark.png' })
   await page.evaluate(() => document.body.removeAttribute('data-ds-dark-theme'))
   assert.equal(await page.getByRole('menu').evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(255, 255, 255)')
