@@ -1,4 +1,4 @@
-/** Shipped bundle against legacy/host-owned row menus, including SlotOutlet's real wrapper. */
+/** Shipped bundle against DSH-owned session row menus. */
 import assert from 'node:assert/strict'
 import { createServer } from 'node:http'
 import { readFile, mkdir } from 'node:fs/promises'
@@ -71,11 +71,10 @@ try {
   await page.evaluate(() => document.body.setAttribute('data-ds-dark-theme', ''))
   await native().click({ button: 'right' })
   await page.getByRole('menuitem', { name: '原生置顶', exact: true }).waitFor()
-  assert.equal(
-    await page.evaluate(() => window.__harness.log.filter((l) => l.kind === 'native.more').length),
-    1,
-    'repeated right click must not toggle the menu closed',
-  )
+  assert.deepEqual(await page.evaluate(() => ({
+    opened: window.__harness.log.filter((l) => l.kind === 'native.contextMenu').length,
+    toggled: window.__harness.log.filter((l) => l.kind === 'native.more').length,
+  })), { opened: 2, toggled: 0 }, 'DSH owns right click; the plugin only contributes the delete item')
   await page.keyboard.press('Escape')
   await page.getByRole('menu').waitFor({ state: 'detached' })
   await page.locator('[data-talkmap-session]').first().waitFor()
@@ -182,33 +181,6 @@ try {
   await page.getByText('存储统计失败，会话操作仍可使用', {exact:true}).waitFor()
   assert.equal(await page.getByRole('button', {name:'还原',exact:true}).isEnabled(), true)
   await page.evaluate(() => { window.__harness.storageFails(false); window.__harness.trashFixture(false) })
-  // Teardown removes listeners even if a detached row is still referenced.
-  const detached = await page.locator('[data-row-key]').first().elementHandle()
-  await page.evaluate(() => window.__harness.nativeRows(false))
-  await page.locator('[data-row-key]').first().waitFor({ state: 'detached' })
-  assert.equal(await detached.evaluate((el) => {
-    const e = new MouseEvent('contextmenu', { bubbles: true, cancelable: true })
-    el.dispatchEvent(e)
-    return e.defaultPrevented
-  }), false)
-  await detached.dispose()
-  // 0.2.2-rc.1's native trigger owns right click. The bridge must not intercept
-  // React's delegated event or synthesize an ellipsis click on these rows.
-  await page.reload()
-  await page.evaluate(() => window.__harness.nativeRows(true, 'host'))
-  const hostRow = page.locator('[data-row-key]').first()
-  await hostRow.click({ button: 'right' })
-  await deleteItem.waitFor()
-  await hostRow.click({ button: 'right' })
-  await deleteItem.waitFor()
-  assert.deepEqual(await page.evaluate(() => ({
-    opened: window.__harness.log.filter((l) => l.kind === 'native.contextMenu').length,
-    toggled: window.__harness.log.filter((l) => l.kind === 'native.more').length,
-    selected: window.__harness.log.filter((l) => l.kind === 'native.open').length,
-  })), { opened: 2, toggled: 0, selected: 0 })
-  await deleteItem.click()
-  await page.getByRole('alertdialog').getByRole('button', { name: '取消', exact: true }).click()
-  assert.equal(await page.evaluate(() => window.__harness.recycleCalls().length), 0)
   // A fresh fixture exercises the actual canvas context menu and shared action.
   await page.reload()
   const card = page.locator('[data-talkmap-session]').first()
@@ -355,7 +327,7 @@ try {
   assert.ok((await page.evaluate(() => window.__harness.recycleCalls().at(-1))).sessionIds.length > 1)
   assert.deepEqual(errors, [])
   console.log(
-    'PASS legacy outlet/right click/ellipsis/keyboard/teardown, host-owned right click, delete icon dark/light, cancel/confirm, list deletion, restore, batch purge, silent native/canvas/group deletion, recycle-bin restore, visible failures/partial batches, stop/retry, notice auto-dismiss/hover/focus/reset and persistent confirmation; no page errors',
+    'PASS DSH-owned right click/ellipsis/keyboard menu, delete icon dark/light, cancel/confirm, list deletion, restore, batch purge, silent native/canvas/group deletion, recycle-bin restore, visible failures/partial batches, stop/retry, notice auto-dismiss/hover/focus/reset and persistent confirmation; no page errors',
   )
 } finally {
   await browser.close()

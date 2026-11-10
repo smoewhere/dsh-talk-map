@@ -130,12 +130,12 @@ var require_with_selector_production = __commonJS({
     }
     var objectIs = "function" === typeof Object.is ? Object.is : is;
     var useSyncExternalStore8 = shim.useSyncExternalStore;
-    var useRef10 = React.useRef;
+    var useRef9 = React.useRef;
     var useEffect15 = React.useEffect;
     var useMemo4 = React.useMemo;
     var useDebugValue2 = React.useDebugValue;
     exports.useSyncExternalStoreWithSelector = function(subscribe3, getSnapshot2, getServerSnapshot, selector2, isEqual) {
-      var instRef = useRef10(null);
+      var instRef = useRef9(null);
       if (null === instRef.current) {
         var inst = { hasValue: false, value: null };
         instRef.current = inst;
@@ -17048,21 +17048,14 @@ function MapToggleButton(props) {
 // src/client/NativeSessionActions.tsx
 var import_react19 = require("react");
 var import_jsx_runtime22 = require("react/jsx-runtime");
-var openMenus = /* @__PURE__ */ new Map();
 function NativeDeleteMenuItem(props) {
   const [open, setOpen] = props.useMenuOpenState();
   const menuId = (0, import_react19.useId)();
   (0, import_react19.useEffect)(() => {
     if (!open) return;
     const release = mapUi.claimEscape(`native-session-menu:${menuId}`);
-    openMenus.set(props.sessionId, (openMenus.get(props.sessionId) ?? 0) + 1);
-    return () => {
-      release();
-      const count = (openMenus.get(props.sessionId) ?? 1) - 1;
-      if (count > 0) openMenus.set(props.sessionId, count);
-      else openMenus.delete(props.sessionId);
-    };
-  }, [open, props.sessionId, menuId]);
+    return release;
+  }, [open, menuId]);
   return /* @__PURE__ */ (0, import_jsx_runtime22.jsxs)(
     "button",
     {
@@ -17079,38 +17072,6 @@ function NativeDeleteMenuItem(props) {
       ]
     }
   );
-}
-function NativeRowContextMenu({ sessionId }) {
-  const marker = (0, import_react19.useRef)(null);
-  (0, import_react19.useEffect)(() => {
-    const node = marker.current;
-    const row = node?.closest("[data-row-key]");
-    if (!row || row.dataset.rowKey !== `session:${sessionId}`) return;
-    if (row.querySelector("button[data-context-menu-trigger]")) return;
-    const outlet = node?.closest('[data-slot="sidebar.workspaces.session.row.action"]');
-    const more = outlet?.previousElementSibling?.querySelector(
-      ':scope > button[type="button"][aria-label]'
-    );
-    if (!more || !row.contains(more)) return;
-    const show = (e) => {
-      if (e.defaultPrevented) return;
-      e.preventDefault();
-      e.stopPropagation();
-      row.focus({ preventScroll: true });
-      if (!openMenus.has(sessionId)) more.click();
-    };
-    const key = (e) => {
-      if (e.repeat || e.isComposing || e.ctrlKey || e.altKey || e.metaKey) return;
-      if (e.key === "ContextMenu" || e.shiftKey && e.key === "F10") show(e);
-    };
-    row.addEventListener("contextmenu", show);
-    row.addEventListener("keydown", key);
-    return () => {
-      row.removeEventListener("contextmenu", show);
-      row.removeEventListener("keydown", key);
-    };
-  }, [sessionId]);
-  return /* @__PURE__ */ (0, import_jsx_runtime22.jsx)("span", { ref: marker, hidden: true, "aria-hidden": "true" });
 }
 
 // src/client/index.ts
@@ -17179,7 +17140,6 @@ function apply(ctx) {
     registerSafely("shell.overlay", () => ctx.slots.register({ name: "shell.overlay", id: "talk-map-actions", order: 100 }, ActionSurface), "action surface");
     registerSafely("sidebar.footer.action", () => ctx.slots.register({ name: "sidebar.footer.action", id: "talk-map-trash", order: 11, label: () => t("trash.title") }, TrashButton), "trash button");
     registerSafely("sidebar.workspaces.session.menu.item", () => ctx.slots.register({ name: "sidebar.workspaces.session.menu.item", id: "talk-map.delete", order: 500 }, NativeDeleteMenuItem), "session delete");
-    registerSafely("sidebar.workspaces.session.row.action", () => ctx.slots.register({ name: "sidebar.workspaces.session.row.action", id: "talk-map.context-menu", order: 1e3 }, NativeRowContextMenu), "session context menu");
     attachServices({
       sessions: ctx.sessions,
       workspaces: ctx.workspaces,
