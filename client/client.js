@@ -814,6 +814,7 @@ function setState(next) {
 }
 var dirtyCards = /* @__PURE__ */ new Set();
 var flushTimer;
+var flushRetryDelay = FLUSH_DELAY_MS;
 var cameraTimer;
 var frameTimer;
 var editSeq = 0;
@@ -879,12 +880,12 @@ function scheduleGlobalPersist() {
     void persistGlobal(current, "layout-memory");
   }, 600);
 }
-function scheduleCardFlush() {
+function scheduleCardFlush(delay = FLUSH_DELAY_MS) {
   if (flushTimer !== void 0) return;
   flushTimer = setTimeout(() => {
     flushTimer = void 0;
     void flushCards();
-  }, FLUSH_DELAY_MS);
+  }, delay);
 }
 async function flushCards() {
   if (dirtyCards.size === 0) return;
@@ -898,9 +899,12 @@ async function flushCards() {
   cardWritesInFlight += 1;
   try {
     await talkMapApi.upsertCards(payload);
+    flushRetryDelay = FLUSH_DELAY_MS;
   } catch (error) {
     console.error("[dsh-talk-map] card flush failed:", error);
     for (const id2 of Object.keys(payload)) dirtyCards.add(id2);
+    flushRetryDelay = Math.min(flushRetryDelay * 2, 5e3);
+    scheduleCardFlush(flushRetryDelay);
   } finally {
     cardWritesInFlight -= 1;
   }

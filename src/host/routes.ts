@@ -108,6 +108,28 @@ function tableToRecord<V>(table: { entries(): IterableIterator<[string, V]> }): 
   return out
 }
 
+/**
+ * Windows can transiently refuse the atomic rename behind storage-json
+ * (`EPERM`/`EBUSY`/`EACCES`) while an external scanner, indexer or backup agent
+ * briefly holds the target file open. That is not a data error: retry the
+ * domain write with a short backoff before failing the HTTP request, otherwise
+ * one momentary lock loses the card positions the drag was trying to persist.
+ */
+const TRANSIENT_WRITE_CODES = new Set(['EPERM', 'EBUSY', 'EACCES'])
+async function writeWithRetry<T>(write: () => Promise<T>, attempts = 4): Promise<T> {
+  let delay = 40
+  for (let attempt = 1; ; attempt += 1) {
+    try {
+      return await write()
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code
+      if (attempt >= attempts || code === undefined || !TRANSIENT_WRITE_CODES.has(code)) throw error
+      await new Promise(resolve => setTimeout(resolve, delay))
+      delay *= 2
+    }
+  }
+}
+
 const upsertCardsBody = z.object({
   cards: z.record(z.string(), cardSchema),
 })
@@ -248,7 +270,7 @@ export function mountTalkMapRoutes(
           const store = await storeReady
           const body = upsertCardsBody.parse(await readJsonBody(request))
           const write = async (): Promise<void> => { for (const [id, card] of Object.entries(body.cards)) {
-            await store.cards.put(id, card)
+            await writeWithRetry(() => store.cards.put(id, card))
             // A card without a usable digest gets one queued (hash-skip keeps it cheap).
             const digest = store.digests.get(card.sessionId)
             if (digest === undefined || digest.summary === '') {
@@ -266,7 +288,7 @@ export function mountTalkMapRoutes(
           const body = upsertEdgesBody.parse(await readJsonBody(request))
           const write = async (): Promise<void> => { for (const [id, edge] of Object.entries(body.edges)) {
             if (!store.cards.get(edge.fromCardId) || !store.cards.get(edge.toCardId)) throw new Error('edge endpoints unavailable')
-            await store.edges.put(id, edge)
+            await writeWithRetry(() => store.edges.put(id, edge))
           } }
           if (runtime.trash) await runtime.trash.serial(write)
           else await write()
@@ -279,12 +301,12 @@ export function mountTalkMapRoutes(
           const body = deleteCardsBody.parse(await readJsonBody(request))
           let removed = 0
           for (const id of body.ids) {
-            if (await store.cards.delete(id)) removed += 1
+            if (await writeWithRetry(() => store.cards.delete(id))) removed += 1
           }
           // A card's edges die with it — a dangling edge renders nothing anyway.
           for (const [edgeId, edge] of [...store.edges.entries()]) {
             if (body.ids.includes(edge.fromCardId) || body.ids.includes(edge.toCardId)) {
-              await store.edges.delete(edgeId)
+              await writeWithRetry(() => store.edges.delete(edgeId))
             }
           }
           sendJson(response, 200, { ok: true, removed })
@@ -296,7 +318,7 @@ export function mountTalkMapRoutes(
           const body = deleteCardsBody.parse(await readJsonBody(request))
           let removed = 0
           for (const id of body.ids) {
-            if (await store.edges.delete(id)) removed += 1
+            if (await writeWithRetry(() => store.edges.delete(id))) removed += 1
           }
           sendJson(response, 200, { ok: true, removed })
           return
@@ -308,7 +330,7 @@ export function mountTalkMapRoutes(
           const write = async (): Promise<void> => {
             const memory = { ...body.global.layoutMemory }
             for (const id of Object.keys(memory)) if (runtime.trash?.isBlocked(id)) delete memory[id]
-            await store.setGlobal({ ...body.global, layoutMemory: memory })
+            await writeWithRetry(() => store.setGlobal({ ...body.global, layoutMemory: memory }))
           }
           if (runtime.trash) await runtime.trash.serial(write)
           else await write()

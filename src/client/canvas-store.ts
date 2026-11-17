@@ -37,6 +37,8 @@ function setState(next: Partial<CanvasState>): void {
 
 const dirtyCards = new Set<string>()
 let flushTimer: ReturnType<typeof setTimeout> | undefined
+/** Backoff for a card flush the host rejected (usually a transient file lock). */
+let flushRetryDelay = FLUSH_DELAY_MS
 let cameraTimer: ReturnType<typeof setTimeout> | undefined
 let frameTimer: ReturnType<typeof setTimeout> | undefined
 
@@ -142,12 +144,12 @@ function scheduleGlobalPersist(): void {
   }, 600)
 }
 
-function scheduleCardFlush(): void {
+function scheduleCardFlush(delay = FLUSH_DELAY_MS): void {
   if (flushTimer !== undefined) return
   flushTimer = setTimeout(() => {
     flushTimer = undefined
     void flushCards()
-  }, FLUSH_DELAY_MS)
+  }, delay)
 }
 
 async function flushCards(): Promise<void> {
@@ -162,9 +164,14 @@ async function flushCards(): Promise<void> {
   cardWritesInFlight += 1
   try {
     await talkMapApi.upsertCards(payload)
+    flushRetryDelay = FLUSH_DELAY_MS
   } catch (error) {
     console.error('[dsh-talk-map] card flush failed:', error)
     for (const id of Object.keys(payload)) dirtyCards.add(id)
+    // The host retries transient Windows rename locks itself; if it still
+    // failed, back off and try again instead of waiting for the next drag.
+    flushRetryDelay = Math.min(flushRetryDelay * 2, 5000)
+    scheduleCardFlush(flushRetryDelay)
   } finally {
     cardWritesInFlight -= 1
   }
