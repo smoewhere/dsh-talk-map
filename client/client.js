@@ -2,18 +2,6 @@ window.__ModuleLoader__.load({ id: "dsh-talk-map", factory: (require) => {
 	var module = { exports: {} };
 	var exports = module.exports;
 	"use strict";
-	// Breadcrumb on disk: after a failed reload we need to know whether this bundle
-	// was imported at all (see scripts/_.add-client-boot-log.mjs).
-	// Evidence trail. The console line lands in the shell's crash report (its
-	// console section survives); the POST retries because a fetch issued during
-	// module evaluation can outrun the shell's request routing.
-	console.error('[dsh-talk-map] client bundle evaluated', new Date().toISOString());
-	try {
-		const ping = (phase) => { try { fetch('/talk-map/client-boot', { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ phase }) }).catch(() => {}) } catch {} };
-		ping('evaluate');
-		setTimeout(() => { ping('alive-1s') }, 1000);
-		setTimeout(() => { ping('alive-5s') }, 5000);
-	} catch {}
 	// A single plugin must never be able to kill the whole boot: the shell treats
 	// "an entry did not activate" as fatal and exits. If this bundle fails to
 	// evaluate (e.g. a reload re-imports it while the previous graph is alive),
@@ -11762,12 +11750,7 @@ async function callRpc(endpoint, request = {}) {
 }
 function reportToHost(payload) {
   try {
-    void fetch("/talk-map/client-boot", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({ at: (/* @__PURE__ */ new Date()).toISOString(), ...payload })
-    }).catch(() => {
-    });
+    console.debug("[dsh-talk-map]", payload);
   } catch {
   }
 }

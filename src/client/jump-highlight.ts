@@ -26,11 +26,7 @@ const trace: JumpTrace = {
 
 function report(): void {
   try {
-    void fetch('/talk-map/client-boot', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ phase: 'jump-debug', ...trace }),
-    }).catch(() => {})
+    console.debug('[dsh-talk-map] jump-debug', trace)
   } catch { /* nothing to do */ }
 }
 const STYLE_ID = 'tm-search-flash-style'

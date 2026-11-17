@@ -48,14 +48,17 @@ export async function callRpc<T>(endpoint: string, request: Record<string, unkno
   return (result as { value: T }).value
 }
 
-/** Report a client-side failure to the Host log, so it is diagnosable later. */
+/**
+ * Leave a client-side breadcrumb in the browser console.
+ *
+ * This used to POST to `/talk-map/client-boot`, a route that only ever existed
+ * in a locally hand-patched host bundle from the 2026-10-26 crash hunt. Every
+ * shipped host build answers 404 there, which turned a diagnostic into console
+ * noise. Keep the breadcrumb local to the console instead.
+ */
 export function reportToHost(payload: Record<string, unknown>): void {
   try {
-    void fetch('/talk-map/client-boot', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ at: new Date().toISOString(), ...payload }),
-    }).catch(() => {})
+    console.debug('[dsh-talk-map]', payload)
   } catch { /* nothing to do */ }
 }
 
