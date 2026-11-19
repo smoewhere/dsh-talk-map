@@ -92,6 +92,9 @@ dsh-app://app/plugins/??dsh-talk-map/client.js&rev=...:10
 下面的 overlay 用的，放到主面板里纯属在顶上留一条死白，已去掉。
 
 快捷键那个 `⌥F` 药丸按钮已按要求删除（`alt+F` 这个绑定本身还在，只是没按钮了）。
+后来（feat/hotkey-rebind）在表头重新加了一个**可自定义**的快捷键按钮（`HotkeyButton.tsx`）：
+点一下进入录入态，按下新组合键即保存到 `global.hotkey`；Esc 取消，Backspace 恢复默认。
+全局监听仍是 `index.ts` 里那一个，录入期间会通过 `mapUi.isCapturingHotkey()` 让路，不会误触开关。
 曾经加过的 ⛶ 全屏按钮也因效果问题移除了。
 
 ### 2. 工作区 = 可伸缩的文件夹，卡片按固定槽位吸附

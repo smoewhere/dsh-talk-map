@@ -14,6 +14,7 @@ import type { RootSlotStandardProps } from './dsh.ts'
 import { activeLocale, subscribeLocale, t } from './i18n.ts'
 import { fontScale } from './font-scale.ts'
 import { GlobalSearch } from './GlobalSearch.tsx'
+import { HotkeyButton } from './HotkeyButton.tsx'
 import { closeMapPanel, hideSidebarForMap, mapUi, openSessionInUi, restoreSidebarAfterMap } from './map-state.ts'
 import { TrashButton } from './TrashPanel.tsx'
 import { MapCanvas } from './MapCanvas.tsx'
@@ -136,6 +137,7 @@ export function MapOverlay(props: RootSlotStandardProps): React.JSX.Element {
         <GlobalSearch onOpenSession={(sessionId) => { openSessionInUi(sessionId) }} />
         <TrashButton wide={false} />
         <FontSizeButtons />
+        <HotkeyButton />
         <button
           type="button"
           className={styles['closeButton']}

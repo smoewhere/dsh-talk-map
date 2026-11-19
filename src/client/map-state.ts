@@ -24,6 +24,13 @@ function emit(): void {
  */
 const escGuards = new Set<string>()
 
+/**
+ * Hotkey capture: while the header's shortcut recorder is armed, the global
+ * toggle listener must stand down — otherwise the combo the user is trying to
+ * record would open/close the map instead of being captured.
+ */
+let hotkeyCapturing = false
+
 export const mapUi = {
   get(): MapUiState {
     return state
@@ -51,6 +58,13 @@ export const mapUi = {
   },
   escapeClaimed(): boolean {
     return escGuards.size > 0
+  },
+  /** Arm/disarm the header's shortcut recorder (see hotkeyCapturing). */
+  setHotkeyCapturing(value: boolean): void {
+    hotkeyCapturing = value
+  },
+  isCapturingHotkey(): boolean {
+    return hotkeyCapturing
   },
 }
 

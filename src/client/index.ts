@@ -178,6 +178,9 @@ export function apply(ctx: TalkMapClientContext): void {
     canvas.ensureLoaded()
     ctx.effect(() => {
       const onKeyDown = (event: KeyboardEvent): void => {
+        // The header's recorder is listening for a new binding: let it own the
+        // key instead of toggling the map with the combo being recorded.
+        if (mapUi.isCapturingHotkey()) return
         const hotkey = canvas.get().global?.hotkey ?? DEFAULT_HOTKEY
         if (hotkeyMatches(event, hotkey)) {
           event.preventDefault()

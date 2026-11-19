@@ -292,6 +292,49 @@
   min-width: 44px;
 }
 
+/* ---- shortcut pill (header) --------------------------------------------- */
+.hotkeyButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  flex: none;
+  min-width: 58px;
+  height: 28px;
+  padding: 0 10px;
+  border: 1px solid var(--dsw-alias-border-l2);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--dsw-alias-label-secondary);
+  font: inherit;
+  font-size: calc(12px + var(--tm-font-step, 0px));
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.hotkeyButton:hover {
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--dsw-alias-border-l3, rgba(255, 255, 255, 0.3));
+}
+
+.hotkeyButtonCapturing,
+.hotkeyButtonInvalid {
+  color: var(--dsw-alias-label-primary);
+  border-color: var(--dsw-alias-label-primary);
+}
+
+.hotkeyIcon {
+  width: 15px;
+  height: 15px;
+  flex: none;
+}
+
+.hotkeyLabelText {
+  line-height: 1;
+  letter-spacing: 0.5px;
+  font-variant-numeric: tabular-nums;
+}
+
 .headerSpace {
   flex: 1;
 }
